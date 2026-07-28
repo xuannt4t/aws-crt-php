@@ -76,7 +76,11 @@ const destroy = (unit: OrganizationUnit) => {
                             <template #body="{ node }">
                                 <span
                                     class="rounded-full px-2 py-1 text-xs font-medium"
-                                    :class="node.data.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'"
+                                    :class="
+                                        node.data.is_active
+                                            ? 'bg-green-100 text-green-800'
+                                            : 'bg-gray-100 text-gray-600'
+                                    "
                                 >
                                     {{ node.data.is_active ? 'Hoạt động' : 'Ngừng hoạt động' }}
                                 </span>
@@ -91,7 +95,11 @@ const destroy = (unit: OrganizationUnit) => {
                                     >
                                         Sửa
                                     </Link>
-                                    <button type="button" class="text-sm text-red-600 hover:underline" @click="destroy(node.data)">
+                                    <button
+                                        type="button"
+                                        class="text-sm text-red-600 hover:underline"
+                                        @click="destroy(node.data)"
+                                    >
                                         Xoá
                                     </button>
                                 </div>

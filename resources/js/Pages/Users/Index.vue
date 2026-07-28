@@ -50,7 +50,9 @@ const toggleActive = (user: User) => {
                             <template #body="{ data }">
                                 <span
                                     class="rounded-full px-2 py-1 text-xs font-medium"
-                                    :class="data.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'"
+                                    :class="
+                                        data.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                                    "
                                 >
                                     {{ data.is_active ? 'Hoạt động' : 'Đã vô hiệu hoá' }}
                                 </span>
@@ -59,10 +61,17 @@ const toggleActive = (user: User) => {
                         <Column v-if="canManage" header="Hành động">
                             <template #body="{ data }">
                                 <div class="flex gap-3">
-                                    <Link :href="route('users.edit', data.id)" class="text-sm text-indigo-600 hover:underline">
+                                    <Link
+                                        :href="route('users.edit', data.id)"
+                                        class="text-sm text-indigo-600 hover:underline"
+                                    >
                                         Sửa
                                     </Link>
-                                    <button type="button" class="text-sm text-amber-600 hover:underline" @click="toggleActive(data)">
+                                    <button
+                                        type="button"
+                                        class="text-sm text-amber-600 hover:underline"
+                                        @click="toggleActive(data)"
+                                    >
                                         {{ data.is_active ? 'Vô hiệu hoá' : 'Kích hoạt' }}
                                     </button>
                                 </div>

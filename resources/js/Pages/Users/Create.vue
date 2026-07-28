@@ -65,13 +65,25 @@ const submit = () => {
 
                         <div>
                             <InputLabel for="email" value="Email" />
-                            <TextInput id="email" v-model="form.email" type="email" class="mt-1 block w-full" required />
+                            <TextInput
+                                id="email"
+                                v-model="form.email"
+                                type="email"
+                                class="mt-1 block w-full"
+                                required
+                            />
                             <InputError class="mt-2" :message="form.errors.email" />
                         </div>
 
                         <div>
                             <InputLabel for="password" value="Mật khẩu" />
-                            <TextInput id="password" v-model="form.password" type="password" class="mt-1 block w-full" required />
+                            <TextInput
+                                id="password"
+                                v-model="form.password"
+                                type="password"
+                                class="mt-1 block w-full"
+                                required
+                            />
                             <InputError class="mt-2" :message="form.errors.password" />
                         </div>
 
@@ -89,7 +101,12 @@ const submit = () => {
 
                         <div>
                             <InputLabel for="employee_code" value="Mã nhân viên" />
-                            <TextInput id="employee_code" v-model="form.employee_code" type="text" class="mt-1 block w-full" />
+                            <TextInput
+                                id="employee_code"
+                                v-model="form.employee_code"
+                                type="text"
+                                class="mt-1 block w-full"
+                            />
                             <InputError class="mt-2" :message="form.errors.employee_code" />
                         </div>
 
