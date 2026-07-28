@@ -30,6 +30,20 @@ const showingNavigationDropdown = ref(false);
                                 <NavLink :href="route('dashboard')" :active="route().current('dashboard')">
                                     Dashboard
                                 </NavLink>
+                                <NavLink
+                                    v-if="$page.props.auth.user.is_system_admin"
+                                    :href="route('organization-units.index')"
+                                    :active="route().current('organization-units.*')"
+                                >
+                                    Tổ chức
+                                </NavLink>
+                                <NavLink
+                                    v-if="$page.props.auth.user.is_system_admin"
+                                    :href="route('users.index')"
+                                    :active="route().current('users.*')"
+                                >
+                                    Người dùng
+                                </NavLink>
                             </div>
                         </div>
 
@@ -115,6 +129,20 @@ const showingNavigationDropdown = ref(false);
                     <div class="space-y-1 pb-3 pt-2">
                         <ResponsiveNavLink :href="route('dashboard')" :active="route().current('dashboard')">
                             Dashboard
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            v-if="$page.props.auth.user.is_system_admin"
+                            :href="route('organization-units.index')"
+                            :active="route().current('organization-units.*')"
+                        >
+                            Tổ chức
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            v-if="$page.props.auth.user.is_system_admin"
+                            :href="route('users.index')"
+                            :active="route().current('users.*')"
+                        >
+                            Người dùng
                         </ResponsiveNavLink>
                     </div>
 
