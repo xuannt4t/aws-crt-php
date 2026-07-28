@@ -23,6 +23,7 @@ class UserController extends Controller
                 ->with('organizationUnit:id,name')
                 ->orderBy('name')
                 ->get(['id', 'name', 'email', 'organization_unit_id', 'is_active', 'is_system_admin']),
+            'organizationUnits' => OrganizationUnit::query()->orderBy('name')->get(['id', 'name']),
         ]);
     }
 
@@ -68,7 +69,7 @@ class UserController extends Controller
     {
         $this->authorize('disable', $user);
 
-        $user->update(['is_active' => false]);
+        $user->forceFill(['is_active' => false, 'remember_token' => null])->save();
 
         return Redirect::route('users.index')->with('success', 'Đã vô hiệu hoá người dùng.');
     }
