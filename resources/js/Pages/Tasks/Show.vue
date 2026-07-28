@@ -7,11 +7,12 @@ import AppRichTextContent from '@/Components/AppRichTextContent.vue';
 import AppTaskPriorityBadge from '@/Components/AppTaskPriorityBadge.vue';
 import AppUserAvatar from '@/Components/AppUserAvatar.vue';
 import InputError from '@/Components/InputError.vue';
+import TaskAttachmentList from '@/Components/TaskAttachmentList.vue';
 import { usePermissions } from '@/Composables/usePermissions';
 import { taskStatusClasses, taskStatusLabels } from '@/Constants/task';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
-import type { PageProps, Task, TaskComment } from '@/types';
+import type { PageProps, Task, TaskAttachment, TaskComment } from '@/types';
 
 interface PaginationLink {
     url: string | null;
@@ -30,6 +31,7 @@ interface PaginatedComments {
 const props = defineProps<{
     task: Task;
     comments: PaginatedComments;
+    attachments: TaskAttachment[];
     actions: {
         dispatch: boolean;
         start: boolean;
@@ -37,6 +39,7 @@ const props = defineProps<{
         updateProgress: boolean;
         recall: boolean;
         comment: boolean;
+        attach: boolean;
     };
 }>();
 
@@ -342,6 +345,13 @@ const paginationLabel = (label: string) => {
                         </template>
                     </nav>
                 </section>
+
+                <TaskAttachmentList
+                    class="mt-6"
+                    :task-id="task.id"
+                    :attachments="attachments"
+                    :can-attach="actions.attach"
+                />
 
                 <section class="app-panel overflow-hidden">
                     <div class="border-b border-slate-100 px-5 py-4 sm:px-6">

@@ -36,6 +36,17 @@ export interface TaskComment {
     author?: Pick<User, 'id' | 'name' | 'avatar_url'>;
 }
 
+export interface TaskAttachment {
+    id: number;
+    original_name: string;
+    mime_type: string;
+    size_bytes: number;
+    size_for_humans: string;
+    created_at: string;
+    uploader?: Pick<User, 'id' | 'name' | 'avatar_url'> | null;
+    can_delete: boolean;
+}
+
 export interface Task {
     id: number;
     organization_unit_id: number;
