@@ -28,11 +28,11 @@ class UserPolicy
 
     public function disable(User $user, User $model): bool
     {
-        return $user->is_system_admin;
+        return $user->is_system_admin && $user->isNot($model);
     }
 
     public function delete(User $user, User $model): bool
     {
-        return $user->is_system_admin;
+        return $user->is_system_admin && $user->isNot($model);
     }
 }

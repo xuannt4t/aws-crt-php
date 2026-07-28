@@ -37,7 +37,10 @@ class UpdateUserRequest extends FormRequest
             ],
             'phone' => ['nullable', 'string', 'max:30'],
             'job_title' => ['nullable', 'string', 'max:255'],
-            'is_system_admin' => ['boolean'],
+            'is_system_admin' => [
+                'boolean',
+                Rule::prohibitedIf(fn () => $this->user()->is($this->route('user')) && ! $this->boolean('is_system_admin')),
+            ],
         ];
     }
 }
