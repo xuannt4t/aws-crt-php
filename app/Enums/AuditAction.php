@@ -11,4 +11,5 @@ enum AuditAction: string
     case UserEnabled = 'user.enabled';
     case UserDeleted = 'user.deleted';
     case OrganizationUnitDeleted = 'organization_unit.deleted';
+    case TaskDeleted = 'task.deleted';
 }

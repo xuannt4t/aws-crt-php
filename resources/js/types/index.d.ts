@@ -11,6 +11,36 @@ export interface Role {
     name: string;
 }
 
+export type TaskStatus =
+    | 'draft'
+    | 'todo'
+    | 'in_progress'
+    | 'waiting_review'
+    | 'waiting_approval'
+    | 'completed'
+    | 'cancelled';
+
+export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
+
+export interface Task {
+    id: number;
+    organization_unit_id: number;
+    parent_id: number | null;
+    creator_id: number;
+    assignee_id: number | null;
+    title: string;
+    description: string | null;
+    status: TaskStatus;
+    priority: TaskPriority;
+    progress: number;
+    due_at: string | null;
+    completed_at: string | null;
+    is_overdue?: boolean;
+    organization_unit?: Pick<OrganizationUnit, 'id' | 'name'>;
+    creator?: Pick<User, 'id' | 'name'>;
+    assignee?: Pick<User, 'id' | 'name'> | null;
+}
+
 export interface User {
     id: number;
     name: string;

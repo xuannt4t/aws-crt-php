@@ -4,6 +4,7 @@ use App\Enums\PermissionName;
 use App\Enums\RoleName;
 use App\Models\AuditLog;
 use App\Models\OrganizationUnit;
+use App\Models\Task;
 use App\Models\User;
 use Database\Seeders\DemoDataSeeder;
 use Illuminate\Support\Facades\Artisan;
@@ -41,6 +42,11 @@ test('demo seeder creates organization units and users for administration review
     $demoAuditLog = AuditLog::query()->where('metadata->source', 'demo_seeder')->firstOrFail();
 
     expect($demoAuditLog->subject_id)->toBe($inactiveEmployee->id);
+    expect(Task::query()->count())->toBe(6)
+        ->and(Task::query()
+            ->where('assignee_id', $developer->id)
+            ->where('title', 'Tối ưu truy vấn danh sách công việc')
+            ->exists())->toBeTrue();
 
     $response = $this->post('/login', [
         'email' => $developer->email,
@@ -72,4 +78,5 @@ test('demo seeder can run repeatedly without creating duplicate data', function 
         ])->count())->toBe(6);
 
     expect(AuditLog::query()->where('metadata->source', 'demo_seeder')->count())->toBe(1);
+    expect(Task::query()->count())->toBe(6);
 });

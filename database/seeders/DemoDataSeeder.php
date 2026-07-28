@@ -4,9 +4,13 @@ namespace Database\Seeders;
 
 use App\Enums\AuditAction;
 use App\Enums\RoleName;
+use App\Enums\TaskPriority;
+use App\Enums\TaskStatus;
 use App\Models\AuditLog;
 use App\Models\OrganizationUnit;
+use App\Models\Task;
 use App\Models\User;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -117,6 +121,11 @@ final class DemoDataSeeder extends Seeder
         );
 
         $this->seedDemoAuditLog($inactiveEmployee);
+        $this->seedDemoTasks(
+            productUnit: $productUnit,
+            engineeringUnit: $engineeringUnit,
+            operationsUnit: $operationsUnit,
+        );
     }
 
     private function upsertOrganizationUnit(
@@ -196,5 +205,114 @@ final class DemoDataSeeder extends Seeder
                 'note' => 'Bản ghi mẫu để kiểm tra giao diện quản trị.',
             ],
         ]);
+    }
+
+    private function seedDemoTasks(
+        OrganizationUnit $productUnit,
+        OrganizationUnit $engineeringUnit,
+        OrganizationUnit $operationsUnit,
+    ): void {
+        $admin = User::query()->where('email', config('dormida.admin_email'))->firstOrFail();
+        $productLead = User::query()->where('email', 'product.lead@dormida.test')->firstOrFail();
+        $designer = User::query()->where('email', 'designer@dormida.test')->firstOrFail();
+        $developer = User::query()->where('email', 'developer@dormida.test')->firstOrFail();
+        $operations = User::query()->where('email', 'operations@dormida.test')->firstOrFail();
+
+        $this->upsertTask(
+            title: 'Hoàn thiện đặc tả luồng onboarding',
+            unit: $productUnit,
+            creator: $productLead,
+            assignee: $designer,
+            status: TaskStatus::InProgress,
+            priority: TaskPriority::High,
+            dueAt: now()->addDays(3),
+            progress: 55,
+        );
+
+        $this->upsertTask(
+            title: 'Tối ưu truy vấn danh sách công việc',
+            unit: $engineeringUnit,
+            creator: $admin,
+            assignee: $developer,
+            status: TaskStatus::Todo,
+            priority: TaskPriority::Medium,
+            dueAt: now()->addWeek(),
+        );
+
+        $this->upsertTask(
+            title: 'Rà soát checklist phát hành',
+            unit: $engineeringUnit,
+            creator: $admin,
+            assignee: $developer,
+            status: TaskStatus::WaitingReview,
+            priority: TaskPriority::Urgent,
+            dueAt: now()->addDay(),
+            progress: 90,
+        );
+
+        $this->upsertTask(
+            title: 'Tổng hợp số liệu vận hành tuần',
+            unit: $operationsUnit,
+            creator: $operations,
+            assignee: $operations,
+            status: TaskStatus::Completed,
+            priority: TaskPriority::Low,
+            dueAt: now()->subDay(),
+            progress: 100,
+            completedAt: now()->subHours(3),
+        );
+
+        $this->upsertTask(
+            title: 'Cập nhật quy trình xử lý yêu cầu nội bộ',
+            unit: $operationsUnit,
+            creator: $operations,
+            assignee: $operations,
+            status: TaskStatus::Todo,
+            priority: TaskPriority::High,
+            dueAt: now()->subDays(2),
+        );
+
+        $this->upsertTask(
+            title: 'Chuẩn bị kế hoạch cải tiến quý tới',
+            unit: $productUnit,
+            creator: $productLead,
+            assignee: null,
+            status: TaskStatus::Draft,
+            priority: TaskPriority::Medium,
+            dueAt: null,
+        );
+    }
+
+    private function upsertTask(
+        string $title,
+        OrganizationUnit $unit,
+        User $creator,
+        ?User $assignee,
+        TaskStatus $status,
+        TaskPriority $priority,
+        ?CarbonInterface $dueAt,
+        int $progress = 0,
+        ?CarbonInterface $completedAt = null,
+    ): void {
+        $task = Task::withTrashed()->updateOrCreate(
+            [
+                'organization_unit_id' => $unit->id,
+                'title' => $title,
+            ],
+            [
+                'creator_id' => $creator->id,
+                'assignee_id' => $assignee?->id,
+                'description' => 'Dữ liệu mẫu phục vụ kiểm tra giao diện Task Core.',
+                'status' => $status,
+                'priority' => $priority,
+                'progress' => $progress,
+                'due_at' => $dueAt,
+                'completed_at' => $completedAt,
+            ],
+        );
+
+        if ($task->trashed()) {
+            $task->restore();
+        }
     }
 }

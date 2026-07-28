@@ -66,6 +66,7 @@ const actionLabels: Record<string, string> = {
     'user.enabled': 'Kích hoạt người dùng',
     'user.deleted': 'Xóa người dùng',
     'organization_unit.deleted': 'Xóa đơn vị',
+    'task.deleted': 'Xóa công việc',
 };
 
 const handleFilter = () => {

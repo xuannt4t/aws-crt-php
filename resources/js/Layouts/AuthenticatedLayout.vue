@@ -11,7 +11,7 @@ interface NavigationItem {
     label: string;
     routeName: string;
     activePattern: string;
-    icon: 'dashboard' | 'building' | 'users' | 'shield';
+    icon: 'dashboard' | 'building' | 'users' | 'shield' | 'tasks';
     permission?: string;
 }
 
@@ -25,6 +25,13 @@ const navigation: NavigationItem[] = [
         routeName: 'dashboard',
         activePattern: 'dashboard',
         icon: 'dashboard',
+    },
+    {
+        label: 'Công việc',
+        routeName: 'tasks.index',
+        activePattern: 'tasks.*',
+        icon: 'tasks',
+        permission: 'task.view',
     },
     {
         label: 'Cơ cấu tổ chức',
