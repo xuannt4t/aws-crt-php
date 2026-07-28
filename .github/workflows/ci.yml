@@ -72,6 +72,7 @@ jobs:
       - name: Run migrations
         run: php artisan migrate --force
         env:
+          DB_CONNECTION: mysql
           DB_HOST: 127.0.0.1
           DB_PORT: 3306
           DB_DATABASE: dormida_work
@@ -81,6 +82,7 @@ jobs:
       - name: Run tests
         run: ./vendor/bin/pest
         env:
+          DB_CONNECTION: mysql
           DB_HOST: 127.0.0.1
           DB_PORT: 3306
           DB_DATABASE: dormida_work
