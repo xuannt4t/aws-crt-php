@@ -24,32 +24,33 @@ final readonly class StoreTaskAttachmentAction
     public function execute(User $actor, Task $task, array $files): void
     {
         // Ghi disk trước, ngoài transaction: thao tác I/O chậm không được nằm trong transaction.
+        // Toàn bộ thân hàm (vòng lặp ghi file lẫn DB::transaction) nằm trong một try/catch duy nhất
+        // để bất kỳ lỗi nào xảy ra sau khi đã ghi một phần file đều dọn dẹp được file mồ côi.
         $storedPaths = [];
-        $rows = [];
-
-        foreach ($files as $file) {
-            $path = $file->store("task-attachments/{$task->id}", self::DISK);
-
-            if (! is_string($path)) {
-                $this->discard($storedPaths);
-
-                throw ValidationException::withMessages([
-                    'files' => 'Không thể lưu tệp đính kèm. Vui lòng thử lại.',
-                ]);
-            }
-
-            $storedPaths[] = $path;
-            $rows[] = [
-                'uploader_id' => $actor->id,
-                'disk' => self::DISK,
-                'path' => $path,
-                'original_name' => $file->getClientOriginalName(),
-                'mime_type' => $file->getClientMimeType(),
-                'size_bytes' => $file->getSize(),
-            ];
-        }
 
         try {
+            $rows = [];
+
+            foreach ($files as $file) {
+                $path = $file->store("task-attachments/{$task->id}", self::DISK);
+
+                if (! is_string($path)) {
+                    throw ValidationException::withMessages([
+                        'files' => 'Không thể lưu tệp đính kèm. Vui lòng thử lại.',
+                    ]);
+                }
+
+                $storedPaths[] = $path;
+                $rows[] = [
+                    'uploader_id' => $actor->id,
+                    'disk' => self::DISK,
+                    'path' => $path,
+                    'original_name' => $file->getClientOriginalName(),
+                    'mime_type' => $file->getClientMimeType(),
+                    'size_bytes' => $file->getSize(),
+                ];
+            }
+
             DB::transaction(function () use ($actor, $task, $rows): void {
                 foreach ($rows as $row) {
                     $task->attachments()->create($row);

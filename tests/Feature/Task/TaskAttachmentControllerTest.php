@@ -5,6 +5,7 @@ use App\Enums\PermissionName;
 use App\Models\Task;
 use App\Models\TaskAttachment;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 function uploaderUser(): App\Models\User
@@ -139,4 +140,45 @@ test('at least one file is required', function () {
     $this->actingAs(uploaderUser())
         ->post(route('tasks.attachments.store', $task), [])
         ->assertSessionHasErrors('files');
+});
+
+test('files already written to disk are discarded when the transaction fails after storing them', function () {
+    Storage::fake('local');
+
+    $task = Task::factory()->create();
+
+    // Mô phỏng lỗi DB xảy ra SAU KHI các file đã được ghi lên disk (vòng lặp store() chạy
+    // trước, bên trong cùng khối try/catch với DB::transaction). AuditLogger là "final" nên
+    // Mockery không thể tạo mock thoả type hint constructor của action (đã thử: TypeError vì
+    // partial mock của final class không được coi là instance thật). Thay vào đó, mô phỏng lỗi
+    // bằng cách partial-mock DatabaseManager đứng sau facade DB (không phải final) để
+    // DB::transaction() ném exception ngay khi được gọi — đúng nhánh mà store() ném exception
+    // giữa vòng lặp cũng sẽ đi qua, vì cả hai đều được bọc chung trong khối try/catch của action.
+    $realDatabaseManager = app('db');
+    $partialMock = Mockery::mock($realDatabaseManager)->makePartial();
+    $partialMock->shouldReceive('transaction')->once()->andThrow(new RuntimeException('Lỗi giao dịch DB giả lập.'));
+    $this->app->instance('db', $partialMock);
+    DB::clearResolvedInstance('db');
+
+    $this->withoutExceptionHandling();
+
+    $caught = null;
+
+    try {
+        $this->actingAs(uploaderUser())
+            ->post(route('tasks.attachments.store', $task), [
+                'files' => [
+                    UploadedFile::fake()->create('a.pdf', 10, 'application/pdf'),
+                    UploadedFile::fake()->create('b.pdf', 20, 'application/pdf'),
+                ],
+            ]);
+    } catch (RuntimeException $exception) {
+        $caught = $exception;
+    }
+
+    expect($caught)->not->toBeNull()
+        ->and($caught->getMessage())->toBe('Lỗi giao dịch DB giả lập.');
+
+    expect(TaskAttachment::query()->count())->toBe(0);
+    expect(Storage::disk('local')->allFiles())->toBe([]);
 });
