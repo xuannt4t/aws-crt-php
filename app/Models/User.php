@@ -5,13 +5,15 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -22,6 +24,12 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'organization_unit_id',
+        'is_system_admin',
+        'is_active',
+        'employee_code',
+        'phone',
+        'job_title',
     ];
 
     /**
@@ -44,6 +52,13 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_system_admin' => 'boolean',
+            'is_active' => 'boolean',
         ];
+    }
+
+    public function organizationUnit(): BelongsTo
+    {
+        return $this->belongsTo(OrganizationUnit::class, 'organization_unit_id');
     }
 }
