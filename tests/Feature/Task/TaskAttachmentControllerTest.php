@@ -230,3 +230,63 @@ test('an attachment cannot be reached through a different task', function () {
         ->get(route('tasks.attachments.download', [$task, $attachment]))
         ->assertNotFound();
 });
+
+test('the uploader deletes their attachment and the file stays on disk', function () {
+    Storage::fake('local');
+
+    $uploader = uploaderUser();
+    $task = Task::factory()->create();
+    $path = "task-attachments/{$task->id}/luu-tru.pdf";
+    Storage::disk('local')->put($path, 'noi dung tep');
+
+    $attachment = TaskAttachment::factory()->for($task)->for($uploader, 'uploader')->create([
+        'path' => $path,
+    ]);
+
+    $this->actingAs($uploader)
+        ->delete(route('tasks.attachments.destroy', [$task, $attachment]))
+        ->assertRedirect(route('tasks.show', $task))
+        ->assertSessionHas('success');
+
+    expect(TaskAttachment::count())->toBe(0)
+        ->and(TaskAttachment::withTrashed()->count())->toBe(1);
+
+    Storage::disk('local')->assertExists($path);
+
+    $this->assertDatabaseHas('audit_logs', [
+        'actor_id' => $uploader->id,
+        'action' => AuditAction::TaskAttachmentDeleted->value,
+        'subject_type' => $attachment->getMorphClass(),
+        'subject_id' => $attachment->id,
+    ]);
+});
+
+test('a user with the task update permission deletes an attachment uploaded by someone else', function () {
+    Storage::fake('local');
+
+    $manager = userWithPermissions([
+        PermissionName::TaskView->value,
+        PermissionName::TaskUpdate->value,
+    ]);
+    $task = Task::factory()->create();
+    $attachment = TaskAttachment::factory()->for($task)->create();
+
+    $this->actingAs($manager)
+        ->delete(route('tasks.attachments.destroy', [$task, $attachment]))
+        ->assertRedirect(route('tasks.show', $task));
+
+    expect(TaskAttachment::count())->toBe(0);
+});
+
+test('another user cannot delete an attachment they did not upload', function () {
+    Storage::fake('local');
+
+    $task = Task::factory()->create();
+    $attachment = TaskAttachment::factory()->for($task)->create();
+
+    $this->actingAs(userWithPermissions([PermissionName::TaskView->value]))
+        ->delete(route('tasks.attachments.destroy', [$task, $attachment]))
+        ->assertForbidden();
+
+    expect(TaskAttachment::count())->toBe(1);
+});

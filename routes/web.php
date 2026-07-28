@@ -50,6 +50,9 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
     Route::get('tasks/{task}/attachments/{attachment}/download', [TaskAttachmentController::class, 'download'])
         ->scopeBindings()
         ->name('tasks.attachments.download');
+    Route::delete('tasks/{task}/attachments/{attachment}', [TaskAttachmentController::class, 'destroy'])
+        ->scopeBindings()
+        ->name('tasks.attachments.destroy');
     Route::resource('tasks', TaskController::class);
 });
 
