@@ -182,3 +182,51 @@ test('files already written to disk are discarded when the transaction fails aft
     expect(TaskAttachment::query()->count())->toBe(0);
     expect(Storage::disk('local')->allFiles())->toBe([]);
 });
+
+test('a user who can view the task downloads an attachment under its original name', function () {
+    Storage::fake('local');
+
+    $task = Task::factory()->create();
+    $path = "task-attachments/{$task->id}/luu-tru.pdf";
+    Storage::disk('local')->put($path, 'noi dung tep');
+
+    $attachment = TaskAttachment::factory()->for($task)->create([
+        'path' => $path,
+        'original_name' => 'Báo cáo quý.pdf',
+    ]);
+
+    $viewer = userWithPermissions([PermissionName::TaskView->value]);
+
+    $response = $this->actingAs($viewer)
+        ->get(route('tasks.attachments.download', [$task, $attachment]));
+
+    $response->assertOk();
+    expect($response->headers->get('content-disposition'))->toContain('attachment');
+    expect($response->streamedContent())->toBe('noi dung tep');
+});
+
+test('a user without the task view permission cannot download an attachment', function () {
+    Storage::fake('local');
+
+    $task = Task::factory()->create();
+    $path = "task-attachments/{$task->id}/luu-tru.pdf";
+    Storage::disk('local')->put($path, 'noi dung tep');
+
+    $attachment = TaskAttachment::factory()->for($task)->create(['path' => $path]);
+
+    $this->actingAs(userWithPermissions([]))
+        ->get(route('tasks.attachments.download', [$task, $attachment]))
+        ->assertForbidden();
+});
+
+test('an attachment cannot be reached through a different task', function () {
+    Storage::fake('local');
+
+    $task = Task::factory()->create();
+    $otherTask = Task::factory()->create();
+    $attachment = TaskAttachment::factory()->for($otherTask)->create();
+
+    $this->actingAs(userWithPermissions([PermissionName::TaskView->value]))
+        ->get(route('tasks.attachments.download', [$task, $attachment]))
+        ->assertNotFound();
+});

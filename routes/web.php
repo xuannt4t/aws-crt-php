@@ -47,6 +47,9 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
     Route::post('tasks/{task}/comments', [TaskCommentController::class, 'store'])->name('tasks.comments.store');
     Route::post('tasks/{task}/attachments', [TaskAttachmentController::class, 'store'])
         ->name('tasks.attachments.store');
+    Route::get('tasks/{task}/attachments/{attachment}/download', [TaskAttachmentController::class, 'download'])
+        ->scopeBindings()
+        ->name('tasks.attachments.download');
     Route::resource('tasks', TaskController::class);
 });
 
