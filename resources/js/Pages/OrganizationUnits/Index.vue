@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import InputError from '@/Components/InputError.vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import TreeTable from 'primevue/treetable';
 import Column from 'primevue/column';
@@ -19,6 +20,7 @@ const props = defineProps<{
 
 const page = usePage<PageProps>();
 const canManage = computed(() => page.props.auth.user.is_system_admin);
+const deleteError = computed(() => (page.props.errors as Record<string, string>).organization_unit);
 
 const treeNodes = computed<OrganizationUnitNode[]>(() => {
     const byId = new Map<number, OrganizationUnitNode>();
@@ -65,6 +67,8 @@ const destroy = (unit: OrganizationUnit) => {
         <div class="py-12">
             <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
                 <div class="overflow-hidden bg-white p-6 shadow-sm sm:rounded-lg">
+                    <InputError class="mb-4" :message="deleteError" />
+
                     <p v-if="organizationUnits.length === 0" class="text-sm text-gray-500">
                         Chưa có đơn vị nào. Tạo đơn vị gốc để bắt đầu.
                     </p>
