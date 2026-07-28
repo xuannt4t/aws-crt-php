@@ -62,6 +62,11 @@ final class Task extends Model
         return $this->hasMany(TaskStatusHistory::class)->latest('id');
     }
 
+    public function comments(): HasMany
+    {
+        return $this->hasMany(TaskComment::class);
+    }
+
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'creator_id')->withTrashed();

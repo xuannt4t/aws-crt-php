@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\OrganizationUnitController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\TaskCommentController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\UserController;
 use Illuminate\Foundation\Application;
@@ -42,6 +43,7 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
     Route::patch('tasks/{task}/submit', [TaskController::class, 'submit'])->name('tasks.submit');
     Route::patch('tasks/{task}/recall', [TaskController::class, 'recall'])->name('tasks.recall');
     Route::patch('tasks/{task}/progress', [TaskController::class, 'updateProgress'])->name('tasks.progress.update');
+    Route::post('tasks/{task}/comments', [TaskCommentController::class, 'store'])->name('tasks.comments.store');
     Route::resource('tasks', TaskController::class);
 });
 

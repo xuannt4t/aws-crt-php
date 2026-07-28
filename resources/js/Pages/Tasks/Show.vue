@@ -11,16 +11,32 @@ import { usePermissions } from '@/Composables/usePermissions';
 import { taskStatusClasses, taskStatusLabels } from '@/Constants/task';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
-import type { PageProps, Task } from '@/types';
+import type { PageProps, Task, TaskComment } from '@/types';
+
+interface PaginationLink {
+    url: string | null;
+    label: string;
+    active: boolean;
+}
+
+interface PaginatedComments {
+    data: TaskComment[];
+    current_page: number;
+    last_page: number;
+    total: number;
+    links: PaginationLink[];
+}
 
 const props = defineProps<{
     task: Task;
+    comments: PaginatedComments;
     actions: {
         dispatch: boolean;
         start: boolean;
         submit: boolean;
         updateProgress: boolean;
         recall: boolean;
+        comment: boolean;
     };
 }>();
 
@@ -30,6 +46,9 @@ const isTransitioning = ref(false);
 const isConfirmingRecall = ref(false);
 const progressForm = useForm({
     value: props.task.progress,
+});
+const commentForm = useForm({
+    body: '',
 });
 
 const handleTransition = (routeName: 'tasks.dispatch' | 'tasks.start' | 'tasks.submit') => {
@@ -78,6 +97,13 @@ const recallSubmission = () => {
     );
 };
 
+const submitComment = () => {
+    commentForm.post(route('tasks.comments.store', props.task.id), {
+        preserveScroll: true,
+        onSuccess: () => commentForm.reset(),
+    });
+};
+
 const formatDateTime = (value: string | null) => {
     if (!value) {
         return 'Chưa thiết lập';
@@ -87,6 +113,18 @@ const formatDateTime = (value: string | null) => {
         dateStyle: 'medium',
         timeStyle: 'short',
     }).format(new Date(value));
+};
+
+const paginationLabel = (label: string) => {
+    if (label.includes('Previous')) {
+        return 'Trước';
+    }
+
+    if (label.includes('Next')) {
+        return 'Sau';
+    }
+
+    return label;
 };
 </script>
 
@@ -189,6 +227,120 @@ const formatDateTime = (value: string | null) => {
                         <AppRichTextContent v-if="task.description_html" :html="task.description_html" class="mt-3" />
                         <p v-else class="mt-3 text-sm italic text-slate-400">Chưa có mô tả chi tiết.</p>
                     </div>
+                </section>
+
+                <section class="app-panel overflow-hidden">
+                    <div class="border-b border-slate-100 px-5 py-4 sm:px-6">
+                        <div class="flex items-center justify-between gap-3">
+                            <div>
+                                <h2 class="font-display text-base font-bold text-ink-950">Trao đổi</h2>
+                                <p class="mt-1 text-xs text-slate-500">
+                                    {{ comments.total }} nội dung trao đổi trong công việc này.
+                                </p>
+                            </div>
+                            <span
+                                class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700"
+                            >
+                                <AppIcon name="message" class="size-4" />
+                            </span>
+                        </div>
+                    </div>
+
+                    <form
+                        v-if="actions.comment"
+                        class="border-b border-slate-100 bg-slate-50/40 px-5 py-5 sm:px-6"
+                        @submit.prevent="submitComment"
+                    >
+                        <label for="task-comment" class="text-xs font-bold text-slate-600"
+                            >Thêm nội dung trao đổi</label
+                        >
+                        <textarea
+                            id="task-comment"
+                            v-model="commentForm.body"
+                            rows="3"
+                            maxlength="5000"
+                            class="app-field mt-2 resize-y"
+                            placeholder="Cập nhật tình hình, đặt câu hỏi hoặc phản hồi..."
+                        />
+                        <div class="mt-2 flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                                <InputError :message="commentForm.errors.body" />
+                                <p v-if="!commentForm.errors.body" class="text-xs text-slate-400">
+                                    {{ commentForm.body.length.toLocaleString('vi-VN') }}/5.000 ký tự
+                                </p>
+                            </div>
+                            <button
+                                type="submit"
+                                class="app-button-primary"
+                                :disabled="commentForm.processing || !commentForm.body.trim()"
+                            >
+                                <AppIcon name="arrow-right" class="size-4" />
+                                {{ commentForm.processing ? 'Đang gửi...' : 'Gửi trao đổi' }}
+                            </button>
+                        </div>
+                    </form>
+
+                    <div v-if="comments.data.length" class="divide-y divide-slate-100">
+                        <article
+                            v-for="comment in comments.data"
+                            :key="comment.id"
+                            class="flex gap-3 px-5 py-5 sm:px-6"
+                        >
+                            <AppUserAvatar
+                                :name="comment.author?.name ?? 'Tài khoản đã xóa'"
+                                :avatar-url="comment.author?.avatar_url"
+                                size="sm"
+                            />
+                            <div class="min-w-0 flex-1">
+                                <div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                                    <h3 class="text-sm font-bold text-slate-800">
+                                        {{ comment.author?.name ?? 'Tài khoản đã xóa' }}
+                                        <span
+                                            v-if="comment.author?.id === page.props.auth.user.id"
+                                            class="text-brand-700"
+                                        >
+                                            (Bạn)
+                                        </span>
+                                    </h3>
+                                    <time class="text-xs text-slate-400" :datetime="comment.created_at">
+                                        {{ formatDateTime(comment.created_at) }}
+                                    </time>
+                                </div>
+                                <p class="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-slate-600">
+                                    {{ comment.body }}
+                                </p>
+                            </div>
+                        </article>
+                    </div>
+                    <div v-else class="px-5 py-10 text-center">
+                        <p class="text-sm font-semibold text-slate-500">Chưa có nội dung trao đổi.</p>
+                        <p class="mt-1 text-xs text-slate-400">Hãy bắt đầu bằng một cập nhật ngắn về công việc.</p>
+                    </div>
+
+                    <nav
+                        v-if="comments.last_page > 1"
+                        class="flex flex-wrap items-center justify-center gap-1 border-t border-slate-100 px-5 py-4"
+                        aria-label="Phân trang trao đổi"
+                    >
+                        <template v-for="link in comments.links" :key="link.label">
+                            <Link
+                                v-if="link.url"
+                                :href="link.url"
+                                preserve-scroll
+                                class="min-w-9 rounded-lg px-3 py-2 text-center text-xs font-semibold transition"
+                                :class="
+                                    link.active
+                                        ? 'bg-brand-600 text-white'
+                                        : 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                                "
+                            >
+                                {{ paginationLabel(link.label) }}
+                            </Link>
+                            <span v-else class="min-w-9 px-3 py-2 text-center text-xs text-slate-300">
+                                {{ paginationLabel(link.label) }}
+                            </span>
+                        </template>
+                    </nav>
                 </section>
 
                 <section class="app-panel overflow-hidden">

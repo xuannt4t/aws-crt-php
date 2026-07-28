@@ -14,6 +14,7 @@ type IconName =
     | 'lock'
     | 'logout'
     | 'menu'
+    | 'message'
     | 'plus'
     | 'report'
     | 'shield'
@@ -66,6 +67,7 @@ defineProps<{
         <path v-else-if="name === 'report'" d="M4 19V9M10 19V5M16 19v-7M22 19H2" />
         <path v-else-if="name === 'shield'" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10ZM9 12l2 2 4-4" />
         <path v-else-if="name === 'menu'" d="M4 6h16M4 12h16M4 18h16" />
+        <path v-else-if="name === 'message'" d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v8Z" />
         <path v-else-if="name === 'x'" d="M18 6 6 18M6 6l12 12" />
         <path v-else-if="name === 'plus'" d="M12 5v14M5 12h14" />
         <path v-else-if="name === 'edit'" d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4L16.5 3.5Z" />

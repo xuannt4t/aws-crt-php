@@ -95,12 +95,23 @@ final class TaskController extends Controller
             'statusHistories.actor:id,name,avatar_path',
         ]);
 
+        $comments = $task->comments()
+            ->with('author:id,name,avatar_path')
+            ->latest('id')
+            ->paginate(
+                perPage: 20,
+                columns: ['id', 'task_id', 'author_id', 'body', 'created_at'],
+                pageName: 'comments_page',
+            )
+            ->withQueryString();
+
         return Inertia::render('Tasks/Show', [
             'task' => [
                 ...$task->toArray(),
                 'is_overdue' => $task->isOverdue(),
                 'description_html' => $descriptionSanitizer->sanitize($task->description),
             ],
+            'comments' => $comments,
             'actions' => [
                 'dispatch' => $task->status === TaskStatus::Draft
                     && request()->user()->can('dispatch', $task),
@@ -112,6 +123,7 @@ final class TaskController extends Controller
                     && request()->user()->can('updateProgress', $task),
                 'recall' => $task->status === TaskStatus::WaitingReview
                     && request()->user()->can('recall', $task),
+                'comment' => request()->user()->can('comment', $task),
             ],
         ]);
     }

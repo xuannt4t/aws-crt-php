@@ -27,6 +27,15 @@ export interface TaskStatusHistory {
     actor?: Pick<User, 'id' | 'name' | 'avatar_url'>;
 }
 
+export interface TaskComment {
+    id: number;
+    task_id: number;
+    author_id: number;
+    body: string;
+    created_at: string;
+    author?: Pick<User, 'id' | 'name' | 'avatar_url'>;
+}
+
 export interface Task {
     id: number;
     organization_unit_id: number;
