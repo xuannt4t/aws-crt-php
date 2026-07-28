@@ -5,9 +5,10 @@ import AppConfirmDialog from '@/Components/AppConfirmDialog.vue';
 import AppEmptyState from '@/Components/AppEmptyState.vue';
 import AppIcon from '@/Components/AppIcon.vue';
 import AppPageHeader from '@/Components/AppPageHeader.vue';
+import AppTaskPriorityBadge from '@/Components/AppTaskPriorityBadge.vue';
 import AppUserAvatar from '@/Components/AppUserAvatar.vue';
 import { usePermissions } from '@/Composables/usePermissions';
-import { taskPriorityClasses, taskPriorityLabels, taskStatusClasses, taskStatusLabels } from '@/Constants/task';
+import { taskPriorityLabels, taskStatusClasses, taskStatusLabels } from '@/Constants/task';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import type { OrganizationUnit, Task, TaskPriority, TaskStatus, User } from '@/types';
@@ -257,9 +258,7 @@ const paginationLabel = (label: string) => {
                                     {{ task.title }}
                                 </Link>
                                 <div class="mt-1.5 flex items-center gap-2 text-xs">
-                                    <span :class="taskPriorityClasses[task.priority]">
-                                        {{ taskPriorityLabels[task.priority] }}
-                                    </span>
+                                    <AppTaskPriorityBadge :priority="task.priority" />
                                     <span class="text-slate-300">·</span>
                                     <span class="text-slate-400">Tạo bởi {{ task.creator?.name }}</span>
                                 </div>

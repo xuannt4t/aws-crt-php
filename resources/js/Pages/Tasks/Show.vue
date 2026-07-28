@@ -2,9 +2,10 @@
 import { ref } from 'vue';
 import AppIcon from '@/Components/AppIcon.vue';
 import AppPageHeader from '@/Components/AppPageHeader.vue';
+import AppTaskPriorityBadge from '@/Components/AppTaskPriorityBadge.vue';
 import AppUserAvatar from '@/Components/AppUserAvatar.vue';
 import { usePermissions } from '@/Composables/usePermissions';
-import { taskPriorityLabels, taskStatusClasses, taskStatusLabels } from '@/Constants/task';
+import { taskStatusClasses, taskStatusLabels } from '@/Constants/task';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import type { Task } from '@/types';
@@ -124,9 +125,7 @@ const formatDateTime = (value: string | null) => {
                         >
                             {{ taskStatusLabels[task.status] }}
                         </span>
-                        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">
-                            Ưu tiên {{ taskPriorityLabels[task.priority].toLocaleLowerCase('vi') }}
-                        </span>
+                        <AppTaskPriorityBadge :priority="task.priority" show-prefix />
                         <span
                             v-if="task.is_overdue"
                             class="rounded-full bg-red-50 px-2.5 py-1 text-xs font-bold text-red-700"
@@ -137,10 +136,7 @@ const formatDateTime = (value: string | null) => {
 
                     <div class="mt-6">
                         <h2 class="font-display text-base font-bold text-ink-950">Mô tả</h2>
-                        <p
-                            v-if="task.description"
-                            class="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-600"
-                        >
+                        <p v-if="task.description" class="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-600">
                             {{ task.description }}
                         </p>
                         <p v-else class="mt-3 text-sm italic text-slate-400">Chưa có mô tả chi tiết.</p>
@@ -159,7 +155,9 @@ const formatDateTime = (value: string | null) => {
                             :key="history.id"
                             class="flex gap-4 px-5 py-4 sm:px-6"
                         >
-                            <span class="mt-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-700">
+                            <span
+                                class="mt-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-700"
+                            >
                                 <AppIcon name="arrow-right" class="size-4" />
                             </span>
                             <div class="min-w-0">
@@ -203,7 +201,10 @@ const formatDateTime = (value: string | null) => {
                     </div>
                     <div>
                         <dt class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Thời hạn</dt>
-                        <dd class="mt-2 text-sm font-semibold" :class="task.is_overdue ? 'text-red-700' : 'text-slate-700'">
+                        <dd
+                            class="mt-2 text-sm font-semibold"
+                            :class="task.is_overdue ? 'text-red-700' : 'text-slate-700'"
+                        >
                             {{ formatDateTime(task.due_at) }}
                         </dd>
                     </div>

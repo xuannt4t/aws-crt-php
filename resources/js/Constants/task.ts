@@ -26,10 +26,3 @@ export const taskPriorityLabels: Record<TaskPriority, string> = {
     high: 'Cao',
     urgent: 'Khẩn cấp',
 };
-
-export const taskPriorityClasses: Record<TaskPriority, string> = {
-    low: 'text-slate-500',
-    medium: 'text-blue-600',
-    high: 'text-amber-700',
-    urgent: 'text-red-700',
-};
