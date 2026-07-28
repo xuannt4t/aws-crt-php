@@ -11,6 +11,7 @@ import { usePermissions } from '@/Composables/usePermissions';
 import { taskPriorityLabels, taskStatusClasses, taskStatusLabels } from '@/Constants/task';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
+import MultiSelect from 'primevue/multiselect';
 import type { OrganizationUnit, Task, TaskPriority, TaskStatus, User } from '@/types';
 
 interface PaginationLink {
@@ -36,7 +37,7 @@ const props = defineProps<{
         status?: TaskStatus;
         priority?: TaskPriority;
         organization_unit_id?: number;
-        assignee_id?: number;
+        assignee_ids?: number[];
         overdue?: boolean | string;
     };
     statuses: TaskStatus[];
@@ -54,7 +55,7 @@ const search = ref(props.filters.search ?? '');
 const status = ref(props.filters.status ?? '');
 const priority = ref(props.filters.priority ?? '');
 const organizationUnitId = ref<number | ''>(props.filters.organization_unit_id ?? '');
-const assigneeId = ref<number | ''>(props.filters.assignee_id ?? '');
+const assigneeIds = ref<number[]>(props.filters.assignee_ids ?? []);
 const overdue = ref(props.filters.overdue === true || props.filters.overdue === '1');
 const isLoading = ref(false);
 const taskToDelete = ref<Task | null>(null);
@@ -67,7 +68,7 @@ const handleFilter = () => {
             status: status.value || undefined,
             priority: priority.value || undefined,
             organization_unit_id: organizationUnitId.value || undefined,
-            assignee_id: assigneeId.value || undefined,
+            assignee_ids: assigneeIds.value.length > 0 ? assigneeIds.value : undefined,
             overdue: overdue.value ? 1 : undefined,
         },
         {
@@ -88,7 +89,7 @@ const handleReset = () => {
     status.value = '';
     priority.value = '';
     organizationUnitId.value = '';
-    assigneeId.value = '';
+    assigneeIds.value = [];
     overdue.value = false;
     handleFilter();
 };
@@ -150,7 +151,7 @@ const paginationLabel = (label: string) => {
         </template>
 
         <form class="app-panel mb-5 p-5 sm:p-6" @submit.prevent="handleFilter">
-            <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+            <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
                 <label class="xl:col-span-2">
                     <span class="mb-1.5 block text-xs font-bold text-slate-600">Tìm kiếm</span>
                     <input v-model="search" type="search" class="app-field" placeholder="Tiêu đề công việc" />
@@ -182,19 +183,28 @@ const paginationLabel = (label: string) => {
                         </option>
                     </select>
                 </label>
-                <label>
-                    <span class="mb-1.5 block text-xs font-bold text-slate-600">Người phụ trách</span>
-                    <select v-model="assigneeId" class="app-field">
-                        <option value="">Tất cả</option>
-                        <option v-for="user in users" :key="user.id" :value="user.id">
-                            {{ user.name }}
-                        </option>
-                    </select>
-                </label>
             </div>
 
-            <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
-                <label class="flex cursor-pointer items-center gap-2 text-xs font-semibold text-slate-600">
+            <div class="mt-4 grid gap-4 xl:grid-cols-[minmax(320px,1fr)_auto_auto] xl:items-end">
+                <label class="block min-w-0">
+                    <span class="mb-1.5 block text-xs font-bold text-slate-600">Người phụ trách</span>
+                    <MultiSelect
+                        v-model="assigneeIds"
+                        :options="users"
+                        option-label="name"
+                        option-value="id"
+                        display="chip"
+                        filter
+                        :max-selected-labels="3"
+                        selected-items-label="{0} người đã chọn"
+                        placeholder="Chọn một hoặc nhiều người"
+                        class="mt-2 w-full"
+                        aria-label="Lọc theo người phụ trách"
+                    />
+                </label>
+                <label
+                    class="flex min-h-10 cursor-pointer items-center gap-2 text-xs font-semibold text-slate-600 xl:mb-px"
+                >
                     <input
                         v-model="overdue"
                         type="checkbox"
@@ -202,7 +212,7 @@ const paginationLabel = (label: string) => {
                     />
                     Chỉ công việc quá hạn
                 </label>
-                <div class="flex gap-2">
+                <div class="flex justify-end gap-2">
                     <button type="button" class="app-button-secondary" :disabled="isLoading" @click="handleReset">
                         Xóa bộ lọc
                     </button>

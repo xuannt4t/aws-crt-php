@@ -30,6 +30,10 @@ final class TaskController extends Controller
     {
         $filters = $request->validated();
 
+        if (isset($filters['assignee_ids'])) {
+            $filters['assignee_ids'] = array_map('intval', $filters['assignee_ids']);
+        }
+
         $tasks = Task::query()
             ->with([
                 'organizationUnit:id,name',
@@ -44,8 +48,8 @@ final class TaskController extends Controller
                 ->where('priority', $priority))
             ->when($filters['organization_unit_id'] ?? null, fn (Builder $query, int $unitId) => $query
                 ->where('organization_unit_id', $unitId))
-            ->when($filters['assignee_id'] ?? null, fn (Builder $query, int $assigneeId) => $query
-                ->where('assignee_id', $assigneeId))
+            ->when($filters['assignee_ids'] ?? null, fn (Builder $query, array $assigneeIds) => $query
+                ->whereIn('assignee_id', $assigneeIds))
             ->when($request->boolean('overdue'), fn (Builder $query) => $query->overdue())
             ->latest('id')
             ->paginate(20)

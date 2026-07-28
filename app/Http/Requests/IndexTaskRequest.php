@@ -22,7 +22,12 @@ final class IndexTaskRequest extends FormRequest
             'status' => ['nullable', Rule::enum(TaskStatus::class)],
             'priority' => ['nullable', Rule::enum(TaskPriority::class)],
             'organization_unit_id' => ['nullable', 'integer', Rule::exists('organization_units', 'id')->whereNull('deleted_at')],
-            'assignee_id' => ['nullable', 'integer', Rule::exists('users', 'id')->whereNull('deleted_at')],
+            'assignee_ids' => ['nullable', 'array', 'max:50'],
+            'assignee_ids.*' => [
+                'integer',
+                'distinct',
+                Rule::exists('users', 'id')->whereNull('deleted_at'),
+            ],
             'overdue' => ['nullable', 'boolean'],
         ];
     }

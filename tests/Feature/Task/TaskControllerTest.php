@@ -49,6 +49,27 @@ test('a user without task view permission cannot view tasks', function () {
         ->assertForbidden();
 });
 
+test('tasks can be filtered by multiple assignees', function () {
+    $viewer = userWithPermissions([PermissionName::TaskView->value]);
+    $firstAssignee = User::factory()->create();
+    $secondAssignee = User::factory()->create();
+    $otherAssignee = User::factory()->create();
+
+    Task::factory()->create(['assignee_id' => $firstAssignee->id]);
+    Task::factory()->create(['assignee_id' => $secondAssignee->id]);
+    Task::factory()->create(['assignee_id' => $otherAssignee->id]);
+
+    $this->actingAs($viewer)
+        ->get(route('tasks.index', [
+            'assignee_ids' => [$firstAssignee->id, $secondAssignee->id],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('tasks.data', 2)
+            ->where('tasks.total', 2)
+            ->where('filters.assignee_ids', [$firstAssignee->id, $secondAssignee->id]));
+});
+
 test('a user with view permission can view task details and transition history', function () {
     $viewer = userWithPermissions([PermissionName::TaskView->value]);
     $task = Task::factory()->create();
