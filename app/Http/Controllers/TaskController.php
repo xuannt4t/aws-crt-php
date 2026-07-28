@@ -20,6 +20,7 @@ use App\Http\Requests\UpdateTaskProgressRequest;
 use App\Http\Requests\UpdateTaskRequest;
 use App\Models\OrganizationUnit;
 use App\Models\Task;
+use App\Models\TaskAttachment;
 use App\Models\User;
 use App\Support\TaskDescriptionSanitizer;
 use Illuminate\Database\Eloquent\Builder;
@@ -105,6 +106,25 @@ final class TaskController extends Controller
             )
             ->withQueryString();
 
+        $attachments = $task->attachments()
+            ->with('uploader:id,name,avatar_path')
+            ->get()
+            ->map(fn (TaskAttachment $attachment): array => [
+                'id' => $attachment->id,
+                'original_name' => $attachment->original_name,
+                'mime_type' => $attachment->mime_type,
+                'size_bytes' => $attachment->size_bytes,
+                'size_for_humans' => $attachment->size_for_humans,
+                'created_at' => $attachment->created_at,
+                'uploader' => $attachment->uploader === null ? null : [
+                    'id' => $attachment->uploader->id,
+                    'name' => $attachment->uploader->name,
+                    'avatar_url' => $attachment->uploader->avatar_url,
+                ],
+                'can_delete' => request()->user()->can('delete', $attachment),
+            ])
+            ->all();
+
         return Inertia::render('Tasks/Show', [
             'task' => [
                 ...$task->toArray(),
@@ -112,6 +132,7 @@ final class TaskController extends Controller
                 'description_html' => $descriptionSanitizer->sanitize($task->description),
             ],
             'comments' => $comments,
+            'attachments' => $attachments,
             'actions' => [
                 'dispatch' => $task->status === TaskStatus::Draft
                     && request()->user()->can('dispatch', $task),
@@ -124,6 +145,7 @@ final class TaskController extends Controller
                 'recall' => $task->status === TaskStatus::WaitingReview
                     && request()->user()->can('recall', $task),
                 'comment' => request()->user()->can('comment', $task),
+                'attach' => request()->user()->can('attach', $task),
             ],
         ]);
     }

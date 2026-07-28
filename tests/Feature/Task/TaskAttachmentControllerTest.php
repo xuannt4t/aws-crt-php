@@ -290,3 +290,50 @@ test('another user cannot delete an attachment they did not upload', function ()
 
     expect(TaskAttachment::count())->toBe(1);
 });
+
+test('task details expose attachments with per user delete permission', function () {
+    Storage::fake('local');
+
+    $uploader = uploaderUser();
+    $task = Task::factory()->create();
+
+    $own = TaskAttachment::factory()->for($task)->for($uploader, 'uploader')->create([
+        'original_name' => 'cua-toi.pdf',
+    ]);
+    $foreign = TaskAttachment::factory()->for($task)->create([
+        'original_name' => 'cua-nguoi-khac.pdf',
+    ]);
+
+    $this->actingAs($uploader)
+        ->get(route('tasks.show', $task))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('attachments', 2)
+            ->where('attachments.0.id', $foreign->id)
+            ->where('attachments.0.can_delete', false)
+            ->where('attachments.1.id', $own->id)
+            ->where('attachments.1.can_delete', true)
+            ->where('attachments.1.original_name', 'cua-toi.pdf')
+            ->has('attachments.1.size_for_humans')
+            ->where('actions.attach', true));
+});
+
+test('a viewer without the comment permission cannot attach from the task page', function () {
+    $task = Task::factory()->create();
+
+    $this->actingAs(userWithPermissions([PermissionName::TaskView->value]))
+        ->get(route('tasks.show', $task))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->where('actions.attach', false));
+});
+
+test('deleted attachments disappear from the task page', function () {
+    $task = Task::factory()->create();
+    $attachment = TaskAttachment::factory()->for($task)->create();
+    $attachment->delete();
+
+    $this->actingAs(userWithPermissions([PermissionName::TaskView->value]))
+        ->get(route('tasks.show', $task))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->has('attachments', 0));
+});
