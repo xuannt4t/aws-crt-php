@@ -252,6 +252,73 @@ test('a user without delete permission cannot delete a task', function () {
     $this->assertNotSoftDeleted($task);
 });
 
+test('an assignee can update progress while a task is in progress', function () {
+    $assignee = userWithPermissions([PermissionName::TaskUpdate->value]);
+    $task = Task::factory()->create([
+        'assignee_id' => $assignee->id,
+        'status' => TaskStatus::InProgress,
+        'progress' => 20,
+    ]);
+
+    $this->actingAs($assignee)
+        ->patch(route('tasks.progress.update', $task), ['progress' => 65])
+        ->assertRedirect()
+        ->assertSessionHas('success');
+
+    expect($task->fresh()->progress)->toBe(65);
+});
+
+test('task details show the progress action to the active assignee', function () {
+    $assignee = userWithPermissions([
+        PermissionName::TaskView->value,
+        PermissionName::TaskUpdate->value,
+    ]);
+    $task = Task::factory()->create([
+        'assignee_id' => $assignee->id,
+        'status' => TaskStatus::InProgress,
+    ]);
+
+    $this->actingAs($assignee)
+        ->get(route('tasks.show', $task))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->where('actions.updateProgress', true));
+});
+
+test('only the assignee can update task progress', function () {
+    $assignee = User::factory()->create();
+    $otherUser = userWithPermissions([PermissionName::TaskUpdate->value]);
+    $task = Task::factory()->create([
+        'assignee_id' => $assignee->id,
+        'status' => TaskStatus::InProgress,
+        'progress' => 20,
+    ]);
+
+    $this->actingAs($otherUser)
+        ->patch(route('tasks.progress.update', $task), ['progress' => 65])
+        ->assertForbidden();
+
+    expect($task->fresh()->progress)->toBe(20);
+});
+
+test('task progress must be valid and can only change while in progress', function () {
+    $assignee = userWithPermissions([PermissionName::TaskUpdate->value]);
+    $task = Task::factory()->create([
+        'assignee_id' => $assignee->id,
+        'status' => TaskStatus::Todo,
+        'progress' => 0,
+    ]);
+
+    $this->actingAs($assignee)
+        ->patch(route('tasks.progress.update', $task), ['progress' => 101])
+        ->assertSessionHasErrors('progress');
+
+    $this->actingAs($assignee)
+        ->patch(route('tasks.progress.update', $task), ['progress' => 50])
+        ->assertSessionHasErrors('progress');
+
+    expect($task->fresh()->progress)->toBe(0);
+});
+
 test('a task can follow dispatch start and submit transitions with immutable history', function () {
     $actor = userWithPermissions([
         PermissionName::TaskAssign->value,

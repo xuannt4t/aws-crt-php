@@ -34,7 +34,9 @@ test('only the assignee can start and submit a task with the required permission
     $task = Task::factory()->create(['assignee_id' => $assignee->id]);
 
     expect($assignee->can('start', $task))->toBeTrue()
+        ->and($assignee->can('updateProgress', $task))->toBeTrue()
         ->and($assignee->can('submit', $task))->toBeTrue()
         ->and($otherUser->can('start', $task))->toBeFalse()
+        ->and($otherUser->can('updateProgress', $task))->toBeFalse()
         ->and($otherUser->can('submit', $task))->toBeFalse();
 });

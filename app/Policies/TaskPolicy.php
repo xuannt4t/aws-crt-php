@@ -28,6 +28,12 @@ final class TaskPolicy
         return $user->can(PermissionName::TaskUpdate->value);
     }
 
+    public function updateProgress(User $user, Task $task): bool
+    {
+        return $user->can(PermissionName::TaskUpdate->value)
+            && $task->assignee_id === $user->id;
+    }
+
     public function delete(User $user, Task $task): bool
     {
         return $user->can(PermissionName::TaskDelete->value);

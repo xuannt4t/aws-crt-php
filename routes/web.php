@@ -40,6 +40,7 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
     Route::patch('tasks/{task}/dispatch', [TaskController::class, 'dispatch'])->name('tasks.dispatch');
     Route::patch('tasks/{task}/start', [TaskController::class, 'start'])->name('tasks.start');
     Route::patch('tasks/{task}/submit', [TaskController::class, 'submit'])->name('tasks.submit');
+    Route::patch('tasks/{task}/progress', [TaskController::class, 'updateProgress'])->name('tasks.progress.update');
     Route::resource('tasks', TaskController::class);
 });
 

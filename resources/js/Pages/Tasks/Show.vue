@@ -5,10 +5,11 @@ import AppPageHeader from '@/Components/AppPageHeader.vue';
 import AppRichTextContent from '@/Components/AppRichTextContent.vue';
 import AppTaskPriorityBadge from '@/Components/AppTaskPriorityBadge.vue';
 import AppUserAvatar from '@/Components/AppUserAvatar.vue';
+import InputError from '@/Components/InputError.vue';
 import { usePermissions } from '@/Composables/usePermissions';
 import { taskStatusClasses, taskStatusLabels } from '@/Constants/task';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import type { Task } from '@/types';
 
 const props = defineProps<{
@@ -17,11 +18,15 @@ const props = defineProps<{
         dispatch: boolean;
         start: boolean;
         submit: boolean;
+        updateProgress: boolean;
     };
 }>();
 
 const { can } = usePermissions();
 const isTransitioning = ref(false);
+const progressForm = useForm({
+    value: props.task.progress,
+});
 
 const handleTransition = (routeName: 'tasks.dispatch' | 'tasks.start' | 'tasks.submit') => {
     router.patch(
@@ -37,6 +42,19 @@ const handleTransition = (routeName: 'tasks.dispatch' | 'tasks.start' | 'tasks.s
             },
         },
     );
+};
+
+const updateProgress = () => {
+    progressForm
+        .transform((data) => ({ progress: data.value }))
+        .patch(route('tasks.progress.update', props.task.id), {
+            preserveScroll: true,
+            onError: (errors) => {
+                if (errors.progress) {
+                    progressForm.setError('value', errors.progress);
+                }
+            },
+        });
 };
 
 const formatDateTime = (value: string | null) => {
@@ -221,6 +239,64 @@ const formatDateTime = (value: string | null) => {
                         </dd>
                     </div>
                 </dl>
+
+                <form
+                    v-if="actions.updateProgress"
+                    class="mt-6 rounded-xl border border-brand-100 bg-brand-50/60 p-4"
+                    @submit.prevent="updateProgress"
+                >
+                    <div class="flex items-start gap-3">
+                        <span
+                            class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-brand-700"
+                        >
+                            <AppIcon name="tasks" class="size-4" />
+                        </span>
+                        <div>
+                            <h3 class="text-sm font-bold text-brand-950">Cập nhật tiến độ</h3>
+                            <p class="mt-1 text-xs leading-5 text-brand-800/70">
+                                Bạn là người phụ trách công việc này.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 flex items-center gap-3">
+                        <input
+                            v-model.number="progressForm.value"
+                            type="range"
+                            min="0"
+                            max="100"
+                            step="5"
+                            class="h-2 min-w-0 flex-1 cursor-pointer accent-brand-600"
+                            aria-label="Tiến độ công việc"
+                        />
+                        <label class="relative w-20 shrink-0">
+                            <input
+                                v-model.number="progressForm.value"
+                                type="number"
+                                min="0"
+                                max="100"
+                                class="app-field h-10 py-2 pr-7 text-center text-sm font-bold"
+                                aria-label="Phần trăm tiến độ"
+                            />
+                            <span
+                                class="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400"
+                            >
+                                %
+                            </span>
+                        </label>
+                    </div>
+
+                    <InputError class="mt-2" :message="progressForm.errors.value" />
+
+                    <button
+                        type="submit"
+                        class="app-button-primary mt-4 w-full justify-center"
+                        :disabled="progressForm.processing"
+                    >
+                        <AppIcon name="check" class="size-4" />
+                        {{ progressForm.processing ? 'Đang lưu...' : 'Lưu tiến độ' }}
+                    </button>
+                </form>
             </aside>
         </div>
     </AuthenticatedLayout>

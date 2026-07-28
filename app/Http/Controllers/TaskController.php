@@ -6,6 +6,7 @@ use App\Actions\Task\CreateTaskAction;
 use App\Actions\Task\DeleteTaskAction;
 use App\Actions\Task\TransitionTaskStatusAction;
 use App\Actions\Task\UpdateTaskAction;
+use App\Actions\Task\UpdateTaskProgressAction;
 use App\Enums\PermissionName;
 use App\Enums\TaskPriority;
 use App\Enums\TaskStatus;
@@ -14,6 +15,7 @@ use App\Http\Requests\IndexTaskRequest;
 use App\Http\Requests\StartTaskRequest;
 use App\Http\Requests\StoreTaskRequest;
 use App\Http\Requests\SubmitTaskRequest;
+use App\Http\Requests\UpdateTaskProgressRequest;
 use App\Http\Requests\UpdateTaskRequest;
 use App\Models\OrganizationUnit;
 use App\Models\Task;
@@ -105,6 +107,8 @@ final class TaskController extends Controller
                     && request()->user()->can('start', $task),
                 'submit' => $task->status === TaskStatus::InProgress
                     && request()->user()->can('submit', $task),
+                'updateProgress' => $task->status === TaskStatus::InProgress
+                    && request()->user()->can('updateProgress', $task),
             ],
         ]);
     }
@@ -142,6 +146,16 @@ final class TaskController extends Controller
         $action->execute($task, $request->validated());
 
         return Redirect::route('tasks.index')->with('success', 'Cập nhật công việc thành công.');
+    }
+
+    public function updateProgress(
+        UpdateTaskProgressRequest $request,
+        Task $task,
+        UpdateTaskProgressAction $action,
+    ): RedirectResponse {
+        $action->execute($task, $request->integer('progress'));
+
+        return Redirect::back()->with('success', 'Đã cập nhật tiến độ công việc.');
     }
 
     public function destroy(Task $task, DeleteTaskAction $action): RedirectResponse
