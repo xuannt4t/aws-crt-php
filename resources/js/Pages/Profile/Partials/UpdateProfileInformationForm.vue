@@ -174,14 +174,6 @@ onUnmounted(clearObjectUrl);
                 <PrimaryButton :disabled="form.processing">
                     {{ form.processing ? 'Đang lưu...' : 'Lưu thông tin' }}
                 </PrimaryButton>
-                <Transition
-                    enter-active-class="transition ease-in-out"
-                    enter-from-class="opacity-0"
-                    leave-active-class="transition ease-in-out"
-                    leave-to-class="opacity-0"
-                >
-                    <p v-if="form.recentlySuccessful" class="text-sm font-semibold text-emerald-600">Đã lưu.</p>
-                </Transition>
             </div>
         </form>
     </section>

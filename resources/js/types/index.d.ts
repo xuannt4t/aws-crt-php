@@ -69,4 +69,8 @@ export type PageProps<T extends Record<string, unknown> = Record<string, unknown
         roles: string[];
         permissions: string[];
     };
+    flash: {
+        success: string | null;
+        error: string | null;
+    };
 };

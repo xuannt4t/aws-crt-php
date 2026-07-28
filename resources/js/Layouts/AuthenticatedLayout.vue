@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue';
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 import AppIcon from '@/Components/AppIcon.vue';
 import AppLogoutDialog from '@/Components/AppLogoutDialog.vue';
+import AppToast from '@/Components/AppToast.vue';
 import AppUserAvatar from '@/Components/AppUserAvatar.vue';
 import { usePermissions } from '@/Composables/usePermissions';
 import { Link, usePage } from '@inertiajs/vue3';
@@ -89,6 +90,8 @@ watch(
 
 <template>
     <div class="min-h-screen bg-[#f7f8f6]">
+        <AppToast />
+
         <button
             v-if="isSidebarOpen"
             type="button"

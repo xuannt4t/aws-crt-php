@@ -88,14 +88,6 @@ const updatePassword = () => {
                 <PrimaryButton :disabled="form.processing">
                     {{ form.processing ? 'Đang cập nhật...' : 'Đổi mật khẩu' }}
                 </PrimaryButton>
-                <Transition
-                    enter-active-class="transition ease-in-out"
-                    enter-from-class="opacity-0"
-                    leave-active-class="transition ease-in-out"
-                    leave-to-class="opacity-0"
-                >
-                    <p v-if="form.recentlySuccessful" class="text-sm font-semibold text-emerald-600">Đã cập nhật.</p>
-                </Transition>
             </div>
         </form>
     </section>

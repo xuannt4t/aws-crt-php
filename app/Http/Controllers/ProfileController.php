@@ -33,7 +33,7 @@ class ProfileController extends Controller
     {
         $action->execute($request->user(), $request->validated());
 
-        return Redirect::route('profile.edit');
+        return Redirect::route('profile.edit')->with('success', 'Đã cập nhật hồ sơ cá nhân.');
     }
 
     /**
@@ -53,6 +53,6 @@ class ProfileController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return Redirect::to('/');
+        return Redirect::to('/')->with('success', 'Đã xóa tài khoản.');
     }
 }

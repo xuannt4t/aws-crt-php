@@ -16,6 +16,18 @@ test('profile page is displayed', function () {
     $response->assertOk();
 });
 
+test('flash messages are shared with inertia pages', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->withSession(['success' => 'Thao tác thành công.'])
+        ->get('/profile')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('flash.success', 'Thao tác thành công.')
+            ->where('flash.error', null));
+});
+
 test('profile information can be updated', function () {
     $user = User::factory()->create();
 
@@ -28,6 +40,7 @@ test('profile information can be updated', function () {
 
     $response
         ->assertSessionHasNoErrors()
+        ->assertSessionHas('success', 'Đã cập nhật hồ sơ cá nhân.')
         ->assertRedirect('/profile');
 
     $user->refresh();

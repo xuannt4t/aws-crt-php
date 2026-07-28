@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 import AppIcon from '@/Components/AppIcon.vue';
+import AppToast from '@/Components/AppToast.vue';
 import { Link } from '@inertiajs/vue3';
 </script>
 
 <template>
     <div class="grid min-h-screen bg-sand-50 lg:grid-cols-[1.05fr_0.95fr]">
+        <AppToast />
+
         <section
             class="relative hidden overflow-hidden bg-ink-950 px-12 py-10 text-white lg:flex lg:flex-col xl:px-16 xl:py-12"
         >

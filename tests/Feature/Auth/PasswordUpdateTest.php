@@ -17,6 +17,7 @@ test('password can be updated', function () {
 
     $response
         ->assertSessionHasNoErrors()
+        ->assertSessionHas('success', 'Đổi mật khẩu thành công.')
         ->assertRedirect('/profile');
 
     $this->assertTrue(Hash::check('new-password', $user->refresh()->password));
