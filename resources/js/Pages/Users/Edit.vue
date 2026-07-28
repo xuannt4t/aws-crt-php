@@ -12,7 +12,7 @@ import type { OrganizationUnit, Role, User } from '@/types';
 const props = defineProps<{
     user: Pick<
         User,
-        'id' | 'name' | 'email' | 'organization_unit_id' | 'employee_code' | 'phone' | 'job_title'
+        'id' | 'name' | 'email' | 'organization_unit_id' | 'employee_code' | 'phone' | 'job_title' | 'avatar_url'
     >;
     organizationUnits: Pick<OrganizationUnit, 'id' | 'name'>[];
     selectedRoles: string[];
@@ -62,7 +62,7 @@ const submit = () => {
         <template #header>
             <div class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
                 <div class="flex items-center gap-4">
-                    <AppUserAvatar :name="user.name" size="lg" />
+                    <AppUserAvatar :name="user.name" :avatar-url="user.avatar_url" size="lg" />
                     <div>
                         <p class="mb-1 text-xs font-bold uppercase tracking-[0.16em] text-brand-700">
                             Chỉnh sửa thành viên
@@ -144,7 +144,9 @@ const submit = () => {
                         <AppIcon name="shield" class="size-4 text-violet-700" />
                         Vai trò
                     </h2>
-                    <p class="mt-1 text-xs text-slate-500">Thay đổi vai trò sẽ cập nhật toàn bộ quyền của người dùng.</p>
+                    <p class="mt-1 text-xs text-slate-500">
+                        Thay đổi vai trò sẽ cập nhật toàn bộ quyền của người dùng.
+                    </p>
                 </div>
                 <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     <label

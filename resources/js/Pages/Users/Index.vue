@@ -170,7 +170,7 @@ const toggleActive = (user: User) => {
                     <Column field="name" header="Thành viên">
                         <template #body="{ data }">
                             <div class="flex items-center gap-3">
-                                <AppUserAvatar :name="data.name" size="sm" />
+                                <AppUserAvatar :name="data.name" :avatar-url="data.avatar_url" size="sm" />
                                 <div class="min-w-0">
                                     <p class="font-semibold text-slate-800">{{ data.name }}</p>
                                     <p class="mt-0.5 text-xs text-slate-400">

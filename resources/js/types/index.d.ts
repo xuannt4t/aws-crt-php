@@ -12,13 +12,7 @@ export interface Role {
 }
 
 export type TaskStatus =
-    | 'draft'
-    | 'todo'
-    | 'in_progress'
-    | 'waiting_review'
-    | 'waiting_approval'
-    | 'completed'
-    | 'cancelled';
+    'draft' | 'todo' | 'in_progress' | 'waiting_review' | 'waiting_approval' | 'completed' | 'cancelled';
 
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
 
@@ -30,7 +24,7 @@ export interface TaskStatusHistory {
     to_status: TaskStatus;
     reason: string | null;
     created_at: string;
-    actor?: Pick<User, 'id' | 'name'>;
+    actor?: Pick<User, 'id' | 'name' | 'avatar_url'>;
 }
 
 export interface Task {
@@ -48,8 +42,8 @@ export interface Task {
     completed_at: string | null;
     is_overdue?: boolean;
     organization_unit?: Pick<OrganizationUnit, 'id' | 'name'>;
-    creator?: Pick<User, 'id' | 'name'>;
-    assignee?: Pick<User, 'id' | 'name'> | null;
+    creator?: Pick<User, 'id' | 'name' | 'avatar_url'>;
+    assignee?: Pick<User, 'id' | 'name' | 'avatar_url'> | null;
     status_histories?: TaskStatusHistory[];
 }
 
@@ -65,6 +59,7 @@ export interface User {
     employee_code?: string | null;
     phone?: string | null;
     job_title?: string | null;
+    avatar_url: string | null;
     roles?: Role[];
 }
 

@@ -37,8 +37,8 @@ final class TaskController extends Controller
         $tasks = Task::query()
             ->with([
                 'organizationUnit:id,name',
-                'creator:id,name',
-                'assignee:id,name',
+                'creator:id,name,avatar_path',
+                'assignee:id,name,avatar_path',
             ])
             ->when($filters['search'] ?? null, fn (Builder $query, string $search) => $query
                 ->where('title', 'like', "%{$search}%"))
@@ -86,9 +86,9 @@ final class TaskController extends Controller
 
         $task->load([
             'organizationUnit:id,name',
-            'creator:id,name',
-            'assignee:id,name',
-            'statusHistories.actor:id,name',
+            'creator:id,name,avatar_path',
+            'assignee:id,name,avatar_path',
+            'statusHistories.actor:id,name,avatar_path',
         ]);
 
         return Inertia::render('Tasks/Show', [

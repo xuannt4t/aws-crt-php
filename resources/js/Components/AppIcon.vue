@@ -3,6 +3,7 @@ type IconName =
     | 'arrow-left'
     | 'arrow-right'
     | 'building'
+    | 'camera'
     | 'calendar'
     | 'check'
     | 'chevron-right'
@@ -43,6 +44,10 @@ defineProps<{
         <path
             v-else-if="name === 'building'"
             d="M3 21h18M6 21V6l6-3 6 3v15M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01"
+        />
+        <path
+            v-else-if="name === 'camera'"
+            d="M14.5 5 13 3h-2L9.5 5H5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-4.5ZM12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"
         />
         <path
             v-else-if="name === 'users'"

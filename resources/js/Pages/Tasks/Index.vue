@@ -286,7 +286,11 @@ const paginationLabel = (label: string) => {
                             </td>
                             <td class="px-5 py-4">
                                 <div v-if="task.assignee" class="flex items-center gap-2">
-                                    <AppUserAvatar :name="task.assignee.name" size="sm" />
+                                    <AppUserAvatar
+                                        :name="task.assignee.name"
+                                        :avatar-url="task.assignee.avatar_url"
+                                        size="sm"
+                                    />
                                     <span class="text-sm font-medium text-slate-700">{{ task.assignee.name }}</span>
                                 </div>
                                 <span v-else class="text-xs text-slate-400">Chưa phân công</span>

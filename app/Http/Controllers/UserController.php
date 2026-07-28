@@ -37,6 +37,7 @@ class UserController extends Controller
                     'employee_code',
                     'phone',
                     'job_title',
+                    'avatar_path',
                 ]),
             'organizationUnits' => OrganizationUnit::query()->orderBy('name')->get(['id', 'name']),
         ]);
@@ -65,7 +66,7 @@ class UserController extends Controller
 
         return Inertia::render('Users/Edit', [
             'user' => $user->only([
-                'id', 'name', 'email', 'organization_unit_id', 'employee_code', 'phone', 'job_title',
+                'id', 'name', 'email', 'organization_unit_id', 'employee_code', 'phone', 'job_title', 'avatar_url',
             ]),
             'organizationUnits' => OrganizationUnit::query()->orderBy('name')->get(['id', 'name']),
             'selectedRoles' => $user->getRoleNames(),

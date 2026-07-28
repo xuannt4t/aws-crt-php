@@ -186,7 +186,11 @@ const formatDateTime = (value: string | null) => {
                     <div>
                         <dt class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Người phụ trách</dt>
                         <dd v-if="task.assignee" class="mt-2 flex items-center gap-2.5">
-                            <AppUserAvatar :name="task.assignee.name" size="sm" />
+                            <AppUserAvatar
+                                :name="task.assignee.name"
+                                :avatar-url="task.assignee.avatar_url"
+                                size="sm"
+                            />
                             <span class="text-sm font-semibold text-slate-700">{{ task.assignee.name }}</span>
                         </dd>
                         <dd v-else class="mt-2 text-sm text-slate-400">Chưa phân công</dd>

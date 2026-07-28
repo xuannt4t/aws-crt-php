@@ -12,6 +12,7 @@ interface AuditActor {
     id: number;
     name: string;
     email: string;
+    avatar_url: string | null;
 }
 
 interface AuditLog {
@@ -222,7 +223,11 @@ const paginationLabel = (label: string) => {
                             </td>
                             <td class="px-5 py-4">
                                 <div v-if="log.actor" class="flex items-center gap-2.5">
-                                    <AppUserAvatar :name="log.actor.name" size="sm" />
+                                    <AppUserAvatar
+                                        :name="log.actor.name"
+                                        :avatar-url="log.actor.avatar_url"
+                                        size="sm"
+                                    />
                                     <div>
                                         <p class="text-sm font-semibold text-slate-800">{{ log.actor.name }}</p>
                                         <p class="mt-0.5 text-xs text-slate-400">{{ log.actor.email }}</p>

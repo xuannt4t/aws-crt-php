@@ -16,7 +16,7 @@ final class AuditLogController extends Controller
         $filters = $request->validated();
 
         $auditLogs = AuditLog::query()
-            ->with('actor:id,name,email')
+            ->with('actor:id,name,email,avatar_path')
             ->when($filters['search'] ?? null, function (Builder $query, string $search): void {
                 $query->whereHas('actor', function (Builder $actorQuery) use ($search): void {
                     $actorQuery

@@ -4,11 +4,13 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
@@ -31,6 +33,14 @@ class User extends Authenticatable
         'employee_code',
         'phone',
         'job_title',
+        'avatar_path',
+    ];
+
+    /**
+     * @var list<string>
+     */
+    protected $appends = [
+        'avatar_url',
     ];
 
     /**
@@ -61,5 +71,14 @@ class User extends Authenticatable
     public function organizationUnit(): BelongsTo
     {
         return $this->belongsTo(OrganizationUnit::class, 'organization_unit_id');
+    }
+
+    protected function avatarUrl(): Attribute
+    {
+        return Attribute::get(
+            fn (): ?string => $this->avatar_path
+                ? Storage::disk('public')->url($this->avatar_path)
+                : null,
+        );
     }
 }

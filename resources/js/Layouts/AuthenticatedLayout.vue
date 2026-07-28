@@ -148,7 +148,10 @@ watch(
             <div class="mt-auto">
                 <div class="mb-4 rounded-2xl border border-white/[0.08] bg-white/[0.045] p-3">
                     <div class="flex items-center gap-3">
-                        <AppUserAvatar :name="page.props.auth.user.name" />
+                        <AppUserAvatar
+                            :name="page.props.auth.user.name"
+                            :avatar-url="page.props.auth.user.avatar_url"
+                        />
                         <div class="min-w-0 flex-1">
                             <p class="truncate text-sm font-semibold text-white">{{ page.props.auth.user.name }}</p>
                             <p class="mt-0.5 truncate text-xs text-white/45">
@@ -212,7 +215,11 @@ watch(
                         </span>
                         <span class="mt-0.5 block text-[10px] text-slate-400">{{ page.props.auth.user.email }}</span>
                     </span>
-                    <AppUserAvatar :name="page.props.auth.user.name" size="sm" />
+                    <AppUserAvatar
+                        :name="page.props.auth.user.name"
+                        :avatar-url="page.props.auth.user.avatar_url"
+                        size="sm"
+                    />
                 </Link>
             </header>
 
