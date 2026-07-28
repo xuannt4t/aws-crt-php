@@ -29,7 +29,9 @@ final class StoreTaskRequest extends FormRequest
                 Rule::exists('tasks', 'id')->whereNull('deleted_at'),
             ],
             'assignee_id' => [
-                Rule::prohibitedIf(fn () => ! $this->user()->can(PermissionName::TaskAssign->value)),
+                Rule::prohibitedIf(fn () => ! $this->user()->can(PermissionName::TaskAssign->value)
+                    && $this->filled('assignee_id')
+                    && $this->integer('assignee_id') !== $this->user()->id),
                 'sometimes',
                 'nullable',
                 'integer',

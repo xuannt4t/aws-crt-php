@@ -164,6 +164,33 @@ test('a user without assign permission cannot assign a task', function () {
     $this->assertDatabaseMissing('tasks', ['title' => 'Phân công trái phép']);
 });
 
+test('a task creator without assign permission can assign the task to themselves', function () {
+    $creator = userWithPermissions([PermissionName::TaskCreate->value]);
+    $unit = OrganizationUnit::factory()->create();
+
+    $this->actingAs($creator)
+        ->get(route('tasks.create'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('assignableUsers', 1)
+            ->where('assignableUsers.0.id', $creator->id));
+
+    $this->actingAs($creator)
+        ->post(route('tasks.store'), [
+            'organization_unit_id' => $unit->id,
+            'assignee_id' => $creator->id,
+            'title' => 'Công việc tự nhận',
+            'priority' => TaskPriority::Medium->value,
+        ])
+        ->assertRedirect(route('tasks.index'));
+
+    $this->assertDatabaseHas('tasks', [
+        'title' => 'Công việc tự nhận',
+        'creator_id' => $creator->id,
+        'assignee_id' => $creator->id,
+    ]);
+});
+
 test('a user with assign permission can assign a task', function () {
     $creator = userWithPermissions([
         PermissionName::TaskCreate->value,

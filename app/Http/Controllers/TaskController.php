@@ -79,7 +79,7 @@ final class TaskController extends Controller
 
         return Inertia::render('Tasks/Create', [
             'organizationUnits' => $this->organizationUnits(),
-            'assignableUsers' => $this->assignableUsers(),
+            'assignableUsers' => $this->assignableUsers(includeCurrentUser: true),
             'priorities' => $this->enumValues(TaskPriority::cases()),
         ]);
     }
@@ -249,12 +249,19 @@ final class TaskController extends Controller
     /**
      * @return array<int, array{id: int, name: string}>
      */
-    private function assignableUsers(): array
+    private function assignableUsers(bool $includeCurrentUser = false): array
     {
-        if (! request()->user()->can(PermissionName::TaskAssign->value)) {
+        if (request()->user()->can(PermissionName::TaskAssign->value)) {
+            return $this->activeUsers();
+        }
+
+        if (! $includeCurrentUser) {
             return [];
         }
 
-        return $this->activeUsers();
+        return [[
+            'id' => request()->user()->id,
+            'name' => request()->user()->name,
+        ]];
     }
 }

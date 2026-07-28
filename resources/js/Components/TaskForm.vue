@@ -5,9 +5,9 @@ import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { taskPriorityLabels } from '@/Constants/task';
-import { Link, useForm } from '@inertiajs/vue3';
+import { Link, useForm, usePage } from '@inertiajs/vue3';
 import Editor from 'primevue/editor';
-import type { OrganizationUnit, Task, TaskPriority, User } from '@/types';
+import type { OrganizationUnit, PageProps, Task, TaskPriority, User } from '@/types';
 
 const props = defineProps<{
     task?: Pick<Task, 'id' | 'organization_unit_id' | 'assignee_id' | 'title' | 'description' | 'priority' | 'due_at'>;
@@ -15,6 +15,8 @@ const props = defineProps<{
     assignableUsers: Pick<User, 'id' | 'name'>[];
     priorities: TaskPriority[];
 }>();
+
+const page = usePage<PageProps>();
 
 const toDateTimeLocal = (value: string | null | undefined) => {
     if (!value) {
@@ -153,9 +155,15 @@ const handleSubmit = () => {
                     <select id="assignee_id" v-model="form.assignee_id" class="app-field">
                         <option :value="null">Chưa phân công</option>
                         <option v-for="user in assignableUsers" :key="user.id" :value="user.id">
-                            {{ user.name }}
+                            {{ user.name }}{{ user.id === page.props.auth.user.id ? ' (Bạn)' : '' }}
                         </option>
                     </select>
+                    <p
+                        v-if="assignableUsers.length === 1 && assignableUsers[0].id === page.props.auth.user.id"
+                        class="mt-2 text-xs text-slate-500"
+                    >
+                        Bạn có thể tự nhận công việc; phân công cho người khác cần quyền quản lý công việc.
+                    </p>
                     <InputError class="mt-2" :message="form.errors.assignee_id" />
                 </div>
                 <div>
