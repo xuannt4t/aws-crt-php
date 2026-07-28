@@ -67,6 +67,11 @@ final class Task extends Model
         return $this->hasMany(TaskComment::class);
     }
 
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(TaskAttachment::class)->latest('id');
+    }
+
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'creator_id')->withTrashed();
