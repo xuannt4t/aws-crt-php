@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
+import AppLogoutDialog from '@/Components/AppLogoutDialog.vue';
 import GuestLayout from '@/Layouts/GuestLayout.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, useForm } from '@inertiajs/vue3';
 
 const props = defineProps<{
     status?: string;
@@ -10,6 +11,7 @@ const props = defineProps<{
 
 const form = useForm({});
 const verificationLinkSent = computed(() => props.status === 'verification-link-sent');
+const isLogoutDialogOpen = ref(false);
 
 const submit = () => {
     form.post(route('verification.send'));
@@ -39,14 +41,15 @@ const submit = () => {
             <PrimaryButton class="w-full" :disabled="form.processing">
                 {{ form.processing ? 'Đang gửi...' : 'Gửi lại email xác minh' }}
             </PrimaryButton>
-            <Link
-                :href="route('logout')"
-                method="post"
-                as="button"
+            <button
+                type="button"
                 class="mt-5 w-full text-center text-sm font-semibold text-slate-500 hover:text-slate-800"
+                @click="isLogoutDialogOpen = true"
             >
                 Đăng xuất
-            </Link>
+            </button>
         </form>
+
+        <AppLogoutDialog :show="isLogoutDialogOpen" @close="isLogoutDialogOpen = false" />
     </GuestLayout>
 </template>
