@@ -66,27 +66,22 @@ jobs:
       - name: Lint JS/TS
         run: npm run lint
 
+      - name: Check formatting
+        run: npm run format:check
+
       - name: Build frontend
         run: npm run build
 
       - name: Run migrations
         run: php artisan migrate --force
         env:
-          DB_CONNECTION: mysql
           DB_HOST: 127.0.0.1
           DB_PORT: 3306
-          DB_DATABASE: dormida_work
-          DB_USERNAME: root
-          DB_PASSWORD: ''
 
       - name: Run tests
         run: ./vendor/bin/pest
         env:
-          DB_CONNECTION: mysql
           DB_HOST: 127.0.0.1
           DB_PORT: 3306
-          DB_DATABASE: dormida_work
-          DB_USERNAME: root
-          DB_PASSWORD: ''
           REDIS_HOST: 127.0.0.1
           REDIS_PORT: 6379
