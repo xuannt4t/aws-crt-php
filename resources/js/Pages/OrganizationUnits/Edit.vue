@@ -6,13 +6,15 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import DangerButton from '@/Components/DangerButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import Checkbox from '@/Components/Checkbox.vue';
-import { Head, router, useForm } from '@inertiajs/vue3';
+import { Head, router, useForm, usePage } from '@inertiajs/vue3';
 import type { OrganizationUnit } from '@/types';
 
 const props = defineProps<{
     organizationUnit: OrganizationUnit;
     organizationUnits: Pick<OrganizationUnit, 'id' | 'name'>[];
 }>();
+
+const page = usePage();
 
 const form = useForm({
     parent_id: props.organizationUnit.parent_id,
@@ -75,7 +77,10 @@ const destroy = () => {
                             <Checkbox id="is_active" v-model:checked="form.is_active" />
                             <InputLabel for="is_active" value="Hoạt động" class="ms-2" />
                         </div>
-                        <InputError class="mt-2" :message="(form.errors as Record<string, string>).organization_unit" />
+                        <InputError
+                            class="mt-2"
+                            :message="(page.props.errors as Record<string, string>).organization_unit"
+                        />
 
                         <div class="flex items-center justify-between">
                             <DangerButton type="button" @click="destroy">Xoá</DangerButton>
