@@ -35,6 +35,7 @@ export interface Task {
     assignee_id: number | null;
     title: string;
     description: string | null;
+    description_html?: string | null;
     status: TaskStatus;
     priority: TaskPriority;
     progress: number;

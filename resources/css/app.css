@@ -166,3 +166,104 @@
     font-size: 0.8125rem;
     line-height: 1.25rem;
 }
+
+.task-rich-editor .p-editor-toolbar {
+    border-color: #e2e8f0;
+    border-radius: 0.75rem 0.75rem 0 0;
+    background: #f8fafc;
+}
+
+.task-rich-editor .p-editor-content {
+    border-color: #e2e8f0;
+    border-radius: 0 0 0.75rem 0.75rem;
+}
+
+.task-rich-editor:focus-within .p-editor-toolbar,
+.task-rich-editor:focus-within .p-editor-content {
+    border-color: #319b82;
+}
+
+.task-rich-editor:focus-within {
+    border-radius: 0.75rem;
+    box-shadow: 0 0 0 4px rgb(49 155 130 / 0.1);
+}
+
+.task-rich-editor .ql-picker.ql-header .ql-picker-label::before,
+.task-rich-editor .ql-picker.ql-header .ql-picker-item::before {
+    content: 'Đoạn văn';
+}
+
+.task-rich-editor .ql-picker.ql-header .ql-picker-label[data-value='2']::before,
+.task-rich-editor .ql-picker.ql-header .ql-picker-item[data-value='2']::before {
+    content: 'Tiêu đề';
+}
+
+.task-rich-editor .ql-picker.ql-header .ql-picker-label[data-value='3']::before,
+.task-rich-editor .ql-picker.ql-header .ql-picker-item[data-value='3']::before {
+    content: 'Tiêu đề nhỏ';
+}
+
+.task-rich-editor .ql-snow .ql-tooltip[data-mode='link']::before {
+    content: 'Liên kết:';
+}
+
+.task-rich-editor .ql-snow .ql-tooltip.ql-editing a.ql-action::after {
+    content: 'Lưu';
+}
+
+.task-rich-editor .ql-snow .ql-tooltip a.ql-remove::before {
+    content: 'Xóa';
+}
+
+.task-rich-content {
+    color: #475569;
+    font-size: 0.875rem;
+    line-height: 1.75rem;
+}
+
+.task-rich-content > * + * {
+    margin-top: 0.75rem;
+}
+
+.task-rich-content h2,
+.task-rich-content h3 {
+    color: #17211f;
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+.task-rich-content h2 {
+    font-size: 1.125rem;
+}
+
+.task-rich-content h3 {
+    font-size: 1rem;
+}
+
+.task-rich-content ul,
+.task-rich-content ol {
+    padding-left: 1.5rem;
+}
+
+.task-rich-content ul {
+    list-style: disc;
+}
+
+.task-rich-content ol {
+    list-style: decimal;
+}
+
+.task-rich-content blockquote {
+    border-left: 3px solid #6ccbb3;
+    border-radius: 0 0.5rem 0.5rem 0;
+    background: #f1faf7;
+    padding: 0.5rem 0.875rem;
+    color: #355e54;
+}
+
+.task-rich-content a {
+    color: #147760;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}

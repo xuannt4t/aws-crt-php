@@ -6,13 +6,11 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { taskPriorityLabels } from '@/Constants/task';
 import { Link, useForm } from '@inertiajs/vue3';
+import Editor from 'primevue/editor';
 import type { OrganizationUnit, Task, TaskPriority, User } from '@/types';
 
 const props = defineProps<{
-    task?: Pick<
-        Task,
-        'id' | 'organization_unit_id' | 'assignee_id' | 'title' | 'description' | 'priority' | 'due_at'
-    >;
+    task?: Pick<Task, 'id' | 'organization_unit_id' | 'assignee_id' | 'title' | 'description' | 'priority' | 'due_at'>;
     organizationUnits: Pick<OrganizationUnit, 'id' | 'name'>[];
     assignableUsers: Pick<User, 'id' | 'name'>[];
     priorities: TaskPriority[];
@@ -37,6 +35,8 @@ const form = useForm({
     priority: props.task?.priority ?? ('medium' as TaskPriority),
     due_at: toDateTimeLocal(props.task?.due_at),
 });
+
+const descriptionFormats = ['header', 'bold', 'italic', 'underline', 'strike', 'list', 'blockquote', 'link'];
 
 const handleSubmit = () => {
     const submit = props.task
@@ -81,13 +81,43 @@ const handleSubmit = () => {
                 </div>
                 <div>
                     <InputLabel for="description" value="Mô tả" />
-                    <textarea
+                    <Editor
                         id="description"
                         v-model="form.description"
-                        rows="7"
-                        class="app-field resize-y"
+                        :formats="descriptionFormats"
+                        editor-style="height: 260px"
+                        class="task-rich-editor mt-2"
                         placeholder="Bối cảnh, yêu cầu và kết quả mong đợi..."
-                    />
+                        aria-label="Mô tả công việc"
+                    >
+                        <template #toolbar>
+                            <span class="ql-formats">
+                                <select class="ql-header" title="Kiểu đoạn">
+                                    <option value="2">Tiêu đề</option>
+                                    <option value="3">Tiêu đề nhỏ</option>
+                                    <option selected>Đoạn văn</option>
+                                </select>
+                            </span>
+                            <span class="ql-formats">
+                                <button class="ql-bold" type="button" title="In đậm" />
+                                <button class="ql-italic" type="button" title="In nghiêng" />
+                                <button class="ql-underline" type="button" title="Gạch chân" />
+                                <button class="ql-strike" type="button" title="Gạch ngang" />
+                            </span>
+                            <span class="ql-formats">
+                                <button class="ql-list" value="ordered" type="button" title="Danh sách số" />
+                                <button class="ql-list" value="bullet" type="button" title="Danh sách dấu chấm" />
+                                <button class="ql-blockquote" type="button" title="Trích dẫn" />
+                            </span>
+                            <span class="ql-formats">
+                                <button class="ql-link" type="button" title="Chèn liên kết" />
+                                <button class="ql-clean" type="button" title="Xóa định dạng" />
+                            </span>
+                        </template>
+                    </Editor>
+                    <p class="mt-2 text-xs text-slate-500">
+                        Dùng tiêu đề và danh sách để chia nhỏ yêu cầu, kết quả bàn giao và tiêu chí hoàn thành.
+                    </p>
                     <InputError class="mt-2" :message="form.errors.description" />
                 </div>
             </div>
@@ -101,12 +131,7 @@ const handleSubmit = () => {
             <div class="app-form-grid px-5 pb-7 sm:px-7 lg:grid-cols-2">
                 <div>
                     <InputLabel for="organization_unit_id" value="Đơn vị sở hữu *" />
-                    <select
-                        id="organization_unit_id"
-                        v-model="form.organization_unit_id"
-                        class="app-field"
-                        required
-                    >
+                    <select id="organization_unit_id" v-model="form.organization_unit_id" class="app-field" required>
                         <option :value="null" disabled>Chọn đơn vị</option>
                         <option v-for="unit in organizationUnits" :key="unit.id" :value="unit.id">
                             {{ unit.name }}

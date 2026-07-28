@@ -18,6 +18,7 @@ use App\Http\Requests\UpdateTaskRequest;
 use App\Models\OrganizationUnit;
 use App\Models\Task;
 use App\Models\User;
+use App\Support\TaskDescriptionSanitizer;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Redirect;
@@ -80,7 +81,7 @@ final class TaskController extends Controller
         ]);
     }
 
-    public function show(Task $task): Response
+    public function show(Task $task, TaskDescriptionSanitizer $descriptionSanitizer): Response
     {
         $this->authorize('view', $task);
 
@@ -95,6 +96,7 @@ final class TaskController extends Controller
             'task' => [
                 ...$task->toArray(),
                 'is_overdue' => $task->isOverdue(),
+                'description_html' => $descriptionSanitizer->sanitize($task->description),
             ],
             'actions' => [
                 'dispatch' => $task->status === TaskStatus::Draft

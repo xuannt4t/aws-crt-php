@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import AppIcon from '@/Components/AppIcon.vue';
 import AppPageHeader from '@/Components/AppPageHeader.vue';
+import AppRichTextContent from '@/Components/AppRichTextContent.vue';
 import AppTaskPriorityBadge from '@/Components/AppTaskPriorityBadge.vue';
 import AppUserAvatar from '@/Components/AppUserAvatar.vue';
 import { usePermissions } from '@/Composables/usePermissions';
@@ -136,9 +137,7 @@ const formatDateTime = (value: string | null) => {
 
                     <div class="mt-6">
                         <h2 class="font-display text-base font-bold text-ink-950">Mô tả</h2>
-                        <p v-if="task.description" class="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-600">
-                            {{ task.description }}
-                        </p>
+                        <AppRichTextContent v-if="task.description_html" :html="task.description_html" class="mt-3" />
                         <p v-else class="mt-3 text-sm italic text-slate-400">Chưa có mô tả chi tiết.</p>
                     </div>
                 </section>

@@ -89,6 +89,23 @@ test('a user with view permission can view task details and transition history',
             ->has('task.status_histories', 1));
 });
 
+test('task details expose only sanitized rich text', function () {
+    $viewer = userWithPermissions([PermissionName::TaskView->value]);
+    $task = Task::factory()->create([
+        'description' => '<h2>Yêu cầu</h2><p><strong>An toàn</strong></p><img src=x onerror=alert(1)><script>alert(1)</script>',
+    ]);
+
+    $this->actingAs($viewer)
+        ->get(route('tasks.show', $task))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('task.description_html', fn (string $description) => str_contains($description, '<h2>Yêu cầu</h2>')
+                && str_contains($description, '<strong>An toàn</strong>')
+                && ! str_contains($description, '<script')
+                && ! str_contains($description, '<img')
+                && ! str_contains($description, 'onerror')));
+});
+
 test('a user with create permission creates a draft task', function () {
     $creator = userWithPermissions([PermissionName::TaskCreate->value]);
     $unit = OrganizationUnit::factory()->create();
@@ -109,6 +126,26 @@ test('a user with create permission creates a draft task', function () {
         ->and($task->status)->toBe(TaskStatus::Draft)
         ->and($task->progress)->toBe(0)
         ->and($task->assignee_id)->toBeNull();
+});
+
+test('rich task descriptions are sanitized before storage', function () {
+    $creator = userWithPermissions([PermissionName::TaskCreate->value]);
+    $unit = OrganizationUnit::factory()->create();
+
+    $this->actingAs($creator)->post(route('tasks.store'), [
+        'organization_unit_id' => $unit->id,
+        'title' => 'Công việc có nội dung định dạng',
+        'description' => '<h2>Kết quả</h2><ul><li><strong>Báo cáo</strong></li></ul><a href="javascript:alert(1)">Liên kết xấu</a>',
+        'priority' => TaskPriority::Medium->value,
+    ])->assertSessionHasNoErrors();
+
+    $description = Task::where('title', 'Công việc có nội dung định dạng')->value('description');
+
+    expect($description)
+        ->toContain('<h2>Kết quả</h2>')
+        ->toContain('<strong>Báo cáo</strong>')
+        ->not->toContain('javascript:')
+        ->not->toContain('<script');
 });
 
 test('a user without assign permission cannot assign a task', function () {
