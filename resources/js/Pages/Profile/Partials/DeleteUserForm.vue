@@ -17,8 +17,13 @@ const form = useForm({
 
 const confirmUserDeletion = () => {
     confirmingUserDeletion.value = true;
-
     nextTick(() => passwordInput.value?.focus());
+};
+
+const closeModal = () => {
+    confirmingUserDeletion.value = false;
+    form.clearErrors();
+    form.reset();
 };
 
 const deleteUser = () => {
@@ -31,63 +36,44 @@ const deleteUser = () => {
         },
     });
 };
-
-const closeModal = () => {
-    confirmingUserDeletion.value = false;
-
-    form.clearErrors();
-    form.reset();
-};
 </script>
 
 <template>
-    <section class="space-y-6">
-        <header>
-            <h2 class="text-lg font-medium text-gray-900">Delete Account</h2>
-
-            <p class="mt-1 text-sm text-gray-600">
-                Once your account is deleted, all of its resources and data will be permanently deleted. Before deleting
-                your account, please download any data or information that you wish to retain.
+    <section class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+        <header class="max-w-2xl">
+            <h2 class="font-display text-base font-bold text-red-800">Xoá tài khoản</h2>
+            <p class="mt-1 text-xs leading-5 text-slate-500">
+                Tài khoản và dữ liệu cá nhân sẽ bị xoá. Hành động này cần xác nhận bằng mật khẩu.
             </p>
         </header>
 
-        <DangerButton @click="confirmUserDeletion">Delete Account</DangerButton>
+        <DangerButton class="shrink-0" @click="confirmUserDeletion">Xoá tài khoản</DangerButton>
 
-        <Modal :show="confirmingUserDeletion" @close="closeModal">
-            <div class="p-6">
-                <h2 class="text-lg font-medium text-gray-900">Are you sure you want to delete your account?</h2>
-
-                <p class="mt-1 text-sm text-gray-600">
-                    Once your account is deleted, all of its resources and data will be permanently deleted. Please
-                    enter your password to confirm you would like to permanently delete your account.
+        <Modal :show="confirmingUserDeletion" max-width="md" @close="closeModal">
+            <div class="p-6 sm:p-7">
+                <h2 class="font-display text-lg font-bold text-ink-950">Xác nhận xoá tài khoản?</h2>
+                <p class="mt-2 text-sm leading-6 text-slate-500">
+                    Nhập mật khẩu hiện tại để xác nhận. Dữ liệu đã xoá có thể không khôi phục được.
                 </p>
 
                 <div class="mt-6">
-                    <InputLabel for="password" value="Password" class="sr-only" />
-
+                    <InputLabel for="password" value="Mật khẩu hiện tại" />
                     <TextInput
                         id="password"
                         ref="passwordInput"
                         v-model="form.password"
                         type="password"
-                        class="mt-1 block w-3/4"
-                        placeholder="Password"
+                        class="w-full"
+                        placeholder="Nhập mật khẩu"
                         @keyup.enter="deleteUser"
                     />
-
                     <InputError :message="form.errors.password" class="mt-2" />
                 </div>
 
-                <div class="mt-6 flex justify-end">
-                    <SecondaryButton @click="closeModal"> Cancel </SecondaryButton>
-
-                    <DangerButton
-                        class="ms-3"
-                        :class="{ 'opacity-25': form.processing }"
-                        :disabled="form.processing"
-                        @click="deleteUser"
-                    >
-                        Delete Account
+                <div class="mt-7 flex justify-end gap-2">
+                    <SecondaryButton @click="closeModal">Huỷ</SecondaryButton>
+                    <DangerButton :disabled="form.processing" @click="deleteUser">
+                        {{ form.processing ? 'Đang xoá...' : 'Xoá tài khoản' }}
                     </DangerButton>
                 </div>
             </div>

@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\RoleName;
 use App\Models\OrganizationUnit;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -18,7 +19,7 @@ class DatabaseSeeder extends Seeder
             ['name' => 'DORMIDA WORK', 'is_active' => true]
         );
 
-        User::firstOrCreate(
+        $admin = User::firstOrCreate(
             ['email' => config('dormida.admin_email')],
             [
                 'organization_unit_id' => $rootUnit->id,
@@ -29,5 +30,10 @@ class DatabaseSeeder extends Seeder
                 'email_verified_at' => now(),
             ]
         );
+
+        $admin->forceFill(['email_verified_at' => $admin->email_verified_at ?? now()])->save();
+
+        $this->call(RolePermissionSeeder::class);
+        $admin->assignRole(RoleName::SystemAdmin->value);
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\AuditAction;
+use App\Models\AuditLog;
 use App\Models\User;
 
 test('profile page is displayed', function () {
@@ -65,6 +67,7 @@ test('user can delete their account', function () {
 
     $this->assertGuest();
     $this->assertSoftDeleted($user);
+    expect(AuditLog::where('action', AuditAction::UserDeleted->value)->exists())->toBeTrue();
 });
 
 test('correct password must be provided to delete account', function () {

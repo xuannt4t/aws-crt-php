@@ -1,3 +1,140 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+    :root {
+        color-scheme: light;
+        font-synthesis: none;
+        text-rendering: optimizeLegibility;
+    }
+
+    html {
+        background: #f7f8f6;
+    }
+
+    body {
+        @apply m-0 bg-[#f7f8f6] font-sans text-ink-950 antialiased;
+    }
+
+    button,
+    a,
+    input,
+    select,
+    textarea {
+        @apply outline-none;
+    }
+
+    ::selection {
+        @apply bg-brand-200 text-brand-900;
+    }
+}
+
+@layer components {
+    .app-panel {
+        @apply rounded-2xl border border-black/[0.06] bg-white shadow-panel;
+    }
+
+    .app-field {
+        @apply mt-2 block w-full rounded-xl border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition placeholder:text-slate-400 hover:border-slate-300 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10;
+    }
+
+    .app-label {
+        @apply block text-sm font-semibold text-slate-700;
+    }
+
+    .app-help {
+        @apply mt-1.5 text-xs leading-5 text-slate-500;
+    }
+
+    .app-form-grid {
+        @apply grid gap-5 sm:grid-cols-2;
+    }
+
+    .app-button-primary {
+        @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-transparent bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 focus:ring-4 focus:ring-brand-500/20 disabled:cursor-not-allowed disabled:opacity-50;
+    }
+
+    .app-button-secondary {
+        @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 focus:ring-4 focus:ring-slate-200 disabled:cursor-not-allowed disabled:opacity-50;
+    }
+
+    .app-button-danger {
+        @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-700 shadow-sm transition hover:bg-red-50 focus:ring-4 focus:ring-red-100 disabled:cursor-not-allowed disabled:opacity-50;
+    }
+
+    .app-icon-button {
+        @apply inline-flex size-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 focus:ring-4 focus:ring-slate-200;
+    }
+}
+
+.p-component {
+    font-family: inherit;
+}
+
+.p-datatable {
+    --p-datatable-header-cell-background: #f8faf9;
+    --p-datatable-header-cell-color: #52615e;
+    --p-datatable-row-background: #ffffff;
+    --p-datatable-row-color: #263330;
+    --p-datatable-row-striped-background: #fbfcfb;
+    --p-datatable-row-hover-background: #f4f8f6;
+    --p-datatable-body-cell-border-color: #edf0ee;
+    --p-datatable-header-cell-border-color: #e6ebe8;
+}
+
+.p-datatable .p-datatable-header-cell {
+    padding-block: 0.85rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.045em;
+    text-transform: uppercase;
+}
+
+.p-datatable .p-datatable-tbody > tr > td {
+    padding-block: 1rem;
+    font-size: 0.875rem;
+}
+
+.p-treetable {
+    --p-treetable-header-cell-background: #f8faf9;
+    --p-treetable-header-cell-color: #52615e;
+    --p-treetable-row-background: #ffffff;
+    --p-treetable-row-color: #263330;
+    --p-treetable-row-hover-background: #f4f8f6;
+    --p-treetable-body-cell-border-color: #edf0ee;
+    --p-treetable-header-cell-border-color: #e6ebe8;
+}
+
+.p-treetable .p-treetable-header-cell {
+    padding-block: 0.85rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.045em;
+    text-transform: uppercase;
+}
+
+.p-treetable .p-treetable-tbody > tr > td {
+    padding-block: 1rem;
+    font-size: 0.875rem;
+}
+
+.p-select {
+    border-radius: 0.75rem;
+    border-color: #e2e8f0;
+    box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+}
+
+.p-select:not(.p-disabled):hover {
+    border-color: #cbd5e1;
+}
+
+.p-select:not(.p-disabled).p-focus {
+    border-color: #319b82;
+    box-shadow: 0 0 0 4px rgb(49 155 130 / 0.1);
+}
+
+.p-paginator {
+    padding-top: 1rem;
+    border-top: 1px solid #edf0ee;
+}

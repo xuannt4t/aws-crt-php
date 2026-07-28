@@ -1,10 +1,13 @@
 <?php
 
+use App\Enums\AuditAction;
+use App\Enums\PermissionName;
+use App\Models\AuditLog;
 use App\Models\OrganizationUnit;
 use App\Models\User;
 
-test('a system admin can view the organization units index', function () {
-    $admin = User::factory()->create(['is_system_admin' => true]);
+test('a user with permission can view the organization units index', function () {
+    $admin = userWithPermissions([PermissionName::OrganizationView->value]);
 
     $response = $this->actingAs($admin)->get(route('organization-units.index'));
 
@@ -17,8 +20,8 @@ test('a guest is redirected to login when viewing organization units', function 
     $response->assertRedirect(route('login'));
 });
 
-test('a system admin can create an organization unit', function () {
-    $admin = User::factory()->create(['is_system_admin' => true]);
+test('a user with permission can create an organization unit', function () {
+    $admin = userWithPermissions([PermissionName::OrganizationCreate->value]);
 
     $response = $this->actingAs($admin)->post(route('organization-units.store'), [
         'parent_id' => null,
@@ -32,7 +35,7 @@ test('a system admin can create an organization unit', function () {
 });
 
 test('a regular user cannot create an organization unit', function () {
-    $user = User::factory()->create(['is_system_admin' => false]);
+    $user = User::factory()->create();
 
     $response = $this->actingAs($user)->post(route('organization-units.store'), [
         'parent_id' => null,
@@ -46,7 +49,7 @@ test('a regular user cannot create an organization unit', function () {
 });
 
 test('creating an organization unit requires a unique code', function () {
-    $admin = User::factory()->create(['is_system_admin' => true]);
+    $admin = userWithPermissions([PermissionName::OrganizationCreate->value]);
     OrganizationUnit::factory()->create(['code' => 'ENG']);
 
     $response = $this->actingAs($admin)->post(route('organization-units.store'), [
@@ -59,8 +62,8 @@ test('creating an organization unit requires a unique code', function () {
     $response->assertSessionHasErrors('code');
 });
 
-test('a system admin can update an organization unit', function () {
-    $admin = User::factory()->create(['is_system_admin' => true]);
+test('a user with permission can update an organization unit', function () {
+    $admin = userWithPermissions([PermissionName::OrganizationUpdate->value]);
     $unit = OrganizationUnit::factory()->create();
 
     $response = $this->actingAs($admin)->put(route('organization-units.update', $unit), [
@@ -75,7 +78,7 @@ test('a system admin can update an organization unit', function () {
 });
 
 test('updating an organization unit rejects a circular parent', function () {
-    $admin = User::factory()->create(['is_system_admin' => true]);
+    $admin = userWithPermissions([PermissionName::OrganizationUpdate->value]);
     $unit = OrganizationUnit::factory()->create();
 
     $response = $this->actingAs($admin)->put(route('organization-units.update', $unit), [
@@ -88,18 +91,19 @@ test('updating an organization unit rejects a circular parent', function () {
     $response->assertSessionHasErrors('parent_id');
 });
 
-test('a system admin can delete an organization unit with no dependents', function () {
-    $admin = User::factory()->create(['is_system_admin' => true]);
+test('a user with permission can delete an organization unit with no dependents', function () {
+    $admin = userWithPermissions([PermissionName::OrganizationDelete->value]);
     $unit = OrganizationUnit::factory()->create();
 
     $response = $this->actingAs($admin)->delete(route('organization-units.destroy', $unit));
 
     $response->assertRedirect(route('organization-units.index'));
     $this->assertSoftDeleted($unit);
+    expect(AuditLog::where('action', AuditAction::OrganizationUnitDeleted->value)->exists())->toBeTrue();
 });
 
 test('deleting an organization unit with children fails', function () {
-    $admin = User::factory()->create(['is_system_admin' => true]);
+    $admin = userWithPermissions([PermissionName::OrganizationDelete->value]);
     $parent = OrganizationUnit::factory()->create();
     OrganizationUnit::factory()->create(['parent_id' => $parent->id]);
 
@@ -110,7 +114,7 @@ test('deleting an organization unit with children fails', function () {
 });
 
 test('a regular user cannot update an organization unit', function () {
-    $user = User::factory()->create(['is_system_admin' => false]);
+    $user = User::factory()->create();
     $unit = OrganizationUnit::factory()->create();
 
     $response = $this->actingAs($user)->put(route('organization-units.update', $unit), [
@@ -124,7 +128,7 @@ test('a regular user cannot update an organization unit', function () {
 });
 
 test('a regular user cannot delete an organization unit', function () {
-    $user = User::factory()->create(['is_system_admin' => false]);
+    $user = User::factory()->create();
     $unit = OrganizationUnit::factory()->create();
 
     $response = $this->actingAs($user)->delete(route('organization-units.destroy', $unit));

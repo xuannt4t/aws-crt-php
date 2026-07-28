@@ -1,5 +1,11 @@
 # Sprint Plan
 
+## Trạng thái hiện tại
+
+- Sprint 0 — Foundation: hoàn tất.
+- Sprint 1 — Identity: hoàn tất Authentication, User, Organization, Role & Permission và Audit Log nền tảng.
+- Công việc kế tiếp: Sprint 2 — Task Core.
+
 ## Sprint 0 — Foundation
 
 - Khởi tạo Laravel 11.

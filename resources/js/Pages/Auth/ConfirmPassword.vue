@@ -21,32 +21,33 @@ const submit = () => {
 
 <template>
     <GuestLayout>
-        <Head title="Confirm Password" />
+        <Head title="Xác nhận mật khẩu" />
 
-        <div class="mb-4 text-sm text-gray-600">
-            This is a secure area of the application. Please confirm your password before continuing.
+        <div class="mb-8">
+            <p class="text-xs font-bold uppercase tracking-[0.16em] text-brand-700">Khu vực bảo mật</p>
+            <h1 class="mt-3 font-display text-3xl font-extrabold tracking-[-0.04em] text-ink-950">Xác nhận mật khẩu</h1>
+            <p class="mt-3 text-sm leading-6 text-slate-500">
+                Vui lòng xác nhận mật khẩu trước khi tiếp tục thao tác nhạy cảm.
+            </p>
         </div>
 
-        <form @submit.prevent="submit">
+        <form class="space-y-5" @submit.prevent="submit">
             <div>
-                <InputLabel for="password" value="Password" />
+                <InputLabel for="password" value="Mật khẩu" />
                 <TextInput
                     id="password"
                     v-model="form.password"
                     type="password"
-                    class="mt-1 block w-full"
+                    class="w-full"
                     required
                     autocomplete="current-password"
                     autofocus
                 />
                 <InputError class="mt-2" :message="form.errors.password" />
             </div>
-
-            <div class="mt-4 flex justify-end">
-                <PrimaryButton class="ms-4" :class="{ 'opacity-25': form.processing }" :disabled="form.processing">
-                    Confirm
-                </PrimaryButton>
-            </div>
+            <PrimaryButton class="w-full" :disabled="form.processing">
+                {{ form.processing ? 'Đang xác nhận...' : 'Xác nhận' }}
+            </PrimaryButton>
         </form>
     </GuestLayout>
 </template>

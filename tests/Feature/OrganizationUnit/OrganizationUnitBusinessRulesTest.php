@@ -33,29 +33,32 @@ test('an organization unit can be updated to a valid new parent', function () {
 });
 
 test('an organization unit cannot be deleted while it has children', function () {
+    $actor = User::factory()->create();
     $parent = OrganizationUnit::factory()->create();
     OrganizationUnit::factory()->create(['parent_id' => $parent->id]);
 
-    expect(fn () => (new DeleteOrganizationUnitAction)->execute($parent))
+    expect(fn () => app(DeleteOrganizationUnitAction::class)->execute($actor, $parent))
         ->toThrow(ValidationException::class);
 
     $this->assertNotSoftDeleted($parent);
 });
 
 test('an organization unit cannot be deleted while it has users assigned', function () {
+    $actor = User::factory()->create();
     $unit = OrganizationUnit::factory()->create();
     User::factory()->create(['organization_unit_id' => $unit->id]);
 
-    expect(fn () => (new DeleteOrganizationUnitAction)->execute($unit))
+    expect(fn () => app(DeleteOrganizationUnitAction::class)->execute($actor, $unit))
         ->toThrow(ValidationException::class);
 
     $this->assertNotSoftDeleted($unit);
 });
 
 test('an organization unit with no children or users can be deleted', function () {
+    $actor = User::factory()->create();
     $unit = OrganizationUnit::factory()->create();
 
-    (new DeleteOrganizationUnitAction)->execute($unit);
+    app(DeleteOrganizationUnitAction::class)->execute($actor, $unit);
 
     $this->assertSoftDeleted($unit);
 });

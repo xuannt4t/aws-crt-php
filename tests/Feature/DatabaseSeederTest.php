@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\PermissionName;
+use App\Enums\RoleName;
 use App\Models\OrganizationUnit;
 use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
@@ -14,6 +16,8 @@ test('seeding creates a root organization unit and a system admin user', functio
     expect($admin)->not->toBeNull();
     expect($admin->is_system_admin)->toBeTrue();
     expect($admin->organization_unit_id)->toBe($rootUnit->id);
+    expect($admin->hasRole(RoleName::SystemAdmin->value))->toBeTrue();
+    expect($admin->can(PermissionName::SystemManageSettings->value))->toBeTrue();
 });
 
 test('the seeded admin can log in', function () {

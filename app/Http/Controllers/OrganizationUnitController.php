@@ -68,7 +68,7 @@ class OrganizationUnitController extends Controller
     {
         $this->authorize('delete', $organizationUnit);
 
-        $action->execute($organizationUnit);
+        $action->execute(request()->user(), $organizationUnit);
 
         return Redirect::route('organization-units.index')->with('success', 'Xoá đơn vị thành công.');
     }

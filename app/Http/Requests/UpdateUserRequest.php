@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\PermissionName;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -37,10 +38,17 @@ class UpdateUserRequest extends FormRequest
             ],
             'phone' => ['nullable', 'string', 'max:30'],
             'job_title' => ['nullable', 'string', 'max:255'],
-            'is_system_admin' => [
-                'boolean',
-                Rule::prohibitedIf(fn () => $this->user()->is($this->route('user')) && ! $this->boolean('is_system_admin')),
+            'roles' => [
+                Rule::prohibitedIf(fn () => ! $this->user()->can(PermissionName::UserAssignRole->value)),
+                'sometimes',
+                'array',
+                'min:1',
             ],
+            'roles.*' => [
+                'string',
+                Rule::exists('roles', 'name')->where('guard_name', 'web'),
+            ],
+            'is_system_admin' => ['prohibited'],
         ];
     }
 }

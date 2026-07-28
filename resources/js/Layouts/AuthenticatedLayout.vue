@@ -1,182 +1,223 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
-import Dropdown from '@/Components/Dropdown.vue';
-import DropdownLink from '@/Components/DropdownLink.vue';
-import NavLink from '@/Components/NavLink.vue';
-import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
-import { Link } from '@inertiajs/vue3';
+import AppIcon from '@/Components/AppIcon.vue';
+import AppUserAvatar from '@/Components/AppUserAvatar.vue';
+import { usePermissions } from '@/Composables/usePermissions';
+import { Link, usePage } from '@inertiajs/vue3';
+import type { PageProps } from '@/types';
 
-const showingNavigationDropdown = ref(false);
+interface NavigationItem {
+    label: string;
+    routeName: string;
+    activePattern: string;
+    icon: 'dashboard' | 'building' | 'users' | 'shield';
+    permission?: string;
+}
+
+const page = usePage<PageProps>();
+const { can } = usePermissions();
+const isSidebarOpen = ref(false);
+
+const navigation: NavigationItem[] = [
+    {
+        label: 'Tổng quan',
+        routeName: 'dashboard',
+        activePattern: 'dashboard',
+        icon: 'dashboard',
+    },
+    {
+        label: 'Cơ cấu tổ chức',
+        routeName: 'organization-units.index',
+        activePattern: 'organization-units.*',
+        icon: 'building',
+        permission: 'organization.view',
+    },
+    {
+        label: 'Người dùng',
+        routeName: 'users.index',
+        activePattern: 'users.*',
+        icon: 'users',
+        permission: 'user.view',
+    },
+    {
+        label: 'Nhật ký hệ thống',
+        routeName: 'audit-logs.index',
+        activePattern: 'audit-logs.*',
+        icon: 'shield',
+        permission: 'system.view_audit_logs',
+    },
+];
+
+const visibleNavigation = computed(() =>
+    navigation.filter((item) => !item.permission || can(item.permission)),
+);
+
+const roleLabels: Record<string, string> = {
+    system_admin: 'Quản trị hệ thống',
+    director: 'Giám đốc',
+    department_manager: 'Quản lý phòng ban',
+    project_manager: 'Quản lý dự án',
+    employee: 'Nhân viên',
+    auditor: 'Kiểm toán viên',
+};
+
+const primaryRole = computed(() => {
+    const role = page.props.auth.roles[0];
+
+    return role ? (roleLabels[role] ?? role) : 'Thành viên';
+});
+
+const currentLabel = computed(
+    () => visibleNavigation.value.find((item) => route().current(item.activePattern))?.label ?? 'Không gian làm việc',
+);
+
+watch(
+    () => page.url,
+    () => {
+        isSidebarOpen.value = false;
+    },
+);
 </script>
 
 <template>
-    <div>
-        <div class="min-h-screen bg-gray-100">
-            <nav class="border-b border-gray-100 bg-white">
-                <!-- Primary Navigation Menu -->
-                <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div class="flex h-16 justify-between">
-                        <div class="flex">
-                            <!-- Logo -->
-                            <div class="flex shrink-0 items-center">
-                                <Link :href="route('dashboard')">
-                                    <ApplicationLogo class="block h-9 w-auto fill-current text-gray-800" />
-                                </Link>
-                            </div>
+    <div class="min-h-screen bg-[#f7f8f6]">
+        <button
+            v-if="isSidebarOpen"
+            type="button"
+            class="fixed inset-0 z-40 bg-ink-950/45 backdrop-blur-sm lg:hidden"
+            aria-label="Đóng menu"
+            @click="isSidebarOpen = false"
+        />
 
-                            <!-- Navigation Links -->
-                            <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                                <NavLink :href="route('dashboard')" :active="route().current('dashboard')">
-                                    Dashboard
-                                </NavLink>
-                                <NavLink
-                                    v-if="$page.props.auth.user.is_system_admin"
-                                    :href="route('organization-units.index')"
-                                    :active="route().current('organization-units.*')"
-                                >
-                                    Tổ chức
-                                </NavLink>
-                                <NavLink
-                                    v-if="$page.props.auth.user.is_system_admin"
-                                    :href="route('users.index')"
-                                    :active="route().current('users.*')"
-                                >
-                                    Người dùng
-                                </NavLink>
-                            </div>
-                        </div>
-
-                        <div class="hidden sm:ms-6 sm:flex sm:items-center">
-                            <!-- Settings Dropdown -->
-                            <div class="relative ms-3">
-                                <Dropdown align="right" width="48">
-                                    <template #trigger>
-                                        <span class="inline-flex rounded-md">
-                                            <button
-                                                type="button"
-                                                class="inline-flex items-center rounded-md border border-transparent bg-white px-3 py-2 text-sm font-medium leading-4 text-gray-500 transition duration-150 ease-in-out hover:text-gray-700 focus:outline-none"
-                                            >
-                                                {{ $page.props.auth.user.name }}
-
-                                                <svg
-                                                    class="-me-0.5 ms-2 h-4 w-4"
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    viewBox="0 0 20 20"
-                                                    fill="currentColor"
-                                                >
-                                                    <path
-                                                        fill-rule="evenodd"
-                                                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                                        clip-rule="evenodd"
-                                                    />
-                                                </svg>
-                                            </button>
-                                        </span>
-                                    </template>
-
-                                    <template #content>
-                                        <DropdownLink :href="route('profile.edit')"> Profile </DropdownLink>
-                                        <DropdownLink :href="route('logout')" method="post" as="button">
-                                            Log Out
-                                        </DropdownLink>
-                                    </template>
-                                </Dropdown>
-                            </div>
-                        </div>
-
-                        <!-- Hamburger -->
-                        <div class="-me-2 flex items-center sm:hidden">
-                            <button
-                                class="inline-flex items-center justify-center rounded-md p-2 text-gray-400 transition duration-150 ease-in-out hover:bg-gray-100 hover:text-gray-500 focus:bg-gray-100 focus:text-gray-500 focus:outline-none"
-                                @click="showingNavigationDropdown = !showingNavigationDropdown"
-                            >
-                                <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                                    <path
-                                        :class="{
-                                            hidden: showingNavigationDropdown,
-                                            'inline-flex': !showingNavigationDropdown,
-                                        }"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M4 6h16M4 12h16M4 18h16"
-                                    />
-                                    <path
-                                        :class="{
-                                            hidden: !showingNavigationDropdown,
-                                            'inline-flex': showingNavigationDropdown,
-                                        }"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M6 18L18 6M6 6l12 12"
-                                    />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Responsive Navigation Menu -->
-                <div
-                    :class="{
-                        block: showingNavigationDropdown,
-                        hidden: !showingNavigationDropdown,
-                    }"
-                    class="sm:hidden"
+        <aside
+            class="fixed inset-y-0 left-0 z-50 flex w-[278px] flex-col bg-ink-950 px-4 py-5 text-white shadow-float transition-transform duration-300 lg:translate-x-0 lg:shadow-none"
+            :class="isSidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+        >
+            <div class="flex items-center justify-between px-2">
+                <Link :href="route('dashboard')" class="rounded-xl text-white focus:ring-4 focus:ring-white/10">
+                    <ApplicationLogo />
+                </Link>
+                <button
+                    type="button"
+                    class="inline-flex size-9 items-center justify-center rounded-lg text-white/60 hover:bg-white/10 hover:text-white lg:hidden"
+                    aria-label="Đóng menu"
+                    @click="isSidebarOpen = false"
                 >
-                    <div class="space-y-1 pb-3 pt-2">
-                        <ResponsiveNavLink :href="route('dashboard')" :active="route().current('dashboard')">
-                            Dashboard
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink
-                            v-if="$page.props.auth.user.is_system_admin"
-                            :href="route('organization-units.index')"
-                            :active="route().current('organization-units.*')"
-                        >
-                            Tổ chức
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink
-                            v-if="$page.props.auth.user.is_system_admin"
-                            :href="route('users.index')"
-                            :active="route().current('users.*')"
-                        >
-                            Người dùng
-                        </ResponsiveNavLink>
-                    </div>
+                    <AppIcon name="x" class="size-5" />
+                </button>
+            </div>
 
-                    <!-- Responsive Settings Options -->
-                    <div class="border-t border-gray-200 pb-1 pt-4">
-                        <div class="px-4">
-                            <div class="text-base font-medium text-gray-800">
-                                {{ $page.props.auth.user.name }}
-                            </div>
-                            <div class="text-sm font-medium text-gray-500">
-                                {{ $page.props.auth.user.email }}
-                            </div>
-                        </div>
+            <div class="mt-9 px-2">
+                <p class="text-[10px] font-bold uppercase tracking-[0.18em] text-white/35">Không gian làm việc</p>
+            </div>
 
-                        <div class="mt-3 space-y-1">
-                            <ResponsiveNavLink :href="route('profile.edit')"> Profile </ResponsiveNavLink>
-                            <ResponsiveNavLink :href="route('logout')" method="post" as="button">
-                                Log Out
-                            </ResponsiveNavLink>
-                        </div>
-                    </div>
-                </div>
+            <nav class="mt-3 space-y-1" aria-label="Điều hướng chính">
+                <Link
+                    v-for="item in visibleNavigation"
+                    :key="item.routeName"
+                    :href="route(item.routeName)"
+                    class="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition"
+                    :class="
+                        route().current(item.activePattern)
+                            ? 'bg-white text-ink-950 shadow-sm'
+                            : 'text-white/62 hover:bg-white/[0.07] hover:text-white'
+                    "
+                >
+                    <span
+                        class="flex size-8 items-center justify-center rounded-lg transition"
+                        :class="
+                            route().current(item.activePattern)
+                                ? 'bg-brand-100 text-brand-700'
+                                : 'bg-white/[0.06] text-white/55 group-hover:text-white'
+                        "
+                    >
+                        <AppIcon :name="item.icon" class="size-[18px]" />
+                    </span>
+                    <span>{{ item.label }}</span>
+                </Link>
             </nav>
 
-            <!-- Page Heading -->
-            <header v-if="$slots.header" class="bg-white shadow">
-                <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-                    <slot name="header" />
+            <div class="mt-auto">
+                <div class="mb-4 rounded-2xl border border-white/[0.08] bg-white/[0.045] p-3">
+                    <div class="flex items-center gap-3">
+                        <AppUserAvatar :name="page.props.auth.user.name" />
+                        <div class="min-w-0 flex-1">
+                            <p class="truncate text-sm font-semibold text-white">{{ page.props.auth.user.name }}</p>
+                            <p class="mt-0.5 truncate text-xs text-white/45">
+                                {{ primaryRole }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 grid grid-cols-2 gap-2 border-t border-white/[0.07] pt-3">
+                        <Link
+                            :href="route('profile.edit')"
+                            class="flex items-center justify-center gap-2 rounded-lg px-2 py-2 text-xs font-semibold text-white/60 transition hover:bg-white/[0.07] hover:text-white"
+                        >
+                            <AppIcon name="user" class="size-4" />
+                            Hồ sơ
+                        </Link>
+                        <Link
+                            :href="route('logout')"
+                            method="post"
+                            as="button"
+                            class="flex items-center justify-center gap-2 rounded-lg px-2 py-2 text-xs font-semibold text-white/60 transition hover:bg-white/[0.07] hover:text-white"
+                        >
+                            <AppIcon name="logout" class="size-4" />
+                            Đăng xuất
+                        </Link>
+                    </div>
                 </div>
+
+                <p class="px-2 text-[10px] font-medium uppercase tracking-[0.15em] text-white/20">
+                    Dormida Work · Foundation
+                </p>
+            </div>
+        </aside>
+
+        <div class="min-h-screen lg:pl-[278px]">
+            <header
+                class="sticky top-0 z-30 flex h-[68px] items-center border-b border-black/[0.055] bg-[#f7f8f6]/90 px-4 backdrop-blur-xl sm:px-6 lg:px-8"
+            >
+                <button
+                    type="button"
+                    class="app-icon-button mr-3 lg:hidden"
+                    aria-label="Mở menu"
+                    @click="isSidebarOpen = true"
+                >
+                    <AppIcon name="menu" class="size-5" />
+                </button>
+
+                <div class="flex min-w-0 items-center gap-2 text-sm">
+                    <span class="hidden text-slate-400 sm:inline">Dormida Work</span>
+                    <AppIcon name="chevron-right" class="hidden size-3.5 text-slate-300 sm:block" />
+                    <span class="truncate font-semibold text-slate-700">{{ currentLabel }}</span>
+                </div>
+
+                <Link
+                    :href="route('profile.edit')"
+                    class="ml-auto flex items-center gap-2 rounded-xl p-1 transition hover:bg-white focus:ring-4 focus:ring-slate-200"
+                    aria-label="Mở hồ sơ cá nhân"
+                >
+                    <span class="hidden text-right sm:block">
+                        <span class="block max-w-40 truncate text-xs font-semibold text-slate-700">
+                            {{ page.props.auth.user.name }}
+                        </span>
+                        <span class="mt-0.5 block text-[10px] text-slate-400">{{ page.props.auth.user.email }}</span>
+                    </span>
+                    <AppUserAvatar :name="page.props.auth.user.name" size="sm" />
+                </Link>
             </header>
 
-            <!-- Page Content -->
-            <main>
-                <slot />
+            <main class="px-4 pb-10 pt-7 sm:px-6 sm:pt-9 lg:px-8">
+                <div class="mx-auto w-full max-w-[1440px]">
+                    <header v-if="$slots.header" class="mb-7">
+                        <slot name="header" />
+                    </header>
+
+                    <slot />
+                </div>
             </main>
         </div>
     </div>

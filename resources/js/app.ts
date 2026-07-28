@@ -8,7 +8,7 @@ import { ZiggyVue } from '../../vendor/tightenco/ziggy';
 import PrimeVue from 'primevue/config';
 import Aura from '@primeuix/themes/aura';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const appName = import.meta.env.VITE_APP_NAME || 'Dormida Work';
 
 createInertiaApp({
     title: (title) => `${title} - ${appName}`,
@@ -18,10 +18,18 @@ createInertiaApp({
         createApp({ render: () => h(App, props) })
             .use(plugin)
             .use(ZiggyVue)
-            .use(PrimeVue, { theme: { preset: Aura } })
+            .use(PrimeVue, {
+                ripple: true,
+                theme: {
+                    preset: Aura,
+                    options: {
+                        darkModeSelector: false,
+                    },
+                },
+            })
             .mount(el);
     },
     progress: {
-        color: '#4B5563',
+        color: '#319b82',
     },
 });

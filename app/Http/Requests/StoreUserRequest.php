@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\PermissionName;
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -28,7 +29,17 @@ class StoreUserRequest extends FormRequest
             'employee_code' => ['nullable', 'string', 'max:50', Rule::unique('users', 'employee_code')],
             'phone' => ['nullable', 'string', 'max:30'],
             'job_title' => ['nullable', 'string', 'max:255'],
-            'is_system_admin' => ['boolean'],
+            'roles' => [
+                Rule::prohibitedIf(fn () => ! $this->user()->can(PermissionName::UserAssignRole->value)),
+                'sometimes',
+                'array',
+                'min:1',
+            ],
+            'roles.*' => [
+                'string',
+                Rule::exists('roles', 'name')->where('guard_name', 'web'),
+            ],
+            'is_system_admin' => ['prohibited'],
         ];
     }
 }

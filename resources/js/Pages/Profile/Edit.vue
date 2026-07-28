@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppPageHeader from '@/Components/AppPageHeader.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import DeleteUserForm from './Partials/DeleteUserForm.vue';
 import UpdatePasswordForm from './Partials/UpdatePasswordForm.vue';
@@ -12,30 +13,28 @@ defineProps<{
 </script>
 
 <template>
-    <Head title="Profile" />
+    <Head title="Hồ sơ cá nhân" />
 
     <AuthenticatedLayout>
         <template #header>
-            <h2 class="text-xl font-semibold leading-tight text-gray-800">Profile</h2>
+            <AppPageHeader
+                title="Hồ sơ cá nhân"
+                description="Quản lý thông tin tài khoản và các thiết lập bảo mật của bạn."
+                eyebrow="Tài khoản"
+            />
         </template>
 
-        <div class="py-12">
-            <div class="mx-auto max-w-7xl space-y-6 sm:px-6 lg:px-8">
-                <div class="bg-white p-4 shadow sm:rounded-lg sm:p-8">
-                    <UpdateProfileInformationForm
-                        :must-verify-email="mustVerifyEmail"
-                        :status="status"
-                        class="max-w-xl"
-                    />
-                </div>
+        <div class="grid gap-6 xl:grid-cols-2">
+            <div class="app-panel p-5 sm:p-7">
+                <UpdateProfileInformationForm :must-verify-email="mustVerifyEmail" :status="status" />
+            </div>
 
-                <div class="bg-white p-4 shadow sm:rounded-lg sm:p-8">
-                    <UpdatePasswordForm class="max-w-xl" />
-                </div>
+            <div class="app-panel p-5 sm:p-7">
+                <UpdatePasswordForm />
+            </div>
 
-                <div class="bg-white p-4 shadow sm:rounded-lg sm:p-8">
-                    <DeleteUserForm class="max-w-xl" />
-                </div>
+            <div class="app-panel border-red-100 p-5 sm:p-7 xl:col-span-2">
+                <DeleteUserForm />
             </div>
         </div>
     </AuthenticatedLayout>
