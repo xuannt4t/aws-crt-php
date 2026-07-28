@@ -4,6 +4,7 @@ import AppEmptyState from '@/Components/AppEmptyState.vue';
 import AppIcon from '@/Components/AppIcon.vue';
 import AppPageHeader from '@/Components/AppPageHeader.vue';
 import AppUserAvatar from '@/Components/AppUserAvatar.vue';
+import Modal from '@/Components/Modal.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 
@@ -57,6 +58,7 @@ const action = ref(props.filters.action ?? '');
 const dateFrom = ref(props.filters.date_from ?? '');
 const dateTo = ref(props.filters.date_to ?? '');
 const isLoading = ref(false);
+const selectedLog = ref<AuditLog | null>(null);
 
 const actionLabels: Record<string, string> = {
     'user.created': 'Tạo người dùng',
@@ -118,6 +120,14 @@ const subjectLabel = (log: AuditLog) => {
 const formatValues = (values: Record<string, unknown> | null) =>
     values ? JSON.stringify(values, null, 2) : 'Không có dữ liệu';
 
+const openDetails = (log: AuditLog) => {
+    selectedLog.value = log;
+};
+
+const closeDetails = () => {
+    selectedLog.value = null;
+};
+
 const paginationLabel = (label: string) => {
     if (label.includes('Previous')) {
         return 'Trước';
@@ -147,12 +157,7 @@ const paginationLabel = (label: string) => {
             <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
                 <label class="xl:col-span-2">
                     <span class="mb-1.5 block text-xs font-bold text-slate-600">Người thực hiện</span>
-                    <input
-                        v-model="search"
-                        type="search"
-                        class="app-field"
-                        placeholder="Tìm theo tên hoặc email"
-                    />
+                    <input v-model="search" type="search" class="app-field" placeholder="Tìm theo tên hoặc email" />
                 </label>
                 <label>
                     <span class="mb-1.5 block text-xs font-bold text-slate-600">Hành động</span>
@@ -234,32 +239,15 @@ const paginationLabel = (label: string) => {
                                 {{ subjectLabel(log) }}
                             </td>
                             <td class="px-5 py-4">
-                                <details class="group">
-                                    <summary class="cursor-pointer text-xs font-bold text-brand-700">
-                                        Xem thay đổi
-                                    </summary>
-                                    <div class="mt-3 grid max-w-xl gap-3 lg:grid-cols-2">
-                                        <div>
-                                            <p class="mb-1 text-[10px] font-bold uppercase tracking-wide text-slate-400">
-                                                Trước
-                                            </p>
-                                            <pre
-                                                class="max-h-48 overflow-auto rounded-lg bg-slate-950 p-3 text-[10px] leading-5 text-slate-200"
-                                            >{{ formatValues(log.before_values) }}</pre>
-                                        </div>
-                                        <div>
-                                            <p class="mb-1 text-[10px] font-bold uppercase tracking-wide text-slate-400">
-                                                Sau
-                                            </p>
-                                            <pre
-                                                class="max-h-48 overflow-auto rounded-lg bg-slate-950 p-3 text-[10px] leading-5 text-slate-200"
-                                            >{{ formatValues(log.after_values) }}</pre>
-                                        </div>
-                                    </div>
-                                    <p v-if="log.ip_address" class="mt-2 text-[10px] text-slate-400">
-                                        IP: {{ log.ip_address }}
-                                    </p>
-                                </details>
+                                <button
+                                    type="button"
+                                    class="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold text-brand-700 transition hover:bg-brand-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
+                                    :aria-label="`Xem thay đổi của bản ghi ${log.id}`"
+                                    @click="openDetails(log)"
+                                >
+                                    <AppIcon name="chevron-right" class="size-3.5" />
+                                    Xem thay đổi
+                                </button>
                             </td>
                         </tr>
                     </tbody>
@@ -291,5 +279,67 @@ const paginationLabel = (label: string) => {
                 </template>
             </nav>
         </section>
+
+        <Modal :show="selectedLog !== null" max-width="2xl" @close="closeDetails">
+            <div v-if="selectedLog" class="flex max-h-[85vh] flex-col">
+                <div class="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-5 sm:px-6">
+                    <div>
+                        <p class="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-700">Chi tiết nhật ký</p>
+                        <h2 class="mt-1 font-display text-xl font-bold tracking-[-0.02em] text-ink-950">
+                            {{ actionLabels[selectedLog.action] ?? selectedLog.action }}
+                        </h2>
+                        <p class="mt-1 text-xs text-slate-500">
+                            {{ subjectLabel(selectedLog) }} · {{ formatDateTime(selectedLog.created_at) }}
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        class="app-icon-button shrink-0"
+                        aria-label="Đóng chi tiết nhật ký"
+                        title="Đóng"
+                        @click="closeDetails"
+                    >
+                        <AppIcon name="x" class="size-4" />
+                    </button>
+                </div>
+
+                <div class="overflow-y-auto px-5 py-5 sm:px-6">
+                    <div class="grid gap-4 md:grid-cols-2">
+                        <section class="min-w-0">
+                            <p class="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">
+                                Dữ liệu trước thay đổi
+                            </p>
+                            <pre
+                                class="max-h-[52vh] min-h-40 overflow-auto whitespace-pre-wrap break-words rounded-xl bg-slate-950 p-4 text-xs leading-5 text-slate-200"
+                                >{{ formatValues(selectedLog.before_values) }}</pre>
+                        </section>
+                        <section class="min-w-0">
+                            <p class="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">
+                                Dữ liệu sau thay đổi
+                            </p>
+                            <pre
+                                class="max-h-[52vh] min-h-40 overflow-auto whitespace-pre-wrap break-words rounded-xl bg-slate-950 p-4 text-xs leading-5 text-slate-200"
+                                >{{ formatValues(selectedLog.after_values) }}</pre>
+                        </section>
+                    </div>
+
+                    <div
+                        class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-slate-50 px-4 py-3 text-xs text-slate-500"
+                    >
+                        <span>
+                            Thực hiện bởi:
+                            <strong class="font-semibold text-slate-700">
+                                {{ selectedLog.actor?.name ?? 'Tài khoản đã xóa' }}
+                            </strong>
+                        </span>
+                        <span v-if="selectedLog.ip_address">IP: {{ selectedLog.ip_address }}</span>
+                    </div>
+                </div>
+
+                <div class="flex justify-end border-t border-slate-100 px-5 py-4 sm:px-6">
+                    <button type="button" class="app-button-secondary" @click="closeDetails">Đóng</button>
+                </div>
+            </div>
+        </Modal>
     </AuthenticatedLayout>
 </template>
