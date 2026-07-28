@@ -10,9 +10,9 @@ import AppUserAvatar from '@/Components/AppUserAvatar.vue';
 import { usePermissions } from '@/Composables/usePermissions';
 import { taskPriorityLabels, taskStatusClasses, taskStatusLabels } from '@/Constants/task';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import MultiSelect from 'primevue/multiselect';
-import type { OrganizationUnit, Task, TaskPriority, TaskStatus, User } from '@/types';
+import type { OrganizationUnit, PageProps, Task, TaskPriority, TaskStatus, User } from '@/types';
 
 interface PaginationLink {
     url: string | null;
@@ -46,6 +46,7 @@ const props = defineProps<{
     users: Pick<User, 'id' | 'name'>[];
 }>();
 
+const page = usePage<PageProps>();
 const { can } = usePermissions();
 const canCreate = computed(() => can('task.create'));
 const canUpdate = computed(() => can('task.update'));
@@ -56,6 +57,18 @@ const status = ref(props.filters.status ?? '');
 const priority = ref(props.filters.priority ?? '');
 const organizationUnitId = ref<number | ''>(props.filters.organization_unit_id ?? '');
 const assigneeIds = ref<number[]>(props.filters.assignee_ids ?? []);
+const assigneeOptions = computed(() =>
+    props.users.map((user) => ({
+        ...user,
+        display_name: user.id === page.props.auth.user.id ? `${user.name} (Bạn)` : user.name,
+    })),
+);
+const onlyMyTasks = computed({
+    get: () => assigneeIds.value.length === 1 && assigneeIds.value[0] === page.props.auth.user.id,
+    set: (checked: boolean) => {
+        assigneeIds.value = checked ? [page.props.auth.user.id] : [];
+    },
+});
 const overdue = ref(props.filters.overdue === true || props.filters.overdue === '1');
 const isLoading = ref(false);
 const taskToDelete = ref<Task | null>(null);
@@ -190,8 +203,8 @@ const paginationLabel = (label: string) => {
                     <span class="mb-1.5 block text-xs font-bold text-slate-600">Người phụ trách</span>
                     <MultiSelect
                         v-model="assigneeIds"
-                        :options="users"
-                        option-label="name"
+                        :options="assigneeOptions"
+                        option-label="display_name"
                         option-value="id"
                         display="chip"
                         filter
@@ -202,16 +215,24 @@ const paginationLabel = (label: string) => {
                         aria-label="Lọc theo người phụ trách"
                     />
                 </label>
-                <label
-                    class="flex min-h-10 cursor-pointer items-center gap-2 text-xs font-semibold text-slate-600 xl:mb-px"
-                >
-                    <input
-                        v-model="overdue"
-                        type="checkbox"
-                        class="size-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
-                    />
-                    Chỉ công việc quá hạn
-                </label>
+                <div class="flex min-h-10 flex-wrap items-center gap-x-4 gap-y-2 xl:mb-px">
+                    <label class="flex cursor-pointer items-center gap-2 text-xs font-semibold text-slate-600">
+                        <input
+                            v-model="onlyMyTasks"
+                            type="checkbox"
+                            class="size-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                        />
+                        Chỉ công việc của bạn
+                    </label>
+                    <label class="flex cursor-pointer items-center gap-2 text-xs font-semibold text-slate-600">
+                        <input
+                            v-model="overdue"
+                            type="checkbox"
+                            class="size-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                        />
+                        Chỉ công việc quá hạn
+                    </label>
+                </div>
                 <div class="flex justify-end gap-2">
                     <button type="button" class="app-button-secondary" :disabled="isLoading" @click="handleReset">
                         Xóa bộ lọc
