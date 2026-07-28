@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\OrganizationUnitController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\UserController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -29,6 +30,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('organization-units', OrganizationUnitController::class)
         ->parameters(['organization-units' => 'organizationUnit'])
         ->except('show');
+
+    Route::resource('users', UserController::class)->except('show');
+    Route::patch('users/{user}/disable', [UserController::class, 'disable'])->name('users.disable');
+    Route::patch('users/{user}/enable', [UserController::class, 'enable'])->name('users.enable');
 });
 
 require __DIR__.'/auth.php';
