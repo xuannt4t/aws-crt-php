@@ -32,7 +32,7 @@
         "vue-tsc": "^2.0.24"
     },
     "dependencies": {
-        "@primevue/themes": "^4.5.4",
+        "@primeuix/themes": "^3.0.0",
         "primevue": "^5.0.0"
     }
 }
