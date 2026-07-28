@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import AppActionButton from '@/Components/AppActionButton.vue';
 import AppConfirmDialog from '@/Components/AppConfirmDialog.vue';
 import AppEmptyState from '@/Components/AppEmptyState.vue';
 import AppIcon from '@/Components/AppIcon.vue';
@@ -161,25 +162,19 @@ const destroy = () => {
                     <Column v-if="canUpdate || canDelete" header="Thao tác" class="w-28">
                         <template #body="{ node }">
                             <div class="flex justify-end gap-1">
-                                <Link
+                                <AppActionButton
                                     v-if="canUpdate"
                                     :href="route('organization-units.edit', node.data.id)"
-                                    class="app-icon-button"
-                                    :aria-label="`Sửa ${node.data.name}`"
-                                    title="Sửa"
-                                >
-                                    <AppIcon name="edit" class="size-4" />
-                                </Link>
-                                <button
+                                    icon="edit"
+                                    :label="`Chỉnh sửa ${node.data.name}`"
+                                />
+                                <AppActionButton
                                     v-if="canDelete"
-                                    type="button"
-                                    class="app-icon-button hover:bg-red-50 hover:text-red-600"
-                                    :aria-label="`Xoá ${node.data.name}`"
-                                    title="Xoá"
+                                    icon="trash"
+                                    tone="danger"
+                                    :label="`Xóa ${node.data.name}`"
                                     @click="unitToDelete = node.data"
-                                >
-                                    <AppIcon name="trash" class="size-4" />
-                                </button>
+                                />
                             </div>
                         </template>
                     </Column>

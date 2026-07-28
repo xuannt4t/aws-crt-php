@@ -1,17 +1,13 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import AppActionButton from '@/Components/AppActionButton.vue';
 import AppConfirmDialog from '@/Components/AppConfirmDialog.vue';
 import AppEmptyState from '@/Components/AppEmptyState.vue';
 import AppIcon from '@/Components/AppIcon.vue';
 import AppPageHeader from '@/Components/AppPageHeader.vue';
 import AppUserAvatar from '@/Components/AppUserAvatar.vue';
 import { usePermissions } from '@/Composables/usePermissions';
-import {
-    taskPriorityClasses,
-    taskPriorityLabels,
-    taskStatusClasses,
-    taskStatusLabels,
-} from '@/Constants/task';
+import { taskPriorityClasses, taskPriorityLabels, taskStatusClasses, taskStatusLabels } from '@/Constants/task';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import type { OrganizationUnit, Task, TaskPriority, TaskStatus, User } from '@/types';
@@ -299,25 +295,19 @@ const paginationLabel = (label: string) => {
                             </td>
                             <td v-if="canUpdate || canDelete" class="px-5 py-4">
                                 <div class="flex justify-end gap-1">
-                                    <Link
+                                    <AppActionButton
                                         v-if="canUpdate"
                                         :href="route('tasks.edit', task.id)"
-                                        class="app-icon-button"
-                                        :aria-label="`Sửa ${task.title}`"
-                                        title="Sửa"
-                                    >
-                                        <AppIcon name="edit" class="size-4" />
-                                    </Link>
-                                    <button
+                                        icon="edit"
+                                        :label="`Chỉnh sửa ${task.title}`"
+                                    />
+                                    <AppActionButton
                                         v-if="canDelete"
-                                        type="button"
-                                        class="app-icon-button hover:bg-red-50 hover:text-red-600"
-                                        :aria-label="`Xóa ${task.title}`"
-                                        title="Xóa"
+                                        icon="trash"
+                                        tone="danger"
+                                        :label="`Xóa ${task.title}`"
                                         @click="taskToDelete = task"
-                                    >
-                                        <AppIcon name="trash" class="size-4" />
-                                    </button>
+                                    />
                                 </div>
                             </td>
                         </tr>

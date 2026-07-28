@@ -10,6 +10,7 @@ type IconName =
     | 'edit'
     | 'filter'
     | 'folder'
+    | 'lock'
     | 'logout'
     | 'menu'
     | 'plus'
@@ -20,6 +21,7 @@ type IconName =
     | 'trash'
     | 'user'
     | 'users'
+    | 'unlock'
     | 'x';
 
 defineProps<{
@@ -64,6 +66,14 @@ defineProps<{
         <path v-else-if="name === 'edit'" d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4L16.5 3.5Z" />
         <path v-else-if="name === 'trash'" d="M3 6h18M8 6V4h8v2M19 6l-1 15H6L5 6M10 11v5M14 11v5" />
         <path v-else-if="name === 'logout'" d="M10 17l5-5-5-5M15 12H3M14 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5" />
+        <path
+            v-else-if="name === 'lock'"
+            d="M7 10V7a5 5 0 0 1 10 0v3M6 10h12a2 2 0 0 1 2 2v8H4v-8a2 2 0 0 1 2-2Zm6 4v2"
+        />
+        <path
+            v-else-if="name === 'unlock'"
+            d="M17 10V7a5 5 0 0 0-9.8-1.4M6 10h12a2 2 0 0 1 2 2v8H4v-8a2 2 0 0 1 2-2Zm6 4v2"
+        />
         <path v-else-if="name === 'filter'" d="M4 5h16M7 12h10M10 19h4" />
         <path v-else-if="name === 'check'" d="m5 12 4 4L19 6" />
         <path

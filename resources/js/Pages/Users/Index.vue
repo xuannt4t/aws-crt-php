@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import AppActionButton from '@/Components/AppActionButton.vue';
 import AppIcon from '@/Components/AppIcon.vue';
 import AppEmptyState from '@/Components/AppEmptyState.vue';
 import AppPageHeader from '@/Components/AppPageHeader.vue';
@@ -224,30 +225,19 @@ const toggleActive = (user: User) => {
                     <Column v-if="canUpdate || canDisable" header="Thao tác" class="w-36">
                         <template #body="{ data }">
                             <div class="flex justify-end gap-1">
-                                <Link
+                                <AppActionButton
                                     v-if="canUpdate"
                                     :href="route('users.edit', data.id)"
-                                    class="app-icon-button"
-                                    :aria-label="`Sửa ${data.name}`"
-                                    title="Sửa"
-                                >
-                                    <AppIcon name="edit" class="size-4" />
-                                </Link>
-                                <button
+                                    icon="edit"
+                                    :label="`Chỉnh sửa ${data.name}`"
+                                />
+                                <AppActionButton
                                     v-if="canDisable && data.id !== page.props.auth.user.id"
-                                    type="button"
-                                    class="app-icon-button"
-                                    :class="
-                                        data.is_active
-                                            ? 'hover:bg-amber-50 hover:text-amber-700'
-                                            : 'hover:bg-emerald-50 hover:text-emerald-700'
-                                    "
-                                    :aria-label="data.is_active ? `Vô hiệu hoá ${data.name}` : `Kích hoạt ${data.name}`"
-                                    :title="data.is_active ? 'Vô hiệu hoá' : 'Kích hoạt'"
+                                    :icon="data.is_active ? 'lock' : 'unlock'"
+                                    :tone="data.is_active ? 'warning' : 'success'"
+                                    :label="data.is_active ? `Vô hiệu hóa ${data.name}` : `Kích hoạt ${data.name}`"
                                     @click="toggleActive(data)"
-                                >
-                                    <AppIcon :name="data.is_active ? 'logout' : 'check'" class="size-4" />
-                                </button>
+                                />
                             </div>
                         </template>
                     </Column>
