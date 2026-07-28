@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Models\OrganizationUnit;
 use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -13,11 +13,21 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        $rootUnit = OrganizationUnit::firstOrCreate(
+            ['code' => 'ROOT'],
+            ['name' => 'DORMIDA WORK', 'is_active' => true]
+        );
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        User::firstOrCreate(
+            ['email' => config('dormida.admin_email')],
+            [
+                'organization_unit_id' => $rootUnit->id,
+                'name' => 'System Admin',
+                'password' => bcrypt(config('dormida.admin_password')),
+                'is_system_admin' => true,
+                'is_active' => true,
+                'email_verified_at' => now(),
+            ]
+        );
     }
 }
