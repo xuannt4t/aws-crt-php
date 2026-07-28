@@ -4,12 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Actions\Task\CreateTaskAction;
 use App\Actions\Task\DeleteTaskAction;
+use App\Actions\Task\TransitionTaskStatusAction;
 use App\Actions\Task\UpdateTaskAction;
 use App\Enums\PermissionName;
 use App\Enums\TaskPriority;
 use App\Enums\TaskStatus;
+use App\Http\Requests\DispatchTaskRequest;
 use App\Http\Requests\IndexTaskRequest;
+use App\Http\Requests\StartTaskRequest;
 use App\Http\Requests\StoreTaskRequest;
+use App\Http\Requests\SubmitTaskRequest;
 use App\Http\Requests\UpdateTaskRequest;
 use App\Models\OrganizationUnit;
 use App\Models\Task;
@@ -72,6 +76,33 @@ final class TaskController extends Controller
         ]);
     }
 
+    public function show(Task $task): Response
+    {
+        $this->authorize('view', $task);
+
+        $task->load([
+            'organizationUnit:id,name',
+            'creator:id,name',
+            'assignee:id,name',
+            'statusHistories.actor:id,name',
+        ]);
+
+        return Inertia::render('Tasks/Show', [
+            'task' => [
+                ...$task->toArray(),
+                'is_overdue' => $task->isOverdue(),
+            ],
+            'actions' => [
+                'dispatch' => $task->status === TaskStatus::Draft
+                    && request()->user()->can('dispatch', $task),
+                'start' => $task->status === TaskStatus::Todo
+                    && request()->user()->can('start', $task),
+                'submit' => $task->status === TaskStatus::InProgress
+                    && request()->user()->can('submit', $task),
+            ],
+        ]);
+    }
+
     public function store(StoreTaskRequest $request, CreateTaskAction $action): RedirectResponse
     {
         $action->execute($request->user(), $request->validated());
@@ -114,6 +145,36 @@ final class TaskController extends Controller
         $action->execute(request()->user(), $task);
 
         return Redirect::route('tasks.index')->with('success', 'Xóa công việc thành công.');
+    }
+
+    public function dispatch(
+        DispatchTaskRequest $request,
+        Task $task,
+        TransitionTaskStatusAction $action,
+    ): RedirectResponse {
+        $action->execute($request->user(), $task, TaskStatus::Todo);
+
+        return Redirect::back()->with('success', 'Đã giao công việc.');
+    }
+
+    public function start(
+        StartTaskRequest $request,
+        Task $task,
+        TransitionTaskStatusAction $action,
+    ): RedirectResponse {
+        $action->execute($request->user(), $task, TaskStatus::InProgress);
+
+        return Redirect::back()->with('success', 'Đã bắt đầu công việc.');
+    }
+
+    public function submit(
+        SubmitTaskRequest $request,
+        Task $task,
+        TransitionTaskStatusAction $action,
+    ): RedirectResponse {
+        $action->execute($request->user(), $task, TaskStatus::WaitingReview);
+
+        return Redirect::back()->with('success', 'Đã gửi công việc để kiểm tra.');
     }
 
     /**

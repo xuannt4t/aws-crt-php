@@ -37,4 +37,21 @@ final class TaskPolicy
     {
         return $user->can(PermissionName::TaskAssign->value);
     }
+
+    public function dispatch(User $user, Task $task): bool
+    {
+        return $user->can(PermissionName::TaskAssign->value);
+    }
+
+    public function start(User $user, Task $task): bool
+    {
+        return $user->can(PermissionName::TaskUpdate->value)
+            && $task->assignee_id === $user->id;
+    }
+
+    public function submit(User $user, Task $task): bool
+    {
+        return $user->can(PermissionName::TaskSubmit->value)
+            && $task->assignee_id === $user->id;
+    }
 }

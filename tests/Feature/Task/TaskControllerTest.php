@@ -7,6 +7,7 @@ use App\Enums\TaskStatus;
 use App\Models\AuditLog;
 use App\Models\OrganizationUnit;
 use App\Models\Task;
+use App\Models\TaskStatusHistory;
 use App\Models\User;
 
 test('a user with permission can view filtered paginated tasks', function () {
@@ -46,6 +47,25 @@ test('a user without task view permission cannot view tasks', function () {
     $this->actingAs($user)
         ->get(route('tasks.index'))
         ->assertForbidden();
+});
+
+test('a user with view permission can view task details and transition history', function () {
+    $viewer = userWithPermissions([PermissionName::TaskView->value]);
+    $task = Task::factory()->create();
+    TaskStatusHistory::create([
+        'task_id' => $task->id,
+        'actor_id' => $viewer->id,
+        'from_status' => TaskStatus::Draft,
+        'to_status' => TaskStatus::Todo,
+    ]);
+
+    $this->actingAs($viewer)
+        ->get(route('tasks.show', $task))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Tasks/Show')
+            ->where('task.id', $task->id)
+            ->has('task.status_histories', 1));
 });
 
 test('a user with create permission creates a draft task', function () {
@@ -172,4 +192,88 @@ test('a user without delete permission cannot delete a task', function () {
         ->assertForbidden();
 
     $this->assertNotSoftDeleted($task);
+});
+
+test('a task can follow dispatch start and submit transitions with immutable history', function () {
+    $actor = userWithPermissions([
+        PermissionName::TaskAssign->value,
+        PermissionName::TaskUpdate->value,
+        PermissionName::TaskSubmit->value,
+    ]);
+    $task = Task::factory()->create([
+        'assignee_id' => $actor->id,
+        'status' => TaskStatus::Draft,
+    ]);
+
+    $this->actingAs($actor)
+        ->patch(route('tasks.dispatch', $task))
+        ->assertRedirect();
+    expect($task->fresh()->status)->toBe(TaskStatus::Todo);
+
+    $this->actingAs($actor)
+        ->patch(route('tasks.start', $task))
+        ->assertRedirect();
+    expect($task->fresh()->status)->toBe(TaskStatus::InProgress);
+
+    $this->actingAs($actor)
+        ->patch(route('tasks.submit', $task))
+        ->assertRedirect();
+    expect($task->fresh()->status)->toBe(TaskStatus::WaitingReview);
+
+    expect($task->statusHistories()->count())->toBe(3)
+        ->and(TaskStatusHistory::query()
+            ->where('task_id', $task->id)
+            ->oldest('id')
+            ->pluck('to_status')
+            ->all())->toBe([
+                TaskStatus::Todo,
+                TaskStatus::InProgress,
+                TaskStatus::WaitingReview,
+            ]);
+});
+
+test('a draft task without assignee cannot be dispatched', function () {
+    $dispatcher = userWithPermissions([PermissionName::TaskAssign->value]);
+    $task = Task::factory()->create([
+        'assignee_id' => null,
+        'status' => TaskStatus::Draft,
+    ]);
+
+    $this->actingAs($dispatcher)
+        ->patch(route('tasks.dispatch', $task))
+        ->assertSessionHasErrors('assignee_id');
+
+    expect($task->fresh()->status)->toBe(TaskStatus::Draft)
+        ->and($task->statusHistories()->count())->toBe(0);
+});
+
+test('a non assignee cannot start a task', function () {
+    $assignee = User::factory()->create();
+    $otherUser = userWithPermissions([PermissionName::TaskUpdate->value]);
+    $task = Task::factory()->create([
+        'assignee_id' => $assignee->id,
+        'status' => TaskStatus::Todo,
+    ]);
+
+    $this->actingAs($otherUser)
+        ->patch(route('tasks.start', $task))
+        ->assertForbidden();
+
+    expect($task->fresh()->status)->toBe(TaskStatus::Todo)
+        ->and($task->statusHistories()->count())->toBe(0);
+});
+
+test('an invalid task transition does not write history', function () {
+    $assignee = userWithPermissions([PermissionName::TaskSubmit->value]);
+    $task = Task::factory()->create([
+        'assignee_id' => $assignee->id,
+        'status' => TaskStatus::Draft,
+    ]);
+
+    $this->actingAs($assignee)
+        ->patch(route('tasks.submit', $task))
+        ->assertSessionHasErrors('status');
+
+    expect($task->fresh()->status)->toBe(TaskStatus::Draft)
+        ->and($task->statusHistories()->count())->toBe(0);
 });

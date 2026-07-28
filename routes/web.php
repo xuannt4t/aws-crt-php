@@ -37,7 +37,10 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
     Route::patch('users/{user}/disable', [UserController::class, 'disable'])->name('users.disable');
     Route::patch('users/{user}/enable', [UserController::class, 'enable'])->name('users.enable');
     Route::get('audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
-    Route::resource('tasks', TaskController::class)->except('show');
+    Route::patch('tasks/{task}/dispatch', [TaskController::class, 'dispatch'])->name('tasks.dispatch');
+    Route::patch('tasks/{task}/start', [TaskController::class, 'start'])->name('tasks.start');
+    Route::patch('tasks/{task}/submit', [TaskController::class, 'submit'])->name('tasks.submit');
+    Route::resource('tasks', TaskController::class);
 });
 
 require __DIR__.'/auth.php';

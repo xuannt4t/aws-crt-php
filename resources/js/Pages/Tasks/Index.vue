@@ -254,7 +254,12 @@ const paginationLabel = (label: string) => {
                     <tbody class="divide-y divide-slate-100">
                         <tr v-for="task in tasks.data" :key="task.id" class="hover:bg-slate-50/60">
                             <td class="max-w-md px-5 py-4 sm:px-6">
-                                <p class="truncate text-sm font-bold text-slate-800">{{ task.title }}</p>
+                                <Link
+                                    :href="route('tasks.show', task.id)"
+                                    class="block truncate text-sm font-bold text-slate-800 hover:text-brand-700"
+                                >
+                                    {{ task.title }}
+                                </Link>
                                 <div class="mt-1.5 flex items-center gap-2 text-xs">
                                     <span :class="taskPriorityClasses[task.priority]">
                                         {{ taskPriorityLabels[task.priority] }}

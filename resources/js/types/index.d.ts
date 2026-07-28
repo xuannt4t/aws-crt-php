@@ -22,6 +22,17 @@ export type TaskStatus =
 
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
 
+export interface TaskStatusHistory {
+    id: number;
+    task_id: number;
+    actor_id: number;
+    from_status: TaskStatus;
+    to_status: TaskStatus;
+    reason: string | null;
+    created_at: string;
+    actor?: Pick<User, 'id' | 'name'>;
+}
+
 export interface Task {
     id: number;
     organization_unit_id: number;
@@ -39,6 +50,7 @@ export interface Task {
     organization_unit?: Pick<OrganizationUnit, 'id' | 'name'>;
     creator?: Pick<User, 'id' | 'name'>;
     assignee?: Pick<User, 'id' | 'name'> | null;
+    status_histories?: TaskStatusHistory[];
 }
 
 export interface User {
