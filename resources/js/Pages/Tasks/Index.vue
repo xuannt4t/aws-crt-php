@@ -312,7 +312,15 @@ const paginationLabel = (label: string) => {
                                         :avatar-url="task.assignee.avatar_url"
                                         size="sm"
                                     />
-                                    <span class="text-sm font-medium text-slate-700">{{ task.assignee.name }}</span>
+                                    <span class="text-sm font-medium text-slate-700">
+                                        {{ task.assignee.name }}
+                                        <span
+                                            v-if="task.assignee.id === page.props.auth.user.id"
+                                            class="font-semibold text-brand-700"
+                                        >
+                                            (Bạn)
+                                        </span>
+                                    </span>
                                 </div>
                                 <span v-else class="text-xs text-slate-400">Chưa phân công</span>
                             </td>

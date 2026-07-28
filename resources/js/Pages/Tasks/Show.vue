@@ -10,8 +10,8 @@ import InputError from '@/Components/InputError.vue';
 import { usePermissions } from '@/Composables/usePermissions';
 import { taskStatusClasses, taskStatusLabels } from '@/Constants/task';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import type { Task } from '@/types';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
+import type { PageProps, Task } from '@/types';
 
 const props = defineProps<{
     task: Task;
@@ -25,6 +25,7 @@ const props = defineProps<{
 }>();
 
 const { can } = usePermissions();
+const page = usePage<PageProps>();
 const isTransitioning = ref(false);
 const isConfirmingRecall = ref(false);
 const progressForm = useForm({
@@ -238,7 +239,12 @@ const formatDateTime = (value: string | null) => {
                                 :avatar-url="task.assignee.avatar_url"
                                 size="sm"
                             />
-                            <span class="text-sm font-semibold text-slate-700">{{ task.assignee.name }}</span>
+                            <span class="text-sm font-semibold text-slate-700">
+                                {{ task.assignee.name }}
+                                <span v-if="task.assignee.id === page.props.auth.user.id" class="text-brand-700">
+                                    (Bạn)
+                                </span>
+                            </span>
                         </dd>
                         <dd v-else class="mt-2 text-sm text-slate-400">Chưa phân công</dd>
                     </div>
