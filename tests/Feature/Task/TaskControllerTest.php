@@ -357,6 +357,65 @@ test('a task can follow dispatch start and submit transitions with immutable his
             ]);
 });
 
+test('an assignee can recall a task waiting for review and the transition remains in history', function () {
+    $assignee = userWithPermissions([
+        PermissionName::TaskView->value,
+        PermissionName::TaskSubmit->value,
+    ]);
+    $task = Task::factory()->create([
+        'assignee_id' => $assignee->id,
+        'status' => TaskStatus::WaitingReview,
+        'progress' => 80,
+    ]);
+
+    $this->actingAs($assignee)
+        ->get(route('tasks.show', $task))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->where('actions.recall', true));
+
+    $this->actingAs($assignee)
+        ->patch(route('tasks.recall', $task))
+        ->assertRedirect()
+        ->assertSessionHas('success');
+
+    expect($task->fresh()->status)->toBe(TaskStatus::InProgress)
+        ->and($task->fresh()->progress)->toBe(80)
+        ->and($task->statusHistories()->count())->toBe(1)
+        ->and($task->statusHistories()->first()->from_status)->toBe(TaskStatus::WaitingReview)
+        ->and($task->statusHistories()->first()->to_status)->toBe(TaskStatus::InProgress);
+});
+
+test('a non assignee cannot recall a task waiting for review', function () {
+    $assignee = User::factory()->create();
+    $otherUser = userWithPermissions([PermissionName::TaskSubmit->value]);
+    $task = Task::factory()->create([
+        'assignee_id' => $assignee->id,
+        'status' => TaskStatus::WaitingReview,
+    ]);
+
+    $this->actingAs($otherUser)
+        ->patch(route('tasks.recall', $task))
+        ->assertForbidden();
+
+    expect($task->fresh()->status)->toBe(TaskStatus::WaitingReview)
+        ->and($task->statusHistories()->count())->toBe(0);
+});
+
+test('a recall request cannot move a task from an unexpected status', function () {
+    $assignee = userWithPermissions([PermissionName::TaskSubmit->value]);
+    $task = Task::factory()->create([
+        'assignee_id' => $assignee->id,
+        'status' => TaskStatus::Todo,
+    ]);
+
+    $this->actingAs($assignee)
+        ->patch(route('tasks.recall', $task))
+        ->assertSessionHasErrors('status');
+
+    expect($task->fresh()->status)->toBe(TaskStatus::Todo)
+        ->and($task->statusHistories()->count())->toBe(0);
+});
+
 test('a draft task without assignee cannot be dispatched', function () {
     $dispatcher = userWithPermissions([PermissionName::TaskAssign->value]);
     $task = Task::factory()->create([

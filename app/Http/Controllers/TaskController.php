@@ -12,6 +12,7 @@ use App\Enums\TaskPriority;
 use App\Enums\TaskStatus;
 use App\Http\Requests\DispatchTaskRequest;
 use App\Http\Requests\IndexTaskRequest;
+use App\Http\Requests\RecallTaskRequest;
 use App\Http\Requests\StartTaskRequest;
 use App\Http\Requests\StoreTaskRequest;
 use App\Http\Requests\SubmitTaskRequest;
@@ -109,6 +110,8 @@ final class TaskController extends Controller
                     && request()->user()->can('submit', $task),
                 'updateProgress' => $task->status === TaskStatus::InProgress
                     && request()->user()->can('updateProgress', $task),
+                'recall' => $task->status === TaskStatus::WaitingReview
+                    && request()->user()->can('recall', $task),
             ],
         ]);
     }
@@ -172,7 +175,7 @@ final class TaskController extends Controller
         Task $task,
         TransitionTaskStatusAction $action,
     ): RedirectResponse {
-        $action->execute($request->user(), $task, TaskStatus::Todo);
+        $action->execute($request->user(), $task, TaskStatus::Todo, TaskStatus::Draft);
 
         return Redirect::back()->with('success', 'Đã giao công việc.');
     }
@@ -182,7 +185,7 @@ final class TaskController extends Controller
         Task $task,
         TransitionTaskStatusAction $action,
     ): RedirectResponse {
-        $action->execute($request->user(), $task, TaskStatus::InProgress);
+        $action->execute($request->user(), $task, TaskStatus::InProgress, TaskStatus::Todo);
 
         return Redirect::back()->with('success', 'Đã bắt đầu công việc.');
     }
@@ -192,9 +195,19 @@ final class TaskController extends Controller
         Task $task,
         TransitionTaskStatusAction $action,
     ): RedirectResponse {
-        $action->execute($request->user(), $task, TaskStatus::WaitingReview);
+        $action->execute($request->user(), $task, TaskStatus::WaitingReview, TaskStatus::InProgress);
 
         return Redirect::back()->with('success', 'Đã gửi công việc để kiểm tra.');
+    }
+
+    public function recall(
+        RecallTaskRequest $request,
+        Task $task,
+        TransitionTaskStatusAction $action,
+    ): RedirectResponse {
+        $action->execute($request->user(), $task, TaskStatus::InProgress, TaskStatus::WaitingReview);
+
+        return Redirect::back()->with('success', 'Đã thu hồi yêu cầu kiểm tra.');
     }
 
     /**

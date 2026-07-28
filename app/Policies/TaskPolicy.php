@@ -60,4 +60,10 @@ final class TaskPolicy
         return $user->can(PermissionName::TaskSubmit->value)
             && $task->assignee_id === $user->id;
     }
+
+    public function recall(User $user, Task $task): bool
+    {
+        return $user->can(PermissionName::TaskSubmit->value)
+            && $task->assignee_id === $user->id;
+    }
 }

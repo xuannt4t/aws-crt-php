@@ -19,7 +19,7 @@ cancelled
 - `draft → todo`: công việc đã đủ thông tin để giao.
 - `todo → in_progress`: người phụ trách bắt đầu.
 - `in_progress → waiting_review`: gửi kiểm tra.
-- `waiting_review → in_progress`: yêu cầu chỉnh sửa.
+- `waiting_review → in_progress`: người kiểm tra yêu cầu chỉnh sửa hoặc người phụ trách thu hồi yêu cầu kiểm tra.
 - `waiting_review → waiting_approval`: qua bước review nếu có.
 - `waiting_approval → completed`: phê duyệt.
 - `waiting_approval → in_progress`: từ chối hoặc yêu cầu chỉnh sửa.

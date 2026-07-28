@@ -22,7 +22,7 @@ test('task permissions control each policy ability', function () {
         ->and($userWithoutPermission->can('viewAny', Task::class))->toBeFalse();
 });
 
-test('only the assignee can start and submit a task with the required permission', function () {
+test('only the assignee can run task workflow actions with the required permission', function () {
     $assignee = userWithPermissions([
         PermissionName::TaskUpdate->value,
         PermissionName::TaskSubmit->value,
@@ -36,7 +36,9 @@ test('only the assignee can start and submit a task with the required permission
     expect($assignee->can('start', $task))->toBeTrue()
         ->and($assignee->can('updateProgress', $task))->toBeTrue()
         ->and($assignee->can('submit', $task))->toBeTrue()
+        ->and($assignee->can('recall', $task))->toBeTrue()
         ->and($otherUser->can('start', $task))->toBeFalse()
         ->and($otherUser->can('updateProgress', $task))->toBeFalse()
-        ->and($otherUser->can('submit', $task))->toBeFalse();
+        ->and($otherUser->can('submit', $task))->toBeFalse()
+        ->and($otherUser->can('recall', $task))->toBeFalse();
 });

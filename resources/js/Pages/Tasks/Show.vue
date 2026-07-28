@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import AppConfirmDialog from '@/Components/AppConfirmDialog.vue';
 import AppIcon from '@/Components/AppIcon.vue';
 import AppPageHeader from '@/Components/AppPageHeader.vue';
 import AppRichTextContent from '@/Components/AppRichTextContent.vue';
@@ -19,11 +20,13 @@ const props = defineProps<{
         start: boolean;
         submit: boolean;
         updateProgress: boolean;
+        recall: boolean;
     };
 }>();
 
 const { can } = usePermissions();
 const isTransitioning = ref(false);
+const isConfirmingRecall = ref(false);
 const progressForm = useForm({
     value: props.task.progress,
 });
@@ -55,6 +58,23 @@ const updateProgress = () => {
                 }
             },
         });
+};
+
+const recallSubmission = () => {
+    router.patch(
+        route('tasks.recall', props.task.id),
+        {},
+        {
+            preserveScroll: true,
+            onStart: () => {
+                isTransitioning.value = true;
+            },
+            onFinish: () => {
+                isTransitioning.value = false;
+                isConfirmingRecall.value = false;
+            },
+        },
+    );
 };
 
 const formatDateTime = (value: string | null) => {
@@ -93,7 +113,7 @@ const formatDateTime = (value: string | null) => {
         </template>
 
         <section
-            v-if="actions.dispatch || actions.start || actions.submit"
+            v-if="actions.dispatch || actions.start || actions.submit || actions.recall"
             class="mb-5 flex flex-col gap-4 rounded-2xl border border-brand-100 bg-brand-50/70 p-5 sm:flex-row sm:items-center sm:justify-between"
         >
             <div>
@@ -130,6 +150,16 @@ const formatDateTime = (value: string | null) => {
                 >
                     <AppIcon name="check" class="size-4" />
                     Gửi kiểm tra
+                </button>
+                <button
+                    v-if="actions.recall"
+                    type="button"
+                    class="app-button-secondary"
+                    :disabled="isTransitioning"
+                    @click="isConfirmingRecall = true"
+                >
+                    <AppIcon name="arrow-left" class="size-4" />
+                    Thu hồi yêu cầu kiểm tra
                 </button>
             </div>
         </section>
@@ -299,5 +329,17 @@ const formatDateTime = (value: string | null) => {
                 </form>
             </aside>
         </div>
+
+        <AppConfirmDialog
+            :show="isConfirmingRecall"
+            title="Thu hồi yêu cầu kiểm tra?"
+            description="Công việc sẽ quay về trạng thái Đang thực hiện để bạn tiếp tục cập nhật. Lịch sử gửi kiểm tra vẫn được giữ lại."
+            confirm-label="Thu hồi yêu cầu"
+            icon="arrow-left"
+            tone="primary"
+            :processing="isTransitioning"
+            @cancel="isConfirmingRecall = false"
+            @confirm="recallSubmission"
+        />
     </AuthenticatedLayout>
 </template>
