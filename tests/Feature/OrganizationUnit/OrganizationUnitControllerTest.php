@@ -108,3 +108,27 @@ test('deleting an organization unit with children fails', function () {
     $response->assertSessionHasErrors('organization_unit');
     $this->assertNotSoftDeleted($parent);
 });
+
+test('a regular user cannot update an organization unit', function () {
+    $user = User::factory()->create(['is_system_admin' => false]);
+    $unit = OrganizationUnit::factory()->create();
+
+    $response = $this->actingAs($user)->put(route('organization-units.update', $unit), [
+        'parent_id' => null,
+        'name' => 'Renamed Unit',
+        'code' => $unit->code,
+        'is_active' => true,
+    ]);
+
+    $response->assertForbidden();
+});
+
+test('a regular user cannot delete an organization unit', function () {
+    $user = User::factory()->create(['is_system_admin' => false]);
+    $unit = OrganizationUnit::factory()->create();
+
+    $response = $this->actingAs($user)->delete(route('organization-units.destroy', $unit));
+
+    $response->assertForbidden();
+    $this->assertNotSoftDeleted($unit);
+});
