@@ -46,7 +46,12 @@ final readonly class StoreTaskAttachmentAction
                     'disk' => self::DISK,
                     'path' => $path,
                     'original_name' => $file->getClientOriginalName(),
-                    'mime_type' => $file->getClientMimeType(),
+                    // MIME thật do server phát hiện (khớp rule `mimetypes` đã validate),
+                    // không dùng getClientMimeType() vì đó là nhãn client tự khai, không đáng tin.
+                    // getMimeType() trả về null khi không đoán được MIME; rule `mimetypes` đã
+                    // validate thành công nên trường hợp này gần như không xảy ra, nhưng vẫn
+                    // dự phòng bằng nhãn client để không ghi giá trị null vào cột bắt buộc.
+                    'mime_type' => $file->getMimeType() ?? $file->getClientMimeType(),
                     'size_bytes' => $file->getSize(),
                 ];
             }

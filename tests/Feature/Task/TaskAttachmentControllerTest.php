@@ -144,6 +144,50 @@ test('at least one file is required', function () {
         ->assertSessionHasErrors('files');
 });
 
+test('a file whose original name is longer than 255 characters is rejected with a validation error', function () {
+    Storage::fake('local');
+
+    $task = Task::factory()->create();
+    $longName = str_repeat('a', 300).'.pdf';
+
+    $this->actingAs(uploaderUser())
+        ->post(route('tasks.attachments.store', $task), [
+            'files' => [UploadedFile::fake()->create($longName, 10, 'application/pdf')],
+        ])
+        ->assertSessionHasErrors('files.0');
+
+    expect(TaskAttachment::query()->count())->toBe(0);
+    expect(Storage::disk('local')->allFiles())->toBe([]);
+});
+
+test('the stored mime type reflects the real detected mime type rather than the client supplied value', function () {
+    Storage::fake('local');
+
+    $task = Task::factory()->create();
+
+    // UploadedFile::fake() ép getMimeType() trả về đúng giá trị client khai (không mô phỏng
+    // được sự khác biệt), nên ở đây dựng một UploadedFile thật trỏ tới nội dung PDF hợp lệ
+    // nhưng khai MIME client là "application/octet-stream" — đúng kịch bản I-1 mô tả.
+    $realPath = tempnam(sys_get_temp_dir(), 'attach-mime-');
+    file_put_contents($realPath, "%PDF-1.4\n%\xE2\xE3\xCF\xD3\n1 0 obj\n<< >>\nendobj\ntrailer\n<< >>\n%%EOF");
+
+    $file = new UploadedFile($realPath, 'bao-cao.pdf', 'application/octet-stream', null, true);
+    $realMimeType = $file->getMimeType();
+
+    expect($realMimeType)->toBe('application/pdf');
+
+    $this->actingAs(uploaderUser())
+        ->post(route('tasks.attachments.store', $task), [
+            'files' => [$file],
+        ])
+        ->assertSessionDoesntHaveErrors();
+
+    $attachment = TaskAttachment::query()->sole();
+
+    expect($attachment->mime_type)->toBe($realMimeType)
+        ->and($attachment->mime_type)->not->toBe('application/octet-stream');
+});
+
 test('files already written to disk are discarded when the transaction fails after storing them', function () {
     Storage::fake('local');
 
@@ -219,6 +263,41 @@ test('a user without the task view permission cannot download an attachment', fu
     $this->actingAs(userWithPermissions([]))
         ->get(route('tasks.attachments.download', [$task, $attachment]))
         ->assertForbidden();
+});
+
+test('downloading an attachment whose file is missing from disk returns not found', function () {
+    Storage::fake('local');
+
+    $task = Task::factory()->create();
+    $path = "task-attachments/{$task->id}/mat-tich.pdf";
+
+    // Bản ghi DB tồn tại nhưng KHÔNG ghi file lên disk fake, mô phỏng trường hợp file bị
+    // mất trên disk trong khi bản ghi vẫn còn (disk `local` cấu hình 'throw' => false nên
+    // Storage::download() không tự báo lỗi).
+    $attachment = TaskAttachment::factory()->for($task)->create(['path' => $path]);
+
+    $viewer = userWithPermissions([PermissionName::TaskView->value]);
+
+    $this->actingAs($viewer)
+        ->get(route('tasks.attachments.download', [$task, $attachment]))
+        ->assertNotFound();
+});
+
+test('downloading a soft deleted attachment returns not found', function () {
+    Storage::fake('local');
+
+    $task = Task::factory()->create();
+    $path = "task-attachments/{$task->id}/da-xoa.pdf";
+    Storage::disk('local')->put($path, 'noi dung tep');
+
+    $attachment = TaskAttachment::factory()->for($task)->create(['path' => $path]);
+    $attachment->delete();
+
+    $viewer = userWithPermissions([PermissionName::TaskView->value]);
+
+    $this->actingAs($viewer)
+        ->get(route('tasks.attachments.download', [$task, $attachment]))
+        ->assertNotFound();
 });
 
 test('an attachment cannot be reached through a different task', function () {

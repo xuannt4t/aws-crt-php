@@ -49,3 +49,17 @@ test('another user without the task update permission cannot delete an attachmen
 
     expect($other->can('delete', $attachment))->toBeFalse();
 });
+
+test('the uploader cannot delete their own attachment without the task view permission', function () {
+    $uploader = userWithPermissions([]);
+    $attachment = TaskAttachment::factory()->for($uploader, 'uploader')->create();
+
+    expect($uploader->can('delete', $attachment))->toBeFalse();
+});
+
+test('a user with only the task update permission cannot delete an attachment without the task view permission', function () {
+    $manager = userWithPermissions([PermissionName::TaskUpdate->value]);
+    $attachment = TaskAttachment::factory()->create();
+
+    expect($manager->can('delete', $attachment))->toBeFalse();
+});

@@ -2,11 +2,19 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\ValidationException;
 
 final class StoreTaskAttachmentRequest extends FormRequest
 {
+    /**
+     * Khớp độ dài cột `original_name` (varchar(255)) trong migration
+     * `create_task_attachments_table`.
+     */
+    private const MAX_ORIGINAL_NAME_LENGTH = 255;
+
     /**
      * MIME được phép đính kèm. Kiểm tra bằng MIME thật của tệp, không theo phần mở rộng.
      *
@@ -69,9 +77,36 @@ final class StoreTaskAttachmentRequest extends FormRequest
     {
         return [
             'files.required' => 'Vui lòng chọn ít nhất một tệp.',
+            'files.array' => 'Dữ liệu tệp không hợp lệ.',
+            'files.min' => 'Vui lòng chọn ít nhất một tệp.',
             'files.max' => 'Mỗi lần chỉ tải lên tối đa 5 tệp.',
+            'files.*.required' => 'Vui lòng chọn tệp hợp lệ.',
+            'files.*.file' => 'Dữ liệu tải lên không phải là một tệp hợp lệ.',
             'files.*.max' => 'Mỗi tệp không được vượt quá 10MB.',
             'files.*.mimetypes' => 'Định dạng tệp không được phép đính kèm.',
         ];
+    }
+
+    /**
+     * Rule `max` trên `file` kiểm tra dung lượng, không phải độ dài tên tệp. Tên tệp gốc
+     * (`original_name`) được lưu vào cột varchar(255); tên quá dài khiến `create()` ném
+     * `QueryException` và trả về lỗi máy chủ (500) thay vì thông báo tiếng Việt hợp lệ.
+     */
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            foreach ((array) $this->file('files', []) as $index => $file) {
+                if (! $file instanceof UploadedFile) {
+                    continue;
+                }
+
+                if (mb_strlen($file->getClientOriginalName()) > self::MAX_ORIGINAL_NAME_LENGTH) {
+                    $validator->errors()->add(
+                        "files.{$index}",
+                        'Tên tệp không được vượt quá 255 ký tự.',
+                    );
+                }
+            }
+        });
     }
 }

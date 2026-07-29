@@ -29,6 +29,14 @@ final class TaskAttachmentController extends Controller
     {
         $this->authorize('downloadAttachment', $task);
 
+        // Disk `local` cấu hình 'throw' => false: nếu tệp đã mất trên disk mà bản ghi DB
+        // còn, Storage::download() trả file rỗng kèm status 200 thay vì báo lỗi. Kiểm tra
+        // tồn tại trước để trả 404 rõ ràng.
+        abort_unless(
+            Storage::disk($attachment->disk)->exists($attachment->path),
+            404,
+        );
+
         return Storage::disk($attachment->disk)
             ->download($attachment->path, $attachment->original_name);
     }
