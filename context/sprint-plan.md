@@ -4,8 +4,8 @@
 
 - Sprint 0 — Foundation: hoàn tất.
 - Sprint 1 — Identity: hoàn tất Authentication, User, Organization, Role & Permission và Audit Log nền tảng.
-- Sprint 2 — Task Core: đang triển khai; đã hoàn tất Task CRUD, người phụ trách chính, filter, phân trang, comment, luồng `draft → todo → in_progress → waiting_review` có history và Attachment (upload, tải xuống có kiểm quyền, xoá mềm kèm audit).
-- Công việc kế tiếp: Activity timeline hợp nhất.
+- Sprint 2 — Task Core: hoàn tất; đã hoàn tất Task CRUD, người phụ trách chính, filter, phân trang, comment, luồng `draft → todo → in_progress → waiting_review` có history, Attachment (upload, tải xuống có kiểm quyền, xoá mềm kèm audit) và Activity timeline hợp nhất.
+- Công việc kế tiếp: Sprint 3 — Project.
 
 ## Sprint 0 — Foundation
 

@@ -3,9 +3,9 @@
 | | |
 |---|---|
 | **Sản phẩm** | DORMIDA WORK — Nền tảng quản trị công việc nội bộ doanh nghiệp |
-| **Phiên bản tài liệu** | 1.1 |
+| **Phiên bản tài liệu** | 1.2 |
 | **Ngày phát hành** | 29/07/2026 |
-| **Trạng thái dự án** | Đang triển khai — Sprint 2 (Task Core): đã xong tệp đính kèm, chỉ còn activity timeline hợp nhất |
+| **Trạng thái dự án** | Sprint 2 (Task Core) hoàn tất — chuẩn bị Sprint 3 (Project) |
 | **Nguồn tổng hợp** | `README.md`, `prompts/*`, `context/*`, `docs/superpowers/specs/*` |
 
 ---
@@ -188,7 +188,7 @@ Role chỉ là tập hợp permission. Nghiệp vụ **không** được hard-co
 | FR-TASK-08 | Người phụ trách có thể thu hồi yêu cầu kiểm tra (`waiting_review → in_progress`). | Đã triển khai |
 | FR-TASK-09 | Bình luận trên công việc, có phân trang. | Đã triển khai |
 | FR-TASK-10 | Đính kèm tệp vào công việc, kiểm tra MIME, dung lượng và quyền truy cập khi tải xuống. | Đã triển khai |
-| FR-TASK-11 | Timeline hoạt động hợp nhất (đổi trạng thái, phân công, bình luận, tệp) trên trang chi tiết. | Đang triển khai |
+| FR-TASK-11 | Timeline hoạt động hợp nhất (đổi trạng thái, phân công, bình luận, tệp) trên trang chi tiết. | Đã triển khai |
 | FR-TASK-12 | Nhiều người phối hợp và người theo dõi trên một công việc. | Kế hoạch |
 | FR-TASK-13 | Checklist trong công việc; hoàn thành công việc có thể yêu cầu checklist hoàn tất. | Kế hoạch |
 | FR-TASK-14 | Tiến độ công việc cha tính từ công việc con hoặc nhập thủ công tuỳ cấu hình. | Kế hoạch |
@@ -554,6 +554,7 @@ Index: `(organization_unit_id, status)`, `(assignee_id, status)`, `(status, due_
 | `task_comments` | Bình luận công việc, hỗ trợ phân trang |
 | `audit_logs` | Nhật ký thao tác nhạy cảm — append-only, không soft delete |
 | `task_attachments` | Tệp đính kèm của công việc: disk, path, tên gốc, MIME, dung lượng, người tải lên — xoá mềm |
+| `task_activities` | Dòng thời gian hoạt động của công việc: loại sự kiện, người thực hiện, payload JSON — append-only |
 | Bảng của Spatie Permission | `roles`, `permissions`, `model_has_roles`, `model_has_permissions`, `role_has_permissions` |
 
 ---
@@ -564,14 +565,14 @@ Index: `(organization_unit_id, status)`, `(assignee_id, status)`, `(status, due_
 |---|---|---|
 | Sprint 0 — Foundation | Laravel 11, Vue 3 + Inertia + TypeScript, Tailwind + PrimeVue, MySQL + Redis, CI cơ bản, quy chuẩn code | Hoàn tất |
 | Sprint 1 — Identity | Authentication, User, Organization, Role & Permission, Audit log nền tảng | Hoàn tất |
-| Sprint 2 — Task Core | Task CRUD, assignment, status flow, comment, attachment, activity timeline | Đang triển khai |
+| Sprint 2 — Task Core | Task CRUD, assignment, status flow, comment, attachment, activity timeline | Hoàn tất |
 | Sprint 3 — Project | Project CRUD, project member, task theo project, project progress | Kế hoạch |
 | Sprint 4 — Approval | Approval flow, review, notification, realtime | Kế hoạch |
 | Sprint 5 — Calendar & Planning | Calendar, plan, objective, deadline reminder | Kế hoạch |
 | Sprint 6 — Reporting | Dashboard, report, export, performance review | Kế hoạch |
 | Sprint 7 — Hardening | Security review, performance review, accessibility, PWA, backup và monitoring | Kế hoạch |
 
-**Đã hoàn tất trong Sprint 2 tính đến ngày phát hành**: Task CRUD, người phụ trách chính, filter, phân trang, bình luận có phân trang, luồng `draft → todo → in_progress → waiting_review` kèm lịch sử, và tệp đính kèm (upload, tải xuống có kiểm quyền, xoá mềm kèm audit). **Công việc kế tiếp**: activity timeline hợp nhất.
+Sprint 2 đã hoàn tất toàn bộ hạng mục gồm tệp đính kèm và activity timeline; công việc kế tiếp là Sprint 3 — Project.
 
 ---
 
@@ -628,3 +629,4 @@ Các nội dung sau **không** thuộc phạm vi hệ thống ở phiên bản h
 |---|---|---|
 | 1.0 | 28/07/2026 | Bản đầu tiên — tổng hợp từ bộ tài liệu chuẩn và trạng thái triển khai đến Sprint 2 |
 | 1.1 | 29/07/2026 | Cập nhật FR-TASK-10 (tệp đính kèm) sang trạng thái đã triển khai |
+| 1.2 | 29/07/2026 | Hoàn tất Sprint 2: cập nhật FR-TASK-11 (activity timeline) sang trạng thái đã triển khai |
