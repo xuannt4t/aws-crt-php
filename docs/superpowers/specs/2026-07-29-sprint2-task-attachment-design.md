@@ -142,7 +142,9 @@ Thêm `TaskAttachmentPolicy`:
 
 | Method | Điều kiện |
 |---|---|
-| `delete(User, TaskAttachment)` | `$attachment->uploader_id === $user->id` **hoặc** `$user->can('task.update')` |
+| `delete(User, TaskAttachment)` | `task.view` **và** (`$attachment->uploader_id === $user->id` **hoặc** `$user->can('task.update')`) |
+
+`task.view` là điều kiện tiên quyết bắt buộc cho cả hai nhánh: người không còn quyền xem công việc (ví dụ đã bị thu hồi quyền) không được xoá tệp mình từng tải lên, và người chỉ có `task.update` mà thiếu `task.view` cũng không được xoá.
 
 Tách policy riêng vì đối tượng được kiểm tra là attachment, không phải task.
 
@@ -153,7 +155,7 @@ Tách policy riêng vì đối tượng được kiểm tra là attachment, khô
 | Method | Route | Hành vi |
 |---|---|---|
 | `store` | `POST tasks/{task}/attachments` → `tasks.attachments.store` | Authorize qua FormRequest, gọi Action, redirect về `tasks.show` kèm flash `success` |
-| `download` | `GET tasks/{task}/attachments/{attachment}/download` → `tasks.attachments.download` | `authorize('downloadAttachment', $task)`, trả `Storage::disk($attachment->disk)->download($attachment->path, $attachment->original_name)` |
+| `download` | `GET tasks/{task}/attachments/{attachment}/download` → `tasks.attachments.download` | `authorize('downloadAttachment', $task)`, kiểm tra `Storage::disk($attachment->disk)->exists($attachment->path)` (disk `local` cấu hình `'throw' => false` nên tệp mất trên disk không tự báo lỗi) → 404 nếu thiếu, ngược lại trả `Storage::disk($attachment->disk)->download($attachment->path, $attachment->original_name)` |
 | `destroy` | `DELETE tasks/{task}/attachments/{attachment}` → `tasks.attachments.destroy` | `authorize('delete', $attachment)`, gọi Action, redirect kèm flash |
 
 Route dùng scoped binding (`->scopeBindings()`) để `{attachment}` bắt buộc thuộc `{task}` trong URL — chặn việc đọc tệp của công việc khác qua một công việc mình có quyền xem. Đặt trong nhóm middleware `auth, verified, active`, khai báo **trước** `Route::resource('tasks', ...)` giống các route action hiện có.
