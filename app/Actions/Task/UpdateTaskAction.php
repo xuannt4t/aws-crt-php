@@ -31,7 +31,7 @@ final class UpdateTaskAction
             $lockedTask = Task::query()->lockForUpdate()->findOrFail($task->id);
             $previousAssigneeId = $lockedTask->assignee_id;
 
-            $lockedTask->update($data);
+            $lockedTask->update($this->withNormalizedQuantity($lockedTask, $data));
 
             if (array_key_exists('assignee_id', $data)) {
                 $newAssigneeId = $data['assignee_id'] === null ? null : (int) $data['assignee_id'];
@@ -48,6 +48,40 @@ final class UpdateTaskAction
 
             return $lockedTask->refresh();
         });
+    }
+
+    /**
+     * Giữ ba cột số lượng luôn nhất quán: cùng có giá trị hoặc cùng rỗng,
+     * và progress luôn khớp với số lượng hiện tại.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function withNormalizedQuantity(Task $task, array $data): array
+    {
+        if (! array_key_exists('planned_quantity', $data)) {
+            return $data;
+        }
+
+        $planned = $data['planned_quantity'] === null ? null : (int) $data['planned_quantity'];
+
+        if ($planned === null) {
+            // Tắt chế độ đo sản lượng: giữ nguyên progress đã báo cáo gần nhất.
+            $data['planned_quantity'] = null;
+            $data['actual_quantity'] = null;
+            $data['quantity_unit'] = null;
+
+            return $data;
+        }
+
+        $actual = $task->tracksQuantity() ? (int) $task->actual_quantity : 0;
+
+        $data['planned_quantity'] = $planned;
+        $data['actual_quantity'] = $actual;
+        $data['quantity_unit'] = $data['quantity_unit'] ?? null;
+        $data['progress'] = Task::progressFromQuantity($planned, $actual);
+
+        return $data;
     }
 
     private function userName(?int $userId): ?string

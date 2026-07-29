@@ -24,11 +24,16 @@ final class CreateTaskAction
         $data['description'] = $this->descriptionSanitizer->sanitize($data['description'] ?? null);
 
         return DB::transaction(function () use ($actor, $data): Task {
+            $plannedQuantity = $data['planned_quantity'] ?? null;
+
             $task = Task::create([
                 ...$data,
                 'creator_id' => $actor->id,
                 'status' => TaskStatus::Draft,
                 'progress' => 0,
+                'planned_quantity' => $plannedQuantity,
+                'actual_quantity' => $plannedQuantity === null ? null : 0,
+                'quantity_unit' => $plannedQuantity === null ? null : ($data['quantity_unit'] ?? null),
             ]);
 
             $this->recordActivity->execute($actor, $task, TaskActivityType::Created);

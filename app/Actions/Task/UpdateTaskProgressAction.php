@@ -20,6 +20,12 @@ final class UpdateTaskProgressAction
         return DB::transaction(function () use ($actor, $task, $progress): Task {
             $lockedTask = Task::query()->lockForUpdate()->findOrFail($task->id);
 
+            if ($lockedTask->tracksQuantity()) {
+                throw ValidationException::withMessages([
+                    'progress' => 'Công việc này theo dõi bằng số lượng, hãy cập nhật số lượng thực tế.',
+                ]);
+            }
+
             if ($lockedTask->status !== TaskStatus::InProgress) {
                 throw ValidationException::withMessages([
                     'progress' => 'Chỉ có thể cập nhật tiến độ khi công việc đang được thực hiện.',
