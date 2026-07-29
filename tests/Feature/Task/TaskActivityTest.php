@@ -56,3 +56,60 @@ test('an activity keeps its actor after the account is soft deleted', function (
 
     expect($activity->fresh()->actor->id)->toBe($actor->id);
 });
+
+test('creating a task records a created activity', function () {
+    $creator = userWithPermissions([App\Enums\PermissionName::TaskCreate->value]);
+    $unit = App\Models\OrganizationUnit::factory()->create();
+
+    $task = app(App\Actions\Task\CreateTaskAction::class)->execute($creator, [
+        'organization_unit_id' => $unit->id,
+        'title' => 'Chuẩn bị báo cáo quý',
+        'priority' => App\Enums\TaskPriority::Medium->value,
+    ]);
+
+    $activity = TaskActivity::query()->where('task_id', $task->id)->sole();
+
+    expect($activity->type)->toBe(TaskActivityType::Created)
+        ->and($activity->actor_id)->toBe($creator->id)
+        ->and($activity->payload)->toBeNull();
+});
+
+test('a status transition records an activity and keeps the status history', function () {
+    $actor = User::factory()->create();
+    $assignee = User::factory()->create();
+    $task = Task::factory()->create([
+        'status' => App\Enums\TaskStatus::Draft->value,
+        'assignee_id' => $assignee->id,
+    ]);
+
+    app(App\Actions\Task\TransitionTaskStatusAction::class)->execute(
+        $actor,
+        $task,
+        App\Enums\TaskStatus::Todo,
+        App\Enums\TaskStatus::Draft,
+    );
+
+    $activity = TaskActivity::query()->where('task_id', $task->id)->sole();
+
+    expect($activity->type)->toBe(TaskActivityType::StatusChanged)
+        ->and($activity->actor_id)->toBe($actor->id)
+        ->and($activity->payload)->toBe(['from' => 'draft', 'to' => 'todo']);
+
+    $this->assertDatabaseHas('task_status_histories', [
+        'task_id' => $task->id,
+        'from_status' => 'draft',
+        'to_status' => 'todo',
+    ]);
+});
+
+test('a rejected status transition records no activity', function () {
+    $task = Task::factory()->create(['status' => App\Enums\TaskStatus::Draft->value]);
+
+    expect(fn () => app(App\Actions\Task\TransitionTaskStatusAction::class)->execute(
+        User::factory()->create(),
+        $task,
+        App\Enums\TaskStatus::WaitingReview,
+    ))->toThrow(Illuminate\Validation\ValidationException::class);
+
+    expect(TaskActivity::query()->count())->toBe(0);
+});
