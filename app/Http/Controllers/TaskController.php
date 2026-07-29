@@ -93,7 +93,6 @@ final class TaskController extends Controller
             'organizationUnit:id,name',
             'creator:id,name,avatar_path',
             'assignee:id,name,avatar_path',
-            'statusHistories.actor:id,name,avatar_path',
         ]);
 
         $comments = $task->comments()
@@ -125,6 +124,15 @@ final class TaskController extends Controller
             ])
             ->all();
 
+        $activities = $task->activities()
+            ->with('actor:id,name,avatar_path')
+            ->paginate(
+                perPage: 30,
+                columns: ['id', 'task_id', 'actor_id', 'type', 'payload', 'created_at'],
+                pageName: 'activities_page',
+            )
+            ->withQueryString();
+
         return Inertia::render('Tasks/Show', [
             'task' => [
                 ...$task->toArray(),
@@ -133,6 +141,7 @@ final class TaskController extends Controller
             ],
             'comments' => $comments,
             'attachments' => $attachments,
+            'activities' => $activities,
             'actions' => [
                 'dispatch' => $task->status === TaskStatus::Draft
                     && request()->user()->can('dispatch', $task),

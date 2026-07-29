@@ -86,7 +86,7 @@ test('a user with view permission can view task details and transition history',
         ->assertInertia(fn ($page) => $page
             ->component('Tasks/Show')
             ->where('task.id', $task->id)
-            ->has('task.status_histories', 1));
+            ->has('activities'));
 });
 
 test('task details expose only sanitized rich text', function () {

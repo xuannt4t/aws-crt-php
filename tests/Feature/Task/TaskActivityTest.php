@@ -353,3 +353,66 @@ test('rows already inserted inside the transaction are rolled back when recordin
         TaskActivity::flushEventListeners();
     }
 });
+
+test('task details expose paginated activities newest first', function () {
+    $viewer = userWithPermissions([App\Enums\PermissionName::TaskView->value]);
+    $task = Task::factory()->create();
+
+    TaskActivity::factory()->count(31)->for($task)->create();
+    $newest = TaskActivity::query()->where('task_id', $task->id)->orderByDesc('id')->first();
+
+    $this->actingAs($viewer)
+        ->get(route('tasks.show', $task))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('activities.data', 30)
+            ->where('activities.total', 31)
+            ->where('activities.data.0.id', $newest->id)
+            ->has('activities.data.0.type')
+            ->has('activities.data.0.created_at'));
+});
+
+test('the timeline keeps activities whose actor was soft deleted', function () {
+    $viewer = userWithPermissions([App\Enums\PermissionName::TaskView->value]);
+    $task = Task::factory()->create();
+    $actor = User::factory()->create(['name' => 'Người đã nghỉ']);
+
+    TaskActivity::factory()->for($task)->for($actor, 'actor')->create();
+    $actor->delete();
+
+    $this->actingAs($viewer)
+        ->get(route('tasks.show', $task))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->where('activities.data.0.actor.name', 'Người đã nghỉ'));
+});
+
+test('the timeline does not issue one query per actor', function () {
+    $viewer = userWithPermissions([App\Enums\PermissionName::TaskView->value]);
+    $task = Task::factory()->create();
+
+    foreach (range(1, 10) as $index) {
+        TaskActivity::factory()->for($task)->for(User::factory()->create(), 'actor')->create();
+    }
+
+    $queries = 0;
+    Illuminate\Support\Facades\DB::listen(function () use (&$queries): void {
+        $queries++;
+    });
+
+    $this->actingAs($viewer)->get(route('tasks.show', $task))->assertOk();
+
+    // Eager load: 10 actor khác nhau vẫn chỉ tốn một truy vấn cho quan hệ actor.
+    // Ngưỡng 30 rộng rãi so với số truy vấn cố định của trang; nếu N+1 quay lại,
+    // con số sẽ vượt xa ngưỡng này.
+    expect($queries)->toBeLessThan(30);
+});
+
+test('the task page no longer sends status histories', function () {
+    $viewer = userWithPermissions([App\Enums\PermissionName::TaskView->value]);
+    $task = Task::factory()->create();
+
+    $this->actingAs($viewer)
+        ->get(route('tasks.show', $task))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->missing('task.status_histories'));
+});
