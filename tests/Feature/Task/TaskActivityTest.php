@@ -3,6 +3,7 @@
 use App\Actions\Task\CreateTaskAction;
 use App\Actions\Task\CreateTaskCommentAction;
 use App\Actions\Task\RecordTaskActivityAction;
+use App\Actions\Task\StoreTaskAttachmentAction;
 use App\Actions\Task\TransitionTaskStatusAction;
 use App\Actions\Task\UpdateTaskAction;
 use App\Actions\Task\UpdateTaskProgressAction;
@@ -10,6 +11,7 @@ use App\Enums\PermissionName;
 use App\Enums\TaskActivityType;
 use App\Enums\TaskPriority;
 use App\Enums\TaskStatus;
+use App\Models\AuditLog;
 use App\Models\OrganizationUnit;
 use App\Models\Task;
 use App\Models\TaskActivity;
@@ -318,4 +320,36 @@ test('a transaction failure during upload leaves no orphaned activity or attachm
 
     expect(TaskActivity::query()->where('type', 'attachment_added')->count())->toBe(0)
         ->and(TaskAttachment::query()->count())->toBe(0);
+});
+
+test('rows already inserted inside the transaction are rolled back when recording the activity fails', function () {
+    Storage::fake('local');
+
+    $uploader = userWithPermissions([
+        PermissionName::TaskView->value,
+        PermissionName::TaskComment->value,
+    ]);
+    $task = Task::factory()->create();
+
+    // Kỹ thuật khác: mock transaction() ở test trên khiến closure không bao giờ chạy, nên
+    // count() === 0 chỉ chứng minh "chưa từng ghi gì", không chứng minh rollback thật. Ở đây,
+    // dùng model event `creating` trên TaskActivity để ném lỗi ở bước CUỐI của closure —
+    // sau khi các bản ghi TaskAttachment và AuditLog đã thực sự được insert bên trong cùng
+    // transaction. Khi exception ném ra, transaction rollback toàn bộ, xoá cả những gì đã ghi.
+    TaskActivity::creating(static function (): void {
+        throw new RuntimeException('Lỗi giả lập sau khi đã ghi attachment.');
+    });
+
+    try {
+        expect(fn () => app(StoreTaskAttachmentAction::class)->execute($uploader, $task, [
+            UploadedFile::fake()->create('a.pdf', 10, 'application/pdf'),
+        ]))->toThrow(RuntimeException::class, 'Lỗi giả lập sau khi đã ghi attachment.');
+
+        expect(TaskAttachment::query()->count())->toBe(0)
+            ->and(AuditLog::query()->count())->toBe(0)
+            ->and(TaskActivity::query()->count())->toBe(0)
+            ->and(Storage::disk('local')->allFiles())->toBe([]);
+    } finally {
+        TaskActivity::flushEventListeners();
+    }
 });
