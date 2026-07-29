@@ -355,7 +355,7 @@ test('rows already inserted inside the transaction are rolled back when recordin
 });
 
 test('task details expose paginated activities newest first', function () {
-    $viewer = userWithPermissions([App\Enums\PermissionName::TaskView->value]);
+    $viewer = userWithPermissions([PermissionName::TaskView->value]);
     $task = Task::factory()->create();
 
     TaskActivity::factory()->count(31)->for($task)->create();
@@ -373,7 +373,7 @@ test('task details expose paginated activities newest first', function () {
 });
 
 test('the timeline keeps activities whose actor was soft deleted', function () {
-    $viewer = userWithPermissions([App\Enums\PermissionName::TaskView->value]);
+    $viewer = userWithPermissions([PermissionName::TaskView->value]);
     $task = Task::factory()->create();
     $actor = User::factory()->create(['name' => 'Người đã nghỉ']);
 
@@ -387,7 +387,7 @@ test('the timeline keeps activities whose actor was soft deleted', function () {
 });
 
 test('the timeline does not issue one query per actor', function () {
-    $viewer = userWithPermissions([App\Enums\PermissionName::TaskView->value]);
+    $viewer = userWithPermissions([PermissionName::TaskView->value]);
     $task = Task::factory()->create();
 
     foreach (range(1, 10) as $index) {
@@ -395,20 +395,22 @@ test('the timeline does not issue one query per actor', function () {
     }
 
     $queries = 0;
-    Illuminate\Support\Facades\DB::listen(function () use (&$queries): void {
+    DB::listen(function () use (&$queries): void {
         $queries++;
     });
 
     $this->actingAs($viewer)->get(route('tasks.show', $task))->assertOk();
 
-    // Eager load: 10 actor khác nhau vẫn chỉ tốn một truy vấn cho quan hệ actor.
-    // Ngưỡng 30 rộng rãi so với số truy vấn cố định của trang; nếu N+1 quay lại,
-    // con số sẽ vượt xa ngưỡng này.
-    expect($queries)->toBeLessThan(30);
+    // Đo thực nghiệm trên trang này (2026-07-29): eager load đúng với 10 activity / 10 actor
+    // khác nhau tốn đúng 10 query. Khi giả lập N+1 thật (lazy-load actor trong vòng lặp thay vì
+    // ->with('actor:...')) con số nhảy lên 19. Ngưỡng 15 chừa vài query dôi ra cho các truy vấn
+    // cố định của trang (session, permission, task, comments, attachments...) mà không rơi vào
+    // vùng 19 của N+1 thật — đủ chặt để bắt lỗi N+1 quay lại, đủ rộng để không giòn.
+    expect($queries)->toBeLessThan(15);
 });
 
 test('the task page no longer sends status histories', function () {
-    $viewer = userWithPermissions([App\Enums\PermissionName::TaskView->value]);
+    $viewer = userWithPermissions([PermissionName::TaskView->value]);
     $task = Task::factory()->create();
 
     $this->actingAs($viewer)
