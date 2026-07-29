@@ -1,10 +1,24 @@
 <?php
 
+use App\Actions\Task\CreateTaskAction;
+use App\Actions\Task\CreateTaskCommentAction;
 use App\Actions\Task\RecordTaskActivityAction;
+use App\Actions\Task\TransitionTaskStatusAction;
+use App\Actions\Task\UpdateTaskAction;
+use App\Actions\Task\UpdateTaskProgressAction;
+use App\Enums\PermissionName;
 use App\Enums\TaskActivityType;
+use App\Enums\TaskPriority;
+use App\Enums\TaskStatus;
+use App\Models\OrganizationUnit;
 use App\Models\Task;
 use App\Models\TaskActivity;
+use App\Models\TaskAttachment;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 test('recording an activity stores the type, actor and payload', function () {
     $actor = User::factory()->create();
@@ -58,13 +72,13 @@ test('an activity keeps its actor after the account is soft deleted', function (
 });
 
 test('creating a task records a created activity', function () {
-    $creator = userWithPermissions([App\Enums\PermissionName::TaskCreate->value]);
-    $unit = App\Models\OrganizationUnit::factory()->create();
+    $creator = userWithPermissions([PermissionName::TaskCreate->value]);
+    $unit = OrganizationUnit::factory()->create();
 
-    $task = app(App\Actions\Task\CreateTaskAction::class)->execute($creator, [
+    $task = app(CreateTaskAction::class)->execute($creator, [
         'organization_unit_id' => $unit->id,
         'title' => 'Chuẩn bị báo cáo quý',
-        'priority' => App\Enums\TaskPriority::Medium->value,
+        'priority' => TaskPriority::Medium->value,
     ]);
 
     $activity = TaskActivity::query()->where('task_id', $task->id)->sole();
@@ -78,15 +92,15 @@ test('a status transition records an activity and keeps the status history', fun
     $actor = User::factory()->create();
     $assignee = User::factory()->create();
     $task = Task::factory()->create([
-        'status' => App\Enums\TaskStatus::Draft->value,
+        'status' => TaskStatus::Draft->value,
         'assignee_id' => $assignee->id,
     ]);
 
-    app(App\Actions\Task\TransitionTaskStatusAction::class)->execute(
+    app(TransitionTaskStatusAction::class)->execute(
         $actor,
         $task,
-        App\Enums\TaskStatus::Todo,
-        App\Enums\TaskStatus::Draft,
+        TaskStatus::Todo,
+        TaskStatus::Draft,
     );
 
     $activity = TaskActivity::query()->where('task_id', $task->id)->sole();
@@ -103,13 +117,13 @@ test('a status transition records an activity and keeps the status history', fun
 });
 
 test('a rejected status transition records no activity', function () {
-    $task = Task::factory()->create(['status' => App\Enums\TaskStatus::Draft->value]);
+    $task = Task::factory()->create(['status' => TaskStatus::Draft->value]);
 
-    expect(fn () => app(App\Actions\Task\TransitionTaskStatusAction::class)->execute(
+    expect(fn () => app(TransitionTaskStatusAction::class)->execute(
         User::factory()->create(),
         $task,
-        App\Enums\TaskStatus::WaitingReview,
-    ))->toThrow(Illuminate\Validation\ValidationException::class);
+        TaskStatus::WaitingReview,
+    ))->toThrow(ValidationException::class);
 
     expect(TaskActivity::query()->count())->toBe(0);
 });
@@ -120,7 +134,7 @@ test('changing the assignee records an activity with both names', function () {
     $next = User::factory()->create(['name' => 'Hùng Trần']);
     $task = Task::factory()->create(['assignee_id' => $previous->id]);
 
-    app(App\Actions\Task\UpdateTaskAction::class)->execute($actor, $task, [
+    app(UpdateTaskAction::class)->execute($actor, $task, [
         'assignee_id' => $next->id,
     ]);
 
@@ -139,7 +153,7 @@ test('clearing the assignee records an activity with a null target', function ()
     $previous = User::factory()->create(['name' => 'Lan Nguyễn']);
     $task = Task::factory()->create(['assignee_id' => $previous->id]);
 
-    app(App\Actions\Task\UpdateTaskAction::class)->execute(User::factory()->create(), $task, [
+    app(UpdateTaskAction::class)->execute(User::factory()->create(), $task, [
         'assignee_id' => null,
     ]);
 
@@ -154,7 +168,7 @@ test('updating a task without touching the assignee records no assignment activi
     $assignee = User::factory()->create();
     $task = Task::factory()->create(['assignee_id' => $assignee->id, 'title' => 'Cũ']);
 
-    app(App\Actions\Task\UpdateTaskAction::class)->execute(User::factory()->create(), $task, [
+    app(UpdateTaskAction::class)->execute(User::factory()->create(), $task, [
         'title' => 'Mới',
         'assignee_id' => $assignee->id,
     ]);
@@ -166,11 +180,11 @@ test('updating a task without touching the assignee records no assignment activi
 test('updating the progress records an activity with the previous value', function () {
     $actor = User::factory()->create();
     $task = Task::factory()->create([
-        'status' => App\Enums\TaskStatus::InProgress->value,
+        'status' => TaskStatus::InProgress->value,
         'progress' => 40,
     ]);
 
-    app(App\Actions\Task\UpdateTaskProgressAction::class)->execute($actor, $task, 65);
+    app(UpdateTaskProgressAction::class)->execute($actor, $task, 65);
 
     $activity = TaskActivity::query()->where('type', 'progress_updated')->sole();
 
@@ -181,11 +195,11 @@ test('updating the progress records an activity with the previous value', functi
 
 test('re-submitting the same progress records no activity', function () {
     $task = Task::factory()->create([
-        'status' => App\Enums\TaskStatus::InProgress->value,
+        'status' => TaskStatus::InProgress->value,
         'progress' => 40,
     ]);
 
-    app(App\Actions\Task\UpdateTaskProgressAction::class)->execute(User::factory()->create(), $task, 40);
+    app(UpdateTaskProgressAction::class)->execute(User::factory()->create(), $task, 40);
 
     expect(TaskActivity::query()->where('type', 'progress_updated')->count())->toBe(0);
 });
@@ -195,7 +209,7 @@ test('commenting records an activity with a trimmed excerpt', function () {
     $task = Task::factory()->create();
     $body = str_repeat('Nội dung trao đổi rất dài. ', 20);
 
-    $comment = app(App\Actions\Task\CreateTaskCommentAction::class)->execute($author, $task, $body);
+    $comment = app(CreateTaskCommentAction::class)->execute($author, $task, $body);
 
     $activity = TaskActivity::query()->where('type', 'commented')->sole();
 
@@ -205,19 +219,19 @@ test('commenting records an activity with a trimmed excerpt', function () {
 });
 
 test('uploading several files records a single activity for the request', function () {
-    Illuminate\Support\Facades\Storage::fake('local');
+    Storage::fake('local');
 
     $uploader = userWithPermissions([
-        App\Enums\PermissionName::TaskView->value,
-        App\Enums\PermissionName::TaskComment->value,
+        PermissionName::TaskView->value,
+        PermissionName::TaskComment->value,
     ]);
     $task = Task::factory()->create();
 
     $this->actingAs($uploader)->post(route('tasks.attachments.store', $task), [
         'files' => [
-            Illuminate\Http\UploadedFile::fake()->create('a.pdf', 10, 'application/pdf'),
-            Illuminate\Http\UploadedFile::fake()->create('b.pdf', 10, 'application/pdf'),
-            Illuminate\Http\UploadedFile::fake()->create('c.pdf', 10, 'application/pdf'),
+            UploadedFile::fake()->create('a.pdf', 10, 'application/pdf'),
+            UploadedFile::fake()->create('b.pdf', 10, 'application/pdf'),
+            UploadedFile::fake()->create('c.pdf', 10, 'application/pdf'),
         ],
     ])->assertRedirect(route('tasks.show', $task));
 
@@ -229,14 +243,14 @@ test('uploading several files records a single activity for the request', functi
 });
 
 test('deleting an attachment records an activity that survives the soft delete', function () {
-    Illuminate\Support\Facades\Storage::fake('local');
+    Storage::fake('local');
 
     $uploader = userWithPermissions([
-        App\Enums\PermissionName::TaskView->value,
-        App\Enums\PermissionName::TaskComment->value,
+        PermissionName::TaskView->value,
+        PermissionName::TaskComment->value,
     ]);
     $task = Task::factory()->create();
-    $attachment = App\Models\TaskAttachment::factory()->for($task)->for($uploader, 'uploader')->create([
+    $attachment = TaskAttachment::factory()->for($task)->for($uploader, 'uploader')->create([
         'original_name' => 'báo cáo quý.pdf',
     ]);
 
@@ -248,21 +262,60 @@ test('deleting an attachment records an activity that survives the soft delete',
 
     expect($activity->payload['attachment_id'])->toBe($attachment->id)
         ->and($activity->payload['original_name'])->toBe('báo cáo quý.pdf')
-        ->and(App\Models\TaskAttachment::query()->count())->toBe(0);
+        ->and(TaskAttachment::query()->count())->toBe(0);
 });
 
 test('a failed upload leaves no orphaned activity', function () {
-    Illuminate\Support\Facades\Storage::fake('local');
+    Storage::fake('local');
 
     $uploader = userWithPermissions([
-        App\Enums\PermissionName::TaskView->value,
-        App\Enums\PermissionName::TaskComment->value,
+        PermissionName::TaskView->value,
+        PermissionName::TaskComment->value,
     ]);
     $task = Task::factory()->create();
 
     $this->actingAs($uploader)->post(route('tasks.attachments.store', $task), [
-        'files' => [Illuminate\Http\UploadedFile::fake()->create('virus.exe', 10, 'application/x-msdownload')],
+        'files' => [UploadedFile::fake()->create('virus.exe', 10, 'application/x-msdownload')],
     ])->assertSessionHasErrors('files.0');
 
     expect(TaskActivity::query()->where('type', 'attachment_added')->count())->toBe(0);
+});
+
+test('a transaction failure during upload leaves no orphaned activity or attachment row', function () {
+    Storage::fake('local');
+
+    $uploader = userWithPermissions([
+        PermissionName::TaskView->value,
+        PermissionName::TaskComment->value,
+    ]);
+    $task = Task::factory()->create();
+
+    // Kỹ thuật giống tests/Feature/Task/TaskAttachmentControllerTest.php
+    // ("files already written to disk are discarded when the transaction fails after storing
+    // them"): partial-mock DatabaseManager đứng sau facade DB (không phải final) để
+    // DB::transaction() ném exception khi được gọi, mô phỏng lỗi DB thật sự xảy ra bên trong
+    // khối transaction — không phải lỗi validation chặn trước khi Action chạy.
+    $realDatabaseManager = app('db');
+    $partialMock = Mockery::mock($realDatabaseManager)->makePartial();
+    $partialMock->shouldReceive('transaction')->once()->andThrow(new RuntimeException('Lỗi giao dịch DB giả lập.'));
+    $this->app->instance('db', $partialMock);
+    DB::clearResolvedInstance('db');
+
+    $this->withoutExceptionHandling();
+
+    $caught = null;
+
+    try {
+        $this->actingAs($uploader)->post(route('tasks.attachments.store', $task), [
+            'files' => [UploadedFile::fake()->create('a.pdf', 10, 'application/pdf')],
+        ]);
+    } catch (RuntimeException $exception) {
+        $caught = $exception;
+    }
+
+    expect($caught)->not->toBeNull()
+        ->and($caught->getMessage())->toBe('Lỗi giao dịch DB giả lập.');
+
+    expect(TaskActivity::query()->where('type', 'attachment_added')->count())->toBe(0)
+        ->and(TaskAttachment::query()->count())->toBe(0);
 });
