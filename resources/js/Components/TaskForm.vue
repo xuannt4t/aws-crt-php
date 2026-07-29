@@ -10,7 +10,18 @@ import Editor from 'primevue/editor';
 import type { OrganizationUnit, PageProps, Task, TaskPriority, User } from '@/types';
 
 const props = defineProps<{
-    task?: Pick<Task, 'id' | 'organization_unit_id' | 'assignee_id' | 'title' | 'description' | 'priority' | 'due_at'>;
+    task?: Pick<
+        Task,
+        | 'id'
+        | 'organization_unit_id'
+        | 'assignee_id'
+        | 'title'
+        | 'description'
+        | 'priority'
+        | 'due_at'
+        | 'planned_quantity'
+        | 'quantity_unit'
+    >;
     organizationUnits: Pick<OrganizationUnit, 'id' | 'name'>[];
     assignableUsers: Pick<User, 'id' | 'name'>[];
     priorities: TaskPriority[];
@@ -36,6 +47,8 @@ const form = useForm({
     description: props.task?.description ?? '',
     priority: props.task?.priority ?? ('medium' as TaskPriority),
     due_at: toDateTimeLocal(props.task?.due_at),
+    planned_quantity: props.task?.planned_quantity ?? null,
+    quantity_unit: props.task?.quantity_unit ?? '',
 });
 
 const descriptionFormats = ['header', 'bold', 'italic', 'underline', 'strike', 'list', 'blockquote', 'link'];
@@ -55,6 +68,13 @@ const handleSubmit = () => {
         payload.due_at = null;
     } else {
         payload.due_at = new Date(String(payload.due_at)).toISOString();
+    }
+
+    if (!payload.planned_quantity) {
+        payload.planned_quantity = null;
+        delete payload.quantity_unit;
+    } else if (!payload.quantity_unit) {
+        payload.quantity_unit = null;
     }
 
     submit(payload);
@@ -171,6 +191,37 @@ const handleSubmit = () => {
                     <input id="due_at" v-model="form.due_at" type="datetime-local" class="app-field" />
                     <InputError class="mt-2" :message="form.errors.due_at" />
                 </div>
+                <div class="grid gap-5 sm:grid-cols-2">
+                    <div>
+                        <InputLabel for="planned_quantity" value="Số lượng dự kiến" />
+                        <TextInput
+                            id="planned_quantity"
+                            v-model.number="form.planned_quantity"
+                            type="number"
+                            min="1"
+                            max="1000000"
+                            class="mt-1 block w-full"
+                            placeholder="Ví dụ: 500"
+                        />
+                        <InputError class="mt-2" :message="form.errors.planned_quantity" />
+                    </div>
+                    <div>
+                        <InputLabel for="quantity_unit" value="Đơn vị" />
+                        <TextInput
+                            id="quantity_unit"
+                            v-model="form.quantity_unit"
+                            type="text"
+                            maxlength="30"
+                            class="mt-1 block w-full"
+                            placeholder="hồ sơ, cuộc gọi..."
+                            :disabled="!form.planned_quantity"
+                        />
+                        <InputError class="mt-2" :message="form.errors.quantity_unit" />
+                    </div>
+                </div>
+                <p class="text-xs text-slate-500">
+                    Để trống số lượng dự kiến nếu công việc theo dõi tiến độ bằng phần trăm.
+                </p>
             </div>
         </section>
 

@@ -52,6 +52,7 @@ export type TaskActivityType =
     | 'status_changed'
     | 'assigned'
     | 'progress_updated'
+    | 'quantity_updated'
     | 'commented'
     | 'attachment_added'
     | 'attachment_removed';
@@ -76,6 +77,9 @@ export interface Task {
     status: TaskStatus;
     priority: TaskPriority;
     progress: number;
+    planned_quantity: number | null;
+    actual_quantity: number | null;
+    quantity_unit: string | null;
     due_at: string | null;
     completed_at: string | null;
     is_overdue?: boolean;
