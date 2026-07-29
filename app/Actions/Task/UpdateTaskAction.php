@@ -28,15 +28,16 @@ final class UpdateTaskAction
         $data['description'] = $this->descriptionSanitizer->sanitize($data['description'] ?? null);
 
         return DB::transaction(function () use ($actor, $task, $data): Task {
-            $previousAssigneeId = $task->assignee_id;
+            $lockedTask = Task::query()->lockForUpdate()->findOrFail($task->id);
+            $previousAssigneeId = $lockedTask->assignee_id;
 
-            $task->update($data);
+            $lockedTask->update($data);
 
             if (array_key_exists('assignee_id', $data)) {
                 $newAssigneeId = $data['assignee_id'] === null ? null : (int) $data['assignee_id'];
 
                 if ($newAssigneeId !== $previousAssigneeId) {
-                    $this->recordActivity->execute($actor, $task, TaskActivityType::Assigned, [
+                    $this->recordActivity->execute($actor, $lockedTask, TaskActivityType::Assigned, [
                         'from_assignee_id' => $previousAssigneeId,
                         'from_assignee_name' => $this->userName($previousAssigneeId),
                         'to_assignee_id' => $newAssigneeId,
@@ -45,7 +46,7 @@ final class UpdateTaskAction
                 }
             }
 
-            return $task->refresh();
+            return $lockedTask->refresh();
         });
     }
 

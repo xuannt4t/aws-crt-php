@@ -4,6 +4,7 @@ namespace App\Actions\Task;
 
 use App\Enums\AuditAction;
 use App\Enums\TaskActivityType;
+use App\Models\Task;
 use App\Models\TaskAttachment;
 use App\Models\User;
 use App\Services\AuditLogger;
@@ -16,10 +17,10 @@ final readonly class DeleteTaskAttachmentAction
         private RecordTaskActivityAction $recordActivity,
     ) {}
 
-    public function execute(User $actor, TaskAttachment $attachment): void
+    public function execute(User $actor, Task $task, TaskAttachment $attachment): void
     {
         // Giữ file trên disk: bản ghi xoá mềm nên vẫn khôi phục được khi xoá nhầm.
-        DB::transaction(function () use ($actor, $attachment): void {
+        DB::transaction(function () use ($actor, $task, $attachment): void {
             $this->auditLogger->record(
                 actor: $actor,
                 action: AuditAction::TaskAttachmentDeleted,
@@ -31,7 +32,7 @@ final readonly class DeleteTaskAttachmentAction
                 ],
             );
 
-            $this->recordActivity->execute($actor, $attachment->task, TaskActivityType::AttachmentRemoved, [
+            $this->recordActivity->execute($actor, $task, TaskActivityType::AttachmentRemoved, [
                 'attachment_id' => $attachment->id,
                 'original_name' => $attachment->original_name,
             ]);

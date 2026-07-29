@@ -11,7 +11,8 @@ use Illuminate\Support\Str;
 
 final class CreateTaskCommentAction
 {
-    private const EXCERPT_LENGTH = 120;
+    // Số ký tự cắt bằng Str::limit trước khi cộng thêm dấu '…', để tổng độ dài excerpt không vượt 120.
+    private const EXCERPT_LENGTH = 119;
 
     public function __construct(
         private readonly RecordTaskActivityAction $recordActivity,

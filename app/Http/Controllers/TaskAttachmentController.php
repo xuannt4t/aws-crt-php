@@ -49,7 +49,7 @@ final class TaskAttachmentController extends Controller
     ): RedirectResponse {
         $this->authorize('delete', $attachment);
 
-        $action->execute($request->user(), $attachment);
+        $action->execute($request->user(), $task, $attachment);
 
         return Redirect::route('tasks.show', $task)->with('success', 'Đã xoá tệp đính kèm.');
     }

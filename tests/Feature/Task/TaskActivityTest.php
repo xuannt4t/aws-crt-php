@@ -166,6 +166,30 @@ test('clearing the assignee records an activity with a null target', function ()
         ->and($activity->payload['from_assignee_name'])->toBe('Lan Nguyễn');
 });
 
+test('changing the assignee reads the previous value from a locked row, not the stale instance', function () {
+    $actor = User::factory()->create();
+    $original = User::factory()->create(['name' => 'Lan Nguyễn']);
+    $concurrent = User::factory()->create(['name' => 'Hùng Trần']);
+    $next = User::factory()->create(['name' => 'Dũng Phạm']);
+    $task = Task::factory()->create(['assignee_id' => $original->id]);
+
+    // Mô phỏng một request khác đã đổi người phụ trách trực tiếp trong DB sau khi
+    // instance $task này được nạp (route-model-binding), mà không đụng vào $task.
+    Task::query()->whereKey($task->id)->update(['assignee_id' => $concurrent->id]);
+
+    expect($task->assignee_id)->toBe($original->id);
+
+    app(UpdateTaskAction::class)->execute($actor, $task, [
+        'assignee_id' => $next->id,
+    ]);
+
+    $activity = TaskActivity::query()->where('type', 'assigned')->sole();
+
+    expect($activity->payload['from_assignee_id'])->toBe($concurrent->id)
+        ->and($activity->payload['from_assignee_name'])->toBe('Hùng Trần')
+        ->and($activity->payload['to_assignee_id'])->toBe($next->id);
+});
+
 test('updating a task without touching the assignee records no assignment activity', function () {
     $assignee = User::factory()->create();
     $task = Task::factory()->create(['assignee_id' => $assignee->id, 'title' => 'Cũ']);
@@ -217,7 +241,8 @@ test('commenting records an activity with a trimmed excerpt', function () {
 
     expect($activity->actor_id)->toBe($author->id)
         ->and($activity->payload['comment_id'])->toBe($comment->id)
-        ->and(mb_strlen($activity->payload['excerpt']))->toBeLessThanOrEqual(121);
+        ->and(mb_strlen($activity->payload['excerpt']))->toBeLessThanOrEqual(120)
+        ->and($activity->payload['excerpt'])->toBe(mb_substr($body, 0, 119).'…');
 });
 
 test('uploading several files records a single activity for the request', function () {
