@@ -47,6 +47,23 @@ export interface TaskAttachment {
     can_delete: boolean;
 }
 
+export type TaskActivityType =
+    | 'created'
+    | 'status_changed'
+    | 'assigned'
+    | 'progress_updated'
+    | 'commented'
+    | 'attachment_added'
+    | 'attachment_removed';
+
+export interface TaskActivity {
+    id: number;
+    type: TaskActivityType;
+    payload: Record<string, string | number | null | string[] | number[]> | null;
+    created_at: string;
+    actor?: Pick<User, 'id' | 'name' | 'avatar_url'> | null;
+}
+
 export interface Task {
     id: number;
     organization_unit_id: number;

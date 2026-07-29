@@ -7,12 +7,13 @@ import AppRichTextContent from '@/Components/AppRichTextContent.vue';
 import AppTaskPriorityBadge from '@/Components/AppTaskPriorityBadge.vue';
 import AppUserAvatar from '@/Components/AppUserAvatar.vue';
 import InputError from '@/Components/InputError.vue';
+import TaskActivityTimeline from '@/Components/TaskActivityTimeline.vue';
 import TaskAttachmentList from '@/Components/TaskAttachmentList.vue';
 import { usePermissions } from '@/Composables/usePermissions';
 import { taskStatusClasses, taskStatusLabels } from '@/Constants/task';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
-import type { PageProps, Task, TaskAttachment, TaskComment } from '@/types';
+import type { PageProps, Task, TaskActivity, TaskAttachment, TaskComment } from '@/types';
 
 interface PaginationLink {
     url: string | null;
@@ -28,10 +29,19 @@ interface PaginatedComments {
     links: PaginationLink[];
 }
 
+interface PaginatedActivities {
+    data: TaskActivity[];
+    current_page: number;
+    last_page: number;
+    total: number;
+    links: PaginationLink[];
+}
+
 const props = defineProps<{
     task: Task;
     comments: PaginatedComments;
     attachments: TaskAttachment[];
+    activities: PaginatedActivities;
     actions: {
         dispatch: boolean;
         start: boolean;
@@ -353,40 +363,7 @@ const paginationLabel = (label: string) => {
                     :can-attach="actions.attach"
                 />
 
-                <section class="app-panel overflow-hidden">
-                    <div class="border-b border-slate-100 px-5 py-4 sm:px-6">
-                        <h2 class="font-display text-base font-bold text-ink-950">Lịch sử trạng thái</h2>
-                        <p class="mt-1 text-xs text-slate-500">Mỗi lần chuyển trạng thái được ghi nhận bất biến.</p>
-                    </div>
-
-                    <div v-if="task.status_histories?.length" class="divide-y divide-slate-100">
-                        <div
-                            v-for="history in task.status_histories"
-                            :key="history.id"
-                            class="flex gap-4 px-5 py-4 sm:px-6"
-                        >
-                            <span
-                                class="mt-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-700"
-                            >
-                                <AppIcon name="arrow-right" class="size-4" />
-                            </span>
-                            <div class="min-w-0">
-                                <p class="text-sm font-semibold text-slate-700">
-                                    {{ taskStatusLabels[history.from_status] }}
-                                    <span class="mx-1 text-slate-300">→</span>
-                                    {{ taskStatusLabels[history.to_status] }}
-                                </p>
-                                <p class="mt-1 text-xs text-slate-400">
-                                    {{ history.actor?.name ?? 'Tài khoản đã xóa' }} ·
-                                    {{ formatDateTime(history.created_at) }}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    <div v-else class="px-5 py-10 text-center text-sm text-slate-400">
-                        Chưa có lần chuyển trạng thái nào.
-                    </div>
-                </section>
+                <TaskActivityTimeline class="mt-6" :activities="activities" />
             </div>
 
             <aside class="app-panel h-fit p-5 sm:p-6">
