@@ -3,6 +3,7 @@
 namespace App\Actions\Task;
 
 use App\Enums\AuditAction;
+use App\Enums\TaskActivityType;
 use App\Models\Task;
 use App\Models\User;
 use App\Services\AuditLogger;
@@ -16,7 +17,10 @@ final readonly class StoreTaskAttachmentAction
 {
     private const DISK = 'local';
 
-    public function __construct(private AuditLogger $auditLogger) {}
+    public function __construct(
+        private AuditLogger $auditLogger,
+        private RecordTaskActivityAction $recordActivity,
+    ) {}
 
     /**
      * @param  list<UploadedFile>  $files
@@ -57,8 +61,10 @@ final readonly class StoreTaskAttachmentAction
             }
 
             DB::transaction(function () use ($actor, $task, $rows): void {
+                $attachments = [];
+
                 foreach ($rows as $row) {
-                    $task->attachments()->create($row);
+                    $attachments[] = $task->attachments()->create($row);
                 }
 
                 $this->auditLogger->record(
@@ -71,6 +77,12 @@ final readonly class StoreTaskAttachmentAction
                         'original_names' => array_column($rows, 'original_name'),
                     ],
                 );
+
+                $this->recordActivity->execute($actor, $task, TaskActivityType::AttachmentAdded, [
+                    'attachment_ids' => array_map(static fn ($attachment): int => $attachment->id, $attachments),
+                    'original_names' => array_column($rows, 'original_name'),
+                    'file_count' => count($rows),
+                ]);
             });
         } catch (Throwable $exception) {
             $this->discard($storedPaths);

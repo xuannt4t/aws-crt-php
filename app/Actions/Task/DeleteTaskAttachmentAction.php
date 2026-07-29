@@ -3,6 +3,7 @@
 namespace App\Actions\Task;
 
 use App\Enums\AuditAction;
+use App\Enums\TaskActivityType;
 use App\Models\TaskAttachment;
 use App\Models\User;
 use App\Services\AuditLogger;
@@ -10,7 +11,10 @@ use Illuminate\Support\Facades\DB;
 
 final readonly class DeleteTaskAttachmentAction
 {
-    public function __construct(private AuditLogger $auditLogger) {}
+    public function __construct(
+        private AuditLogger $auditLogger,
+        private RecordTaskActivityAction $recordActivity,
+    ) {}
 
     public function execute(User $actor, TaskAttachment $attachment): void
     {
@@ -26,6 +30,11 @@ final readonly class DeleteTaskAttachmentAction
                     'size_bytes' => $attachment->size_bytes,
                 ],
             );
+
+            $this->recordActivity->execute($actor, $attachment->task, TaskActivityType::AttachmentRemoved, [
+                'attachment_id' => $attachment->id,
+                'original_name' => $attachment->original_name,
+            ]);
 
             $attachment->delete();
         });

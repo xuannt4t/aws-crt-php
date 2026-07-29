@@ -189,3 +189,80 @@ test('re-submitting the same progress records no activity', function () {
 
     expect(TaskActivity::query()->where('type', 'progress_updated')->count())->toBe(0);
 });
+
+test('commenting records an activity with a trimmed excerpt', function () {
+    $author = User::factory()->create();
+    $task = Task::factory()->create();
+    $body = str_repeat('Nội dung trao đổi rất dài. ', 20);
+
+    $comment = app(App\Actions\Task\CreateTaskCommentAction::class)->execute($author, $task, $body);
+
+    $activity = TaskActivity::query()->where('type', 'commented')->sole();
+
+    expect($activity->actor_id)->toBe($author->id)
+        ->and($activity->payload['comment_id'])->toBe($comment->id)
+        ->and(mb_strlen($activity->payload['excerpt']))->toBeLessThanOrEqual(121);
+});
+
+test('uploading several files records a single activity for the request', function () {
+    Illuminate\Support\Facades\Storage::fake('local');
+
+    $uploader = userWithPermissions([
+        App\Enums\PermissionName::TaskView->value,
+        App\Enums\PermissionName::TaskComment->value,
+    ]);
+    $task = Task::factory()->create();
+
+    $this->actingAs($uploader)->post(route('tasks.attachments.store', $task), [
+        'files' => [
+            Illuminate\Http\UploadedFile::fake()->create('a.pdf', 10, 'application/pdf'),
+            Illuminate\Http\UploadedFile::fake()->create('b.pdf', 10, 'application/pdf'),
+            Illuminate\Http\UploadedFile::fake()->create('c.pdf', 10, 'application/pdf'),
+        ],
+    ])->assertRedirect(route('tasks.show', $task));
+
+    $activity = TaskActivity::query()->where('type', 'attachment_added')->sole();
+
+    expect($activity->payload['file_count'])->toBe(3)
+        ->and($activity->payload['original_names'])->toBe(['a.pdf', 'b.pdf', 'c.pdf'])
+        ->and($activity->payload['attachment_ids'])->toHaveCount(3);
+});
+
+test('deleting an attachment records an activity that survives the soft delete', function () {
+    Illuminate\Support\Facades\Storage::fake('local');
+
+    $uploader = userWithPermissions([
+        App\Enums\PermissionName::TaskView->value,
+        App\Enums\PermissionName::TaskComment->value,
+    ]);
+    $task = Task::factory()->create();
+    $attachment = App\Models\TaskAttachment::factory()->for($task)->for($uploader, 'uploader')->create([
+        'original_name' => 'báo cáo quý.pdf',
+    ]);
+
+    $this->actingAs($uploader)
+        ->delete(route('tasks.attachments.destroy', [$task, $attachment]))
+        ->assertRedirect(route('tasks.show', $task));
+
+    $activity = TaskActivity::query()->where('type', 'attachment_removed')->sole();
+
+    expect($activity->payload['attachment_id'])->toBe($attachment->id)
+        ->and($activity->payload['original_name'])->toBe('báo cáo quý.pdf')
+        ->and(App\Models\TaskAttachment::query()->count())->toBe(0);
+});
+
+test('a failed upload leaves no orphaned activity', function () {
+    Illuminate\Support\Facades\Storage::fake('local');
+
+    $uploader = userWithPermissions([
+        App\Enums\PermissionName::TaskView->value,
+        App\Enums\PermissionName::TaskComment->value,
+    ]);
+    $task = Task::factory()->create();
+
+    $this->actingAs($uploader)->post(route('tasks.attachments.store', $task), [
+        'files' => [Illuminate\Http\UploadedFile::fake()->create('virus.exe', 10, 'application/x-msdownload')],
+    ])->assertSessionHasErrors('files.0');
+
+    expect(TaskActivity::query()->where('type', 'attachment_added')->count())->toBe(0);
+});
