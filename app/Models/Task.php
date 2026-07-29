@@ -27,6 +27,9 @@ final class Task extends Model
         'status',
         'priority',
         'progress',
+        'planned_quantity',
+        'actual_quantity',
+        'quantity_unit',
         'due_at',
         'completed_at',
     ];
@@ -37,6 +40,8 @@ final class Task extends Model
             'status' => TaskStatus::class,
             'priority' => TaskPriority::class,
             'progress' => 'integer',
+            'planned_quantity' => 'integer',
+            'actual_quantity' => 'integer',
             'due_at' => 'datetime',
             'completed_at' => 'datetime',
         ];
@@ -85,6 +90,23 @@ final class Task extends Model
     public function assignee(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assignee_id')->withTrashed();
+    }
+
+    /**
+     * Tính phần trăm tiến độ từ số lượng. Đây là nơi duy nhất giữ công thức này.
+     */
+    public static function progressFromQuantity(int $planned, int $actual): int
+    {
+        if ($planned <= 0) {
+            return 0;
+        }
+
+        return min(100, (int) round($actual / $planned * 100));
+    }
+
+    public function tracksQuantity(): bool
+    {
+        return $this->planned_quantity !== null;
     }
 
     public function scopeOverdue(Builder $query): Builder

@@ -28,8 +28,21 @@ final class TaskFactory extends Factory
             'status' => TaskStatus::Draft,
             'priority' => fake()->randomElement(TaskPriority::cases()),
             'progress' => 0,
+            'planned_quantity' => null,
+            'actual_quantity' => null,
+            'quantity_unit' => null,
             'due_at' => fake()->optional()->dateTimeBetween('now', '+1 month'),
             'completed_at' => null,
         ];
+    }
+
+    public function withQuantity(int $planned = 500, int $actual = 0, ?string $unit = 'hồ sơ'): static
+    {
+        return $this->state(fn (): array => [
+            'planned_quantity' => $planned,
+            'actual_quantity' => $actual,
+            'quantity_unit' => $unit,
+            'progress' => Task::progressFromQuantity($planned, $actual),
+        ]);
     }
 }
