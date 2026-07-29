@@ -24,3 +24,6 @@ yarn-error.log
 /.zed
 
 .superpowers/
+
+# Bản HTML trung gian khi build SRS PDF (docs/srs/build-pdf.mjs --keep-html)
+docs/srs/srs.preview.html
