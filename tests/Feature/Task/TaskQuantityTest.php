@@ -243,7 +243,8 @@ test('an assignee can record actual quantity through the route', function () {
     $this->actingAs($actor)
         ->patch(route('tasks.quantity.update', $task), ['actual_quantity' => 120])
         ->assertRedirect()
-        ->assertSessionHasNoErrors();
+        ->assertSessionHasNoErrors()
+        ->assertSessionHas('success');
 
     expect($task->fresh()->actual_quantity)->toBe(120)
         ->and($task->fresh()->progress)->toBe(24);
@@ -299,6 +300,8 @@ test('the planned quantity must be a positive number within range', function () 
     $this->actingAs($actor)
         ->post(route('tasks.store'), [...$payload, 'planned_quantity' => 1000001])
         ->assertSessionHasErrors('planned_quantity');
+
+    $this->assertDatabaseCount('tasks', 0);
 });
 
 test('a unit cannot be submitted without a planned quantity', function () {
@@ -316,6 +319,8 @@ test('a unit cannot be submitted without a planned quantity', function () {
             'quantity_unit' => 'hồ sơ',
         ])
         ->assertSessionHasErrors('quantity_unit');
+
+    $this->assertDatabaseCount('tasks', 0);
 });
 
 test('actual quantity cannot be set through the task crud form', function () {
@@ -334,4 +339,42 @@ test('actual quantity cannot be set through the task crud form', function () {
             'actual_quantity' => 480,
         ])
         ->assertSessionHasErrors('actual_quantity');
+
+    $this->assertDatabaseCount('tasks', 0);
+});
+
+test('actual quantity cannot be set through the task crud update form', function () {
+    $actor = userWithPermissions([PermissionName::TaskUpdate->value]);
+    $task = Task::factory()
+        ->withQuantity(planned: 500, actual: 100, unit: 'hồ sơ')
+        ->create();
+
+    $this->actingAs($actor)
+        ->put(route('tasks.update', $task), [
+            'organization_unit_id' => $task->organization_unit_id,
+            'title' => $task->title,
+            'priority' => $task->priority->value,
+            'planned_quantity' => 500,
+            'actual_quantity' => 480,
+        ])
+        ->assertSessionHasErrors('actual_quantity');
+
+    expect($task->fresh()->actual_quantity)->toBe(100);
+});
+
+test('a unit cannot be submitted without a planned quantity through the task crud update form', function () {
+    $actor = userWithPermissions([PermissionName::TaskUpdate->value]);
+    $task = Task::factory()->create();
+
+    $this->actingAs($actor)
+        ->put(route('tasks.update', $task), [
+            'organization_unit_id' => $task->organization_unit_id,
+            'title' => $task->title,
+            'priority' => $task->priority->value,
+            'quantity_unit' => 'hồ sơ',
+        ])
+        ->assertSessionHasErrors('quantity_unit');
+
+    expect($task->fresh()->quantity_unit)->toBeNull()
+        ->and($task->fresh()->planned_quantity)->toBeNull();
 });

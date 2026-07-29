@@ -187,6 +187,7 @@ return [
 
     'attributes' => [
         'action' => 'hành động',
+        'actual_quantity' => 'số lượng đã làm',
         'assignee_id' => 'người phụ trách chính',
         'assignee_ids' => 'danh sách người phụ trách',
         'avatar' => 'ảnh đại diện',
@@ -212,8 +213,10 @@ return [
         'password' => 'mật khẩu',
         'password_confirmation' => 'xác nhận mật khẩu',
         'phone' => 'số điện thoại',
+        'planned_quantity' => 'số lượng dự kiến',
         'priority' => 'độ ưu tiên',
         'progress' => 'tiến độ',
+        'quantity_unit' => 'đơn vị',
         'reason' => 'lý do',
         'roles' => 'vai trò',
         'search' => 'từ khoá tìm kiếm',
