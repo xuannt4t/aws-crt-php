@@ -113,3 +113,79 @@ test('a rejected status transition records no activity', function () {
 
     expect(TaskActivity::query()->count())->toBe(0);
 });
+
+test('changing the assignee records an activity with both names', function () {
+    $actor = User::factory()->create();
+    $previous = User::factory()->create(['name' => 'Lan Nguyễn']);
+    $next = User::factory()->create(['name' => 'Hùng Trần']);
+    $task = Task::factory()->create(['assignee_id' => $previous->id]);
+
+    app(App\Actions\Task\UpdateTaskAction::class)->execute($actor, $task, [
+        'assignee_id' => $next->id,
+    ]);
+
+    $activity = TaskActivity::query()->where('type', 'assigned')->sole();
+
+    expect($activity->actor_id)->toBe($actor->id)
+        ->and($activity->payload)->toBe([
+            'from_assignee_id' => $previous->id,
+            'from_assignee_name' => 'Lan Nguyễn',
+            'to_assignee_id' => $next->id,
+            'to_assignee_name' => 'Hùng Trần',
+        ]);
+});
+
+test('clearing the assignee records an activity with a null target', function () {
+    $previous = User::factory()->create(['name' => 'Lan Nguyễn']);
+    $task = Task::factory()->create(['assignee_id' => $previous->id]);
+
+    app(App\Actions\Task\UpdateTaskAction::class)->execute(User::factory()->create(), $task, [
+        'assignee_id' => null,
+    ]);
+
+    $activity = TaskActivity::query()->where('type', 'assigned')->sole();
+
+    expect($activity->payload['to_assignee_id'])->toBeNull()
+        ->and($activity->payload['to_assignee_name'])->toBeNull()
+        ->and($activity->payload['from_assignee_name'])->toBe('Lan Nguyễn');
+});
+
+test('updating a task without touching the assignee records no assignment activity', function () {
+    $assignee = User::factory()->create();
+    $task = Task::factory()->create(['assignee_id' => $assignee->id, 'title' => 'Cũ']);
+
+    app(App\Actions\Task\UpdateTaskAction::class)->execute(User::factory()->create(), $task, [
+        'title' => 'Mới',
+        'assignee_id' => $assignee->id,
+    ]);
+
+    expect(TaskActivity::query()->where('type', 'assigned')->count())->toBe(0)
+        ->and($task->fresh()->title)->toBe('Mới');
+});
+
+test('updating the progress records an activity with the previous value', function () {
+    $actor = User::factory()->create();
+    $task = Task::factory()->create([
+        'status' => App\Enums\TaskStatus::InProgress->value,
+        'progress' => 40,
+    ]);
+
+    app(App\Actions\Task\UpdateTaskProgressAction::class)->execute($actor, $task, 65);
+
+    $activity = TaskActivity::query()->where('type', 'progress_updated')->sole();
+
+    expect($activity->actor_id)->toBe($actor->id)
+        ->and($activity->payload)->toBe(['from' => 40, 'to' => 65])
+        ->and($task->fresh()->progress)->toBe(65);
+});
+
+test('re-submitting the same progress records no activity', function () {
+    $task = Task::factory()->create([
+        'status' => App\Enums\TaskStatus::InProgress->value,
+        'progress' => 40,
+    ]);
+
+    app(App\Actions\Task\UpdateTaskProgressAction::class)->execute(User::factory()->create(), $task, 40);
+
+    expect(TaskActivity::query()->where('type', 'progress_updated')->count())->toBe(0);
+});

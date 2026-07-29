@@ -180,7 +180,7 @@ final class TaskController extends Controller
 
     public function update(UpdateTaskRequest $request, Task $task, UpdateTaskAction $action): RedirectResponse
     {
-        $action->execute($task, $request->validated());
+        $action->execute($request->user(), $task, $request->validated());
 
         return Redirect::route('tasks.index')->with('success', 'Cập nhật công việc thành công.');
     }
@@ -190,7 +190,7 @@ final class TaskController extends Controller
         Task $task,
         UpdateTaskProgressAction $action,
     ): RedirectResponse {
-        $action->execute($task, $request->integer('progress'));
+        $action->execute($request->user(), $task, $request->integer('progress'));
 
         return Redirect::back()->with('success', 'Đã cập nhật tiến độ công việc.');
     }

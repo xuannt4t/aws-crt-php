@@ -2,6 +2,7 @@
 
 use App\Actions\Task\UpdateTaskAction;
 use App\Models\Task;
+use App\Models\User;
 use Illuminate\Validation\ValidationException;
 
 test('a task cannot use one of its descendants as parent', function () {
@@ -9,7 +10,7 @@ test('a task cannot use one of its descendants as parent', function () {
     $parent = Task::factory()->create(['parent_id' => $grandparent->id]);
     $child = Task::factory()->create(['parent_id' => $parent->id]);
 
-    expect(fn () => app(UpdateTaskAction::class)->execute($grandparent, [
+    expect(fn () => app(UpdateTaskAction::class)->execute(User::factory()->create(), $grandparent, [
         'parent_id' => $child->id,
     ]))->toThrow(ValidationException::class);
 
@@ -20,7 +21,7 @@ test('a task can move below an unrelated parent', function () {
     $task = Task::factory()->create();
     $newParent = Task::factory()->create();
 
-    app(UpdateTaskAction::class)->execute($task, ['parent_id' => $newParent->id]);
+    app(UpdateTaskAction::class)->execute(User::factory()->create(), $task, ['parent_id' => $newParent->id]);
 
     expect($task->fresh()->parent_id)->toBe($newParent->id);
 });
