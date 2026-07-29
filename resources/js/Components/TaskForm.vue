@@ -191,7 +191,7 @@ const handleSubmit = () => {
                     <input id="due_at" v-model="form.due_at" type="datetime-local" class="app-field" />
                     <InputError class="mt-2" :message="form.errors.due_at" />
                 </div>
-                <div class="grid gap-5 sm:grid-cols-2">
+                <div class="grid gap-5 sm:col-span-2 sm:grid-cols-2">
                     <div>
                         <InputLabel for="planned_quantity" value="Số lượng dự kiến" />
                         <TextInput
@@ -200,6 +200,7 @@ const handleSubmit = () => {
                             type="number"
                             min="1"
                             max="1000000"
+                            step="1"
                             class="mt-1 block w-full"
                             placeholder="Ví dụ: 500"
                         />
@@ -219,7 +220,7 @@ const handleSubmit = () => {
                         <InputError class="mt-2" :message="form.errors.quantity_unit" />
                     </div>
                 </div>
-                <p class="text-xs text-slate-500">
+                <p class="text-xs text-slate-500 sm:col-span-2">
                     Để trống số lượng dự kiến nếu công việc theo dõi tiến độ bằng phần trăm.
                 </p>
             </div>

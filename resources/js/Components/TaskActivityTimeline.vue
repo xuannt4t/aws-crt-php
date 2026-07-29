@@ -26,7 +26,6 @@ const KNOWN_TYPES: TaskActivityType[] = [
     'status_changed',
     'assigned',
     'progress_updated',
-    'quantity_updated',
     'commented',
     'attachment_added',
     'attachment_removed',
