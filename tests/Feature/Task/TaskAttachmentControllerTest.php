@@ -2,13 +2,15 @@
 
 use App\Enums\AuditAction;
 use App\Enums\PermissionName;
+use App\Models\AuditLog;
 use App\Models\Task;
 use App\Models\TaskAttachment;
+use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
-function uploaderUser(): App\Models\User
+function uploaderUser(): User
 {
     return userWithPermissions([
         PermissionName::TaskView->value,
@@ -68,7 +70,7 @@ test('uploading records a single audit entry for the request', function () {
         'subject_id' => $task->id,
     ]);
 
-    expect(App\Models\AuditLog::query()->where('action', AuditAction::TaskAttachmentUploaded->value)->count())->toBe(1);
+    expect(AuditLog::query()->where('action', AuditAction::TaskAttachmentUploaded->value)->count())->toBe(1);
 });
 
 test('uploading requires both view and comment permissions', function () {
