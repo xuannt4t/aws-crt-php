@@ -6,6 +6,7 @@ use App\Actions\Task\CreateTaskAction;
 use App\Actions\Task\DeleteTaskAction;
 use App\Actions\Task\TransitionTaskStatusAction;
 use App\Actions\Task\UpdateTaskAction;
+use App\Actions\Task\UpdateTaskActualQuantityAction;
 use App\Actions\Task\UpdateTaskProgressAction;
 use App\Enums\PermissionName;
 use App\Enums\TaskPriority;
@@ -17,6 +18,7 @@ use App\Http\Requests\StartTaskRequest;
 use App\Http\Requests\StoreTaskRequest;
 use App\Http\Requests\SubmitTaskRequest;
 use App\Http\Requests\UpdateTaskProgressRequest;
+use App\Http\Requests\UpdateTaskQuantityRequest;
 use App\Http\Requests\UpdateTaskRequest;
 use App\Models\OrganizationUnit;
 use App\Models\Task;
@@ -180,6 +182,8 @@ final class TaskController extends Controller
                 'description',
                 'priority',
                 'due_at',
+                'planned_quantity',
+                'quantity_unit',
             ]),
             'organizationUnits' => $this->organizationUnits(),
             'assignableUsers' => $this->assignableUsers(),
@@ -202,6 +206,16 @@ final class TaskController extends Controller
         $action->execute($request->user(), $task, $request->integer('progress'));
 
         return Redirect::back()->with('success', 'Đã cập nhật tiến độ công việc.');
+    }
+
+    public function updateQuantity(
+        UpdateTaskQuantityRequest $request,
+        Task $task,
+        UpdateTaskActualQuantityAction $action,
+    ): RedirectResponse {
+        $action->execute($request->user(), $task, $request->integer('actual_quantity'));
+
+        return Redirect::back()->with('success', 'Đã cập nhật số lượng đã làm.');
     }
 
     public function destroy(Task $task, DeleteTaskAction $action): RedirectResponse

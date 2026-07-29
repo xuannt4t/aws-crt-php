@@ -4,6 +4,7 @@ use App\Actions\Task\CreateTaskAction;
 use App\Actions\Task\UpdateTaskAction;
 use App\Actions\Task\UpdateTaskActualQuantityAction;
 use App\Actions\Task\UpdateTaskProgressAction;
+use App\Enums\PermissionName;
 use App\Enums\TaskActivityType;
 use App\Enums\TaskPriority;
 use App\Enums\TaskStatus;
@@ -231,4 +232,106 @@ test('adding a target to an existing task starts it at zero without an activity 
             ->where('task_id', $task->id)
             ->where('type', TaskActivityType::QuantityUpdated)
             ->count())->toBe(0);
+});
+
+test('an assignee can record actual quantity through the route', function () {
+    $actor = userWithPermissions([PermissionName::TaskUpdate->value]);
+    $task = Task::factory()
+        ->withQuantity(planned: 500, actual: 0, unit: 'hồ sơ')
+        ->create(['status' => TaskStatus::InProgress, 'assignee_id' => $actor->id]);
+
+    $this->actingAs($actor)
+        ->patch(route('tasks.quantity.update', $task), ['actual_quantity' => 120])
+        ->assertRedirect()
+        ->assertSessionHasNoErrors();
+
+    expect($task->fresh()->actual_quantity)->toBe(120)
+        ->and($task->fresh()->progress)->toBe(24);
+});
+
+test('only the assignee can record actual quantity', function () {
+    $stranger = userWithPermissions([PermissionName::TaskUpdate->value]);
+    $task = Task::factory()
+        ->withQuantity(planned: 500, actual: 0, unit: 'hồ sơ')
+        ->create(['status' => TaskStatus::InProgress, 'assignee_id' => User::factory()->create()->id]);
+
+    $this->actingAs($stranger)
+        ->patch(route('tasks.quantity.update', $task), ['actual_quantity' => 120])
+        ->assertForbidden();
+
+    expect($task->fresh()->actual_quantity)->toBe(0);
+});
+
+test('actual quantity must be a whole number within range', function () {
+    $actor = userWithPermissions([PermissionName::TaskUpdate->value]);
+    $task = Task::factory()
+        ->withQuantity(planned: 500, actual: 0, unit: 'hồ sơ')
+        ->create(['status' => TaskStatus::InProgress, 'assignee_id' => $actor->id]);
+
+    $this->actingAs($actor)
+        ->patch(route('tasks.quantity.update', $task), ['actual_quantity' => -1])
+        ->assertSessionHasErrors('actual_quantity');
+
+    $this->actingAs($actor)
+        ->patch(route('tasks.quantity.update', $task), ['actual_quantity' => 1000001])
+        ->assertSessionHasErrors('actual_quantity');
+
+    expect($task->fresh()->actual_quantity)->toBe(0);
+});
+
+test('the planned quantity must be a positive number within range', function () {
+    $actor = userWithPermissions([
+        PermissionName::TaskView->value,
+        PermissionName::TaskCreate->value,
+    ]);
+    $unit = OrganizationUnit::factory()->create();
+
+    $payload = [
+        'organization_unit_id' => $unit->id,
+        'title' => 'Nhập hồ sơ tháng 8',
+        'priority' => TaskPriority::Medium->value,
+    ];
+
+    $this->actingAs($actor)
+        ->post(route('tasks.store'), [...$payload, 'planned_quantity' => 0])
+        ->assertSessionHasErrors('planned_quantity');
+
+    $this->actingAs($actor)
+        ->post(route('tasks.store'), [...$payload, 'planned_quantity' => 1000001])
+        ->assertSessionHasErrors('planned_quantity');
+});
+
+test('a unit cannot be submitted without a planned quantity', function () {
+    $actor = userWithPermissions([
+        PermissionName::TaskView->value,
+        PermissionName::TaskCreate->value,
+    ]);
+    $unit = OrganizationUnit::factory()->create();
+
+    $this->actingAs($actor)
+        ->post(route('tasks.store'), [
+            'organization_unit_id' => $unit->id,
+            'title' => 'Nhập hồ sơ tháng 8',
+            'priority' => TaskPriority::Medium->value,
+            'quantity_unit' => 'hồ sơ',
+        ])
+        ->assertSessionHasErrors('quantity_unit');
+});
+
+test('actual quantity cannot be set through the task crud form', function () {
+    $actor = userWithPermissions([
+        PermissionName::TaskView->value,
+        PermissionName::TaskCreate->value,
+    ]);
+    $unit = OrganizationUnit::factory()->create();
+
+    $this->actingAs($actor)
+        ->post(route('tasks.store'), [
+            'organization_unit_id' => $unit->id,
+            'title' => 'Nhập hồ sơ tháng 8',
+            'priority' => TaskPriority::Medium->value,
+            'planned_quantity' => 500,
+            'actual_quantity' => 480,
+        ])
+        ->assertSessionHasErrors('actual_quantity');
 });

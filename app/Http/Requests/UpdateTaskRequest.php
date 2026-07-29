@@ -42,10 +42,30 @@ final class UpdateTaskRequest extends FormRequest
             'description' => ['nullable', 'string', 'max:10000'],
             'priority' => ['required', Rule::enum(TaskPriority::class)],
             'due_at' => ['nullable', 'date'],
+            'planned_quantity' => ['nullable', 'integer', 'min:1', 'max:1000000'],
+            'quantity_unit' => [
+                Rule::prohibitedIf(fn (): bool => ! $this->filled('planned_quantity')),
+                'nullable',
+                'string',
+                'max:30',
+            ],
+            'actual_quantity' => ['prohibited'],
             'status' => ['prohibited'],
             'progress' => ['prohibited'],
             'completed_at' => ['prohibited'],
             'creator_id' => ['prohibited'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'planned_quantity.integer' => 'Số lượng dự kiến phải là số nguyên.',
+            'planned_quantity.min' => 'Số lượng dự kiến phải lớn hơn 0.',
+            'planned_quantity.max' => 'Số lượng dự kiến không được vượt quá 1.000.000.',
+            'quantity_unit.prohibited' => 'Chỉ nhập đơn vị khi công việc có số lượng dự kiến.',
+            'quantity_unit.max' => 'Đơn vị không được dài quá 30 ký tự.',
+            'actual_quantity.prohibited' => 'Số lượng đã làm chỉ được cập nhật ở trang chi tiết công việc.',
         ];
     }
 }
