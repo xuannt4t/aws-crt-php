@@ -4,8 +4,8 @@
 
 - Sprint 0 — Foundation: hoàn tất.
 - Sprint 1 — Identity: hoàn tất Authentication, User, Organization, Role & Permission và Audit Log nền tảng.
-- Sprint 2 — Task Core: đang triển khai; đã hoàn tất Task CRUD, người phụ trách chính, filter, phân trang và luồng `draft → todo → in_progress → waiting_review` có history.
-- Công việc kế tiếp: Comment, attachment và activity timeline hợp nhất.
+- Sprint 2 — Task Core: hoàn tất; đã hoàn tất Task CRUD, người phụ trách chính, filter, phân trang, comment, luồng `draft → todo → in_progress → waiting_review` có history, Attachment (upload, tải xuống có kiểm quyền, xoá mềm kèm audit) và Activity timeline hợp nhất.
+- Công việc kế tiếp: Sprint 3 — Project.
 
 ## Sprint 0 — Foundation
 
@@ -68,3 +68,9 @@
 - Accessibility.
 - PWA.
 - Backup và monitoring.
+
+## Tài liệu dự án (xuyên suốt các sprint)
+
+- Soạn tài liệu SRS (Đặc tả yêu cầu phần mềm) cho DORMIDA WORK: hoàn tất bản 1.0 tại `docs/srs/SRS.md`.
+- Xuất SRS ra file PDF để bàn giao: `docs/srs/DORMIDA-WORK-SRS.pdf`, build bằng `node docs/srs/build-pdf.mjs`.
+- Cập nhật lại SRS sau mỗi sprint hoàn tất và render lại PDF.

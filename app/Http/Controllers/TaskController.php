@@ -6,6 +6,7 @@ use App\Actions\Task\CreateTaskAction;
 use App\Actions\Task\DeleteTaskAction;
 use App\Actions\Task\TransitionTaskStatusAction;
 use App\Actions\Task\UpdateTaskAction;
+use App\Actions\Task\UpdateTaskActualQuantityAction;
 use App\Actions\Task\UpdateTaskProgressAction;
 use App\Enums\PermissionName;
 use App\Enums\TaskPriority;
@@ -17,9 +18,11 @@ use App\Http\Requests\StartTaskRequest;
 use App\Http\Requests\StoreTaskRequest;
 use App\Http\Requests\SubmitTaskRequest;
 use App\Http\Requests\UpdateTaskProgressRequest;
+use App\Http\Requests\UpdateTaskQuantityRequest;
 use App\Http\Requests\UpdateTaskRequest;
 use App\Models\OrganizationUnit;
 use App\Models\Task;
+use App\Models\TaskAttachment;
 use App\Models\User;
 use App\Support\TaskDescriptionSanitizer;
 use Illuminate\Database\Eloquent\Builder;
@@ -92,8 +95,45 @@ final class TaskController extends Controller
             'organizationUnit:id,name',
             'creator:id,name,avatar_path',
             'assignee:id,name,avatar_path',
-            'statusHistories.actor:id,name,avatar_path',
         ]);
+
+        $comments = $task->comments()
+            ->with('author:id,name,avatar_path')
+            ->latest('id')
+            ->paginate(
+                perPage: 20,
+                columns: ['id', 'task_id', 'author_id', 'body', 'created_at'],
+                pageName: 'comments_page',
+            )
+            ->withQueryString();
+
+        $attachments = $task->attachments()
+            ->with('uploader:id,name,avatar_path')
+            ->get()
+            ->map(fn (TaskAttachment $attachment): array => [
+                'id' => $attachment->id,
+                'original_name' => $attachment->original_name,
+                'mime_type' => $attachment->mime_type,
+                'size_bytes' => $attachment->size_bytes,
+                'size_for_humans' => $attachment->size_for_humans,
+                'created_at' => $attachment->created_at,
+                'uploader' => $attachment->uploader === null ? null : [
+                    'id' => $attachment->uploader->id,
+                    'name' => $attachment->uploader->name,
+                    'avatar_url' => $attachment->uploader->avatar_url,
+                ],
+                'can_delete' => request()->user()->can('delete', $attachment),
+            ])
+            ->all();
+
+        $activities = $task->activities()
+            ->with('actor:id,name,avatar_path')
+            ->paginate(
+                perPage: 30,
+                columns: ['id', 'task_id', 'actor_id', 'type', 'payload', 'created_at'],
+                pageName: 'activities_page',
+            )
+            ->withQueryString();
 
         return Inertia::render('Tasks/Show', [
             'task' => [
@@ -101,6 +141,9 @@ final class TaskController extends Controller
                 'is_overdue' => $task->isOverdue(),
                 'description_html' => $descriptionSanitizer->sanitize($task->description),
             ],
+            'comments' => $comments,
+            'attachments' => $attachments,
+            'activities' => $activities,
             'actions' => [
                 'dispatch' => $task->status === TaskStatus::Draft
                     && request()->user()->can('dispatch', $task),
@@ -112,6 +155,8 @@ final class TaskController extends Controller
                     && request()->user()->can('updateProgress', $task),
                 'recall' => $task->status === TaskStatus::WaitingReview
                     && request()->user()->can('recall', $task),
+                'comment' => request()->user()->can('comment', $task),
+                'attach' => request()->user()->can('attach', $task),
             ],
         ]);
     }
@@ -137,6 +182,8 @@ final class TaskController extends Controller
                 'description',
                 'priority',
                 'due_at',
+                'planned_quantity',
+                'quantity_unit',
             ]),
             'organizationUnits' => $this->organizationUnits(),
             'assignableUsers' => $this->assignableUsers(),
@@ -146,7 +193,7 @@ final class TaskController extends Controller
 
     public function update(UpdateTaskRequest $request, Task $task, UpdateTaskAction $action): RedirectResponse
     {
-        $action->execute($task, $request->validated());
+        $action->execute($request->user(), $task, $request->validated());
 
         return Redirect::route('tasks.index')->with('success', 'Cập nhật công việc thành công.');
     }
@@ -156,9 +203,19 @@ final class TaskController extends Controller
         Task $task,
         UpdateTaskProgressAction $action,
     ): RedirectResponse {
-        $action->execute($task, $request->integer('progress'));
+        $action->execute($request->user(), $task, $request->integer('progress'));
 
         return Redirect::back()->with('success', 'Đã cập nhật tiến độ công việc.');
+    }
+
+    public function updateQuantity(
+        UpdateTaskQuantityRequest $request,
+        Task $task,
+        UpdateTaskActualQuantityAction $action,
+    ): RedirectResponse {
+        $action->execute($request->user(), $task, $request->integer('actual_quantity'));
+
+        return Redirect::back()->with('success', 'Đã cập nhật số lượng đã làm.');
     }
 
     public function destroy(Task $task, DeleteTaskAction $action): RedirectResponse

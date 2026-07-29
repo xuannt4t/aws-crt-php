@@ -22,6 +22,18 @@ test('task permissions control each policy ability', function () {
         ->and($userWithoutPermission->can('viewAny', Task::class))->toBeFalse();
 });
 
+test('commenting on a task requires both view and comment permissions', function () {
+    $commenter = userWithPermissions([
+        PermissionName::TaskView->value,
+        PermissionName::TaskComment->value,
+    ]);
+    $commentOnly = userWithPermissions([PermissionName::TaskComment->value]);
+    $task = Task::factory()->create();
+
+    expect($commenter->can('comment', $task))->toBeTrue()
+        ->and($commentOnly->can('comment', $task))->toBeFalse();
+});
+
 test('only the assignee can run task workflow actions with the required permission', function () {
     $assignee = userWithPermissions([
         PermissionName::TaskUpdate->value,

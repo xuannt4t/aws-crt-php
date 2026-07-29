@@ -2,6 +2,7 @@
 
 namespace App\Actions\Task;
 
+use App\Enums\TaskActivityType;
 use App\Enums\TaskStatus;
 use App\Models\Task;
 use App\Models\TaskStatusHistory;
@@ -11,6 +12,10 @@ use Illuminate\Validation\ValidationException;
 
 final class TransitionTaskStatusAction
 {
+    public function __construct(
+        private readonly RecordTaskActivityAction $recordActivity,
+    ) {}
+
     public function execute(
         User $actor,
         Task $task,
@@ -29,6 +34,11 @@ final class TransitionTaskStatusAction
                 'actor_id' => $actor->id,
                 'from_status' => $fromStatus,
                 'to_status' => $targetStatus,
+            ]);
+
+            $this->recordActivity->execute($actor, $lockedTask, TaskActivityType::StatusChanged, [
+                'from' => $fromStatus->value,
+                'to' => $targetStatus->value,
             ]);
 
             return $lockedTask->refresh();

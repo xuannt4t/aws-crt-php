@@ -27,6 +27,44 @@ export interface TaskStatusHistory {
     actor?: Pick<User, 'id' | 'name' | 'avatar_url'>;
 }
 
+export interface TaskComment {
+    id: number;
+    task_id: number;
+    author_id: number;
+    body: string;
+    created_at: string;
+    author?: Pick<User, 'id' | 'name' | 'avatar_url'>;
+}
+
+export interface TaskAttachment {
+    id: number;
+    original_name: string;
+    mime_type: string;
+    size_bytes: number;
+    size_for_humans: string;
+    created_at: string;
+    uploader?: Pick<User, 'id' | 'name' | 'avatar_url'> | null;
+    can_delete: boolean;
+}
+
+export type TaskActivityType =
+    | 'created'
+    | 'status_changed'
+    | 'assigned'
+    | 'progress_updated'
+    | 'quantity_updated'
+    | 'commented'
+    | 'attachment_added'
+    | 'attachment_removed';
+
+export interface TaskActivity {
+    id: number;
+    type: TaskActivityType;
+    payload: Record<string, string | number | null | string[] | number[]> | null;
+    created_at: string;
+    actor?: Pick<User, 'id' | 'name' | 'avatar_url'> | null;
+}
+
 export interface Task {
     id: number;
     organization_unit_id: number;
@@ -39,6 +77,9 @@ export interface Task {
     status: TaskStatus;
     priority: TaskPriority;
     progress: number;
+    planned_quantity: number | null;
+    actual_quantity: number | null;
+    quantity_unit: string | null;
     due_at: string | null;
     completed_at: string | null;
     is_overdue?: boolean;

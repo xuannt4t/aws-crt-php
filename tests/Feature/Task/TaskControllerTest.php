@@ -86,7 +86,17 @@ test('a user with view permission can view task details and transition history',
         ->assertInertia(fn ($page) => $page
             ->component('Tasks/Show')
             ->where('task.id', $task->id)
-            ->has('task.status_histories', 1));
+            ->has('activities'));
+
+    // Trang chi tiết không còn đẩy status_histories sang frontend (xem
+    // TaskActivityTest::"the task page no longer sends status histories"), nhưng việc ghi vào
+    // bảng task_status_histories vẫn phải nguyên vẹn — xem trang không được làm mất lịch sử.
+    $this->assertDatabaseHas('task_status_histories', [
+        'task_id' => $task->id,
+        'actor_id' => $viewer->id,
+        'from_status' => TaskStatus::Draft->value,
+        'to_status' => TaskStatus::Todo->value,
+    ]);
 });
 
 test('task details expose only sanitized rich text', function () {

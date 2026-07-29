@@ -7,7 +7,18 @@ import { Head, Link } from '@inertiajs/vue3';
 import type { OrganizationUnit, Task, TaskPriority, User } from '@/types';
 
 defineProps<{
-    task: Pick<Task, 'id' | 'organization_unit_id' | 'assignee_id' | 'title' | 'description' | 'priority' | 'due_at'>;
+    task: Pick<
+        Task,
+        | 'id'
+        | 'organization_unit_id'
+        | 'assignee_id'
+        | 'title'
+        | 'description'
+        | 'priority'
+        | 'due_at'
+        | 'planned_quantity'
+        | 'quantity_unit'
+    >;
     organizationUnits: Pick<OrganizationUnit, 'id' | 'name'>[];
     assignableUsers: Pick<User, 'id' | 'name'>[];
     priorities: TaskPriority[];

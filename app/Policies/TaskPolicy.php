@@ -44,6 +44,23 @@ final class TaskPolicy
         return $user->can(PermissionName::TaskAssign->value);
     }
 
+    public function comment(User $user, Task $task): bool
+    {
+        return $user->can(PermissionName::TaskView->value)
+            && $user->can(PermissionName::TaskComment->value);
+    }
+
+    public function attach(User $user, Task $task): bool
+    {
+        return $user->can(PermissionName::TaskView->value)
+            && $user->can(PermissionName::TaskComment->value);
+    }
+
+    public function downloadAttachment(User $user, Task $task): bool
+    {
+        return $user->can(PermissionName::TaskView->value);
+    }
+
     public function dispatch(User $user, Task $task): bool
     {
         return $user->can(PermissionName::TaskAssign->value);
