@@ -2,6 +2,7 @@
 type IconName =
     | 'arrow-left'
     | 'arrow-right'
+    | 'bell'
     | 'building'
     | 'camera'
     | 'calendar'
@@ -42,6 +43,7 @@ defineProps<{
         aria-hidden="true"
     >
         <path v-if="name === 'dashboard'" d="M4 13h6V4H4v9Zm0 7h6v-4H4v4Zm10 0h6v-9h-6v9Zm0-12h6V4h-6v4Z" />
+        <path v-else-if="name === 'bell'" d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4" />
         <path
             v-else-if="name === 'building'"
             d="M3 21h18M6 21V6l6-3 6 3v15M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01"

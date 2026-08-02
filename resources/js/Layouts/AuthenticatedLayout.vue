@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue';
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 import AppIcon from '@/Components/AppIcon.vue';
 import AppLogoutDialog from '@/Components/AppLogoutDialog.vue';
+import AppNotificationBell from '@/Components/AppNotificationBell.vue';
 import AppToast from '@/Components/AppToast.vue';
 import AppUserAvatar from '@/Components/AppUserAvatar.vue';
 import { usePermissions } from '@/Composables/usePermissions';
@@ -207,23 +208,29 @@ watch(
                     <span class="truncate font-semibold text-slate-700">{{ currentLabel }}</span>
                 </div>
 
-                <Link
-                    :href="route('profile.edit')"
-                    class="ml-auto flex items-center gap-2 rounded-xl p-1 transition hover:bg-white focus:ring-4 focus:ring-slate-200"
-                    aria-label="Mở hồ sơ cá nhân"
-                >
-                    <span class="hidden text-right sm:block">
-                        <span class="block max-w-40 truncate text-xs font-semibold text-slate-700">
-                            {{ page.props.auth.user.name }}
+                <div class="ml-auto flex items-center gap-1.5">
+                    <AppNotificationBell :user-id="page.props.auth.user.id" />
+
+                    <Link
+                        :href="route('profile.edit')"
+                        class="flex items-center gap-2 rounded-xl p-1 transition hover:bg-white focus:ring-4 focus:ring-slate-200"
+                        aria-label="Mở hồ sơ cá nhân"
+                    >
+                        <span class="hidden text-right sm:block">
+                            <span class="block max-w-40 truncate text-xs font-semibold text-slate-700">
+                                {{ page.props.auth.user.name }}
+                            </span>
+                            <span class="mt-0.5 block text-[10px] text-slate-400">{{
+                                page.props.auth.user.email
+                            }}</span>
                         </span>
-                        <span class="mt-0.5 block text-[10px] text-slate-400">{{ page.props.auth.user.email }}</span>
-                    </span>
-                    <AppUserAvatar
-                        :name="page.props.auth.user.name"
-                        :avatar-url="page.props.auth.user.avatar_url"
-                        size="sm"
-                    />
-                </Link>
+                        <AppUserAvatar
+                            :name="page.props.auth.user.name"
+                            :avatar-url="page.props.auth.user.avatar_url"
+                            size="sm"
+                        />
+                    </Link>
+                </div>
             </header>
 
             <main class="px-4 pb-10 pt-7 sm:px-6 sm:pt-9 lg:px-8">
