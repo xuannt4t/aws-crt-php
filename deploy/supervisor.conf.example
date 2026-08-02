@@ -1,0 +1,21 @@
+[program:dormida-queue]
+process_name=%(program_name)s_%(process_num)02d
+command=php /var/www/dormida/current/artisan queue:work redis --sleep=3 --tries=3 --max-time=3600
+directory=/var/www/dormida/current
+autostart=true
+autorestart=true
+user=www-data
+numprocs=2
+redirect_stderr=true
+stdout_logfile=/var/log/supervisor/dormida-queue.log
+stopwaitsecs=3600
+
+[program:dormida-reverb]
+command=php /var/www/dormida/current/artisan reverb:start --host=127.0.0.1 --port=8080
+directory=/var/www/dormida/current
+autostart=true
+autorestart=true
+user=www-data
+redirect_stderr=true
+stdout_logfile=/var/log/supervisor/dormida-reverb.log
+stopwaitsecs=10
