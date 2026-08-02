@@ -59,6 +59,24 @@ final class DemoDataSeeder extends Seeder
             parentId: $productUnit->id,
         );
 
+        $platformUnit = $this->upsertOrganizationUnit(
+            code: 'ENGINEERING_PLATFORM',
+            name: 'Nhóm Nền tảng',
+            parentId: $engineeringUnit->id,
+        );
+
+        $salesUnit = $this->upsertOrganizationUnit(
+            code: 'SALES',
+            name: 'Phòng Kinh doanh',
+            parentId: $rootUnit->id,
+        );
+
+        $b2bSalesUnit = $this->upsertOrganizationUnit(
+            code: 'SALES_B2B',
+            name: 'Nhóm Kinh doanh B2B',
+            parentId: $salesUnit->id,
+        );
+
         $this->upsertUser(
             email: 'director@dormida.test',
             organizationUnitId: $executiveUnit->id,
@@ -91,11 +109,61 @@ final class DemoDataSeeder extends Seeder
 
         $this->upsertUser(
             email: 'developer@dormida.test',
-            organizationUnitId: $engineeringUnit->id,
+            organizationUnitId: $platformUnit->id,
             name: 'Phạm Quốc Huy',
             employeeCode: 'DW-ENG-001',
             phone: '0901000004',
             jobTitle: 'Backend Developer',
+            role: RoleName::Employee,
+        );
+
+        $this->upsertUser(
+            email: 'engineering.lead@dormida.test',
+            organizationUnitId: $engineeringUnit->id,
+            name: 'Trần Đức Long',
+            employeeCode: 'DW-ENG-002',
+            phone: '0901000007',
+            jobTitle: 'Trưởng phòng Kỹ thuật',
+            role: RoleName::DepartmentManager,
+        );
+
+        $this->upsertUser(
+            email: 'sales.lead@dormida.test',
+            organizationUnitId: $salesUnit->id,
+            name: 'Nguyễn Thu Trang',
+            employeeCode: 'DW-SAL-001',
+            phone: '0901000008',
+            jobTitle: 'Trưởng phòng Kinh doanh',
+            role: RoleName::DepartmentManager,
+        );
+
+        $this->upsertUser(
+            email: 'account.executive@dormida.test',
+            organizationUnitId: $b2bSalesUnit->id,
+            name: 'Đỗ Minh Quân',
+            employeeCode: 'DW-SAL-002',
+            phone: '0901000009',
+            jobTitle: 'Chuyên viên Kinh doanh B2B',
+            role: RoleName::Employee,
+        );
+
+        $this->upsertUser(
+            email: 'product.analyst@dormida.test',
+            organizationUnitId: $productUnit->id,
+            name: 'Phan Khánh Linh',
+            employeeCode: 'DW-PRD-002',
+            phone: '0901000010',
+            jobTitle: 'Chuyên viên Phân tích sản phẩm',
+            role: RoleName::Employee,
+        );
+
+        $this->upsertUser(
+            email: 'operations.specialist@dormida.test',
+            organizationUnitId: $operationsUnit->id,
+            name: 'Bùi Hải Yến',
+            employeeCode: 'DW-OPS-003',
+            phone: '0901000011',
+            jobTitle: 'Chuyên viên Vận hành',
             role: RoleName::Employee,
         );
 
@@ -124,6 +192,7 @@ final class DemoDataSeeder extends Seeder
         $this->seedDemoTasks(
             productUnit: $productUnit,
             engineeringUnit: $engineeringUnit,
+            salesUnit: $salesUnit,
             operationsUnit: $operationsUnit,
         );
     }
@@ -210,6 +279,7 @@ final class DemoDataSeeder extends Seeder
     private function seedDemoTasks(
         OrganizationUnit $productUnit,
         OrganizationUnit $engineeringUnit,
+        OrganizationUnit $salesUnit,
         OrganizationUnit $operationsUnit,
     ): void {
         $admin = User::query()->where('email', config('dormida.admin_email'))->firstOrFail();
@@ -217,6 +287,11 @@ final class DemoDataSeeder extends Seeder
         $designer = User::query()->where('email', 'designer@dormida.test')->firstOrFail();
         $developer = User::query()->where('email', 'developer@dormida.test')->firstOrFail();
         $operations = User::query()->where('email', 'operations@dormida.test')->firstOrFail();
+        $engineeringLead = User::query()->where('email', 'engineering.lead@dormida.test')->firstOrFail();
+        $salesLead = User::query()->where('email', 'sales.lead@dormida.test')->firstOrFail();
+        $accountExecutive = User::query()->where('email', 'account.executive@dormida.test')->firstOrFail();
+        $productAnalyst = User::query()->where('email', 'product.analyst@dormida.test')->firstOrFail();
+        $operationsSpecialist = User::query()->where('email', 'operations.specialist@dormida.test')->firstOrFail();
 
         $this->upsertTask(
             title: 'Hoàn thiện đặc tả luồng onboarding',
@@ -280,6 +355,135 @@ final class DemoDataSeeder extends Seeder
             status: TaskStatus::Draft,
             priority: TaskPriority::Medium,
             dueAt: null,
+        );
+
+        $this->upsertTask(
+            title: 'Phân tích phản hồi khách hàng quý III',
+            unit: $productUnit,
+            creator: $productLead,
+            assignee: $productAnalyst,
+            status: TaskStatus::InProgress,
+            priority: TaskPriority::High,
+            dueAt: now()->addDays(5),
+            progress: 40,
+        );
+
+        $this->upsertTask(
+            title: 'Xây dựng lộ trình sản phẩm quý IV',
+            unit: $productUnit,
+            creator: $productLead,
+            assignee: $productAnalyst,
+            status: TaskStatus::WaitingApproval,
+            priority: TaskPriority::Urgent,
+            dueAt: now()->addDays(2),
+            progress: 85,
+        );
+
+        $this->upsertTask(
+            title: 'Chuẩn hoá thư viện thành phần giao diện',
+            unit: $productUnit,
+            creator: $productLead,
+            assignee: $designer,
+            status: TaskStatus::Todo,
+            priority: TaskPriority::Medium,
+            dueAt: now()->addDays(8),
+        );
+
+        $this->upsertTask(
+            title: 'Thiết lập giám sát hiệu năng API',
+            unit: $engineeringUnit,
+            creator: $engineeringLead,
+            assignee: $developer,
+            status: TaskStatus::InProgress,
+            priority: TaskPriority::Urgent,
+            dueAt: now()->addDays(4),
+            progress: 65,
+        );
+
+        $this->upsertTask(
+            title: 'Nâng cấp quy trình sao lưu dữ liệu',
+            unit: $engineeringUnit,
+            creator: $engineeringLead,
+            assignee: $developer,
+            status: TaskStatus::WaitingReview,
+            priority: TaskPriority::High,
+            dueAt: now()->addDays(2),
+            progress: 90,
+        );
+
+        $this->upsertTask(
+            title: 'Rà soát SLA xử lý yêu cầu',
+            unit: $engineeringUnit,
+            creator: $engineeringLead,
+            assignee: $developer,
+            status: TaskStatus::Draft,
+            priority: TaskPriority::Medium,
+            dueAt: null,
+        );
+
+        $this->upsertTask(
+            title: 'Chuẩn bị danh sách khách hàng tiềm năng',
+            unit: $salesUnit,
+            creator: $salesLead,
+            assignee: $accountExecutive,
+            status: TaskStatus::InProgress,
+            priority: TaskPriority::High,
+            dueAt: now()->addDays(3),
+            progress: 50,
+        );
+
+        $this->upsertTask(
+            title: 'Hoàn thiện bộ tài liệu chào bán doanh nghiệp',
+            unit: $salesUnit,
+            creator: $salesLead,
+            assignee: $accountExecutive,
+            status: TaskStatus::WaitingReview,
+            priority: TaskPriority::Urgent,
+            dueAt: now()->addDay(),
+            progress: 80,
+        );
+
+        $this->upsertTask(
+            title: 'Theo dõi cơ hội hợp tác tháng 8',
+            unit: $salesUnit,
+            creator: $salesLead,
+            assignee: $accountExecutive,
+            status: TaskStatus::Todo,
+            priority: TaskPriority::Medium,
+            dueAt: now()->addWeek(),
+        );
+
+        $this->upsertTask(
+            title: 'Đối soát yêu cầu hỗ trợ nội bộ',
+            unit: $operationsUnit,
+            creator: $operations,
+            assignee: $operationsSpecialist,
+            status: TaskStatus::Todo,
+            priority: TaskPriority::High,
+            dueAt: now()->subDay(),
+        );
+
+        $this->upsertTask(
+            title: 'Lập kế hoạch trực vận hành cuối tuần',
+            unit: $operationsUnit,
+            creator: $operations,
+            assignee: $operationsSpecialist,
+            status: TaskStatus::WaitingApproval,
+            priority: TaskPriority::Medium,
+            dueAt: now()->addDays(2),
+            progress: 75,
+        );
+
+        $this->upsertTask(
+            title: 'Tổng hợp báo cáo điều hành tháng 7',
+            unit: $operationsUnit,
+            creator: $operations,
+            assignee: $operationsSpecialist,
+            status: TaskStatus::Completed,
+            priority: TaskPriority::Low,
+            dueAt: now()->subDays(2),
+            progress: 100,
+            completedAt: now()->subDay(),
         );
     }
 
