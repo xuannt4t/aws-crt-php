@@ -5,6 +5,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrganizationUnitController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\ProjectMemberController;
 use App\Http\Controllers\TaskAttachmentController;
 use App\Http\Controllers\TaskCommentController;
 use App\Http\Controllers\TaskController;
@@ -62,8 +63,17 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
         ->name('tasks.attachments.destroy');
     Route::resource('tasks', TaskController::class);
 
-    // Các route quản lý thành viên và đóng dự án sẽ được đăng ký ở đây trước
-    // Route::resource('projects', ...) ở các task sau (member/close routes).
+    Route::post('projects/{project}/members', [ProjectMemberController::class, 'store'])
+        ->name('projects.members.store');
+    Route::patch('projects/{project}/members/{member}', [ProjectMemberController::class, 'update'])
+        ->scopeBindings()
+        ->name('projects.members.update');
+    Route::delete('projects/{project}/members/{member}', [ProjectMemberController::class, 'destroy'])
+        ->scopeBindings()
+        ->name('projects.members.destroy');
+
+    // Route quản lý đóng dự án sẽ được đăng ký ở đây trước Route::resource('projects', ...)
+    // ở task sau (close routes).
     Route::resource('projects', ProjectController::class);
 });
 
