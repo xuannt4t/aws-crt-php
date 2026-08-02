@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuditLogController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrganizationUnitController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TaskAttachmentController;
@@ -31,6 +32,10 @@ Route::middleware(['auth', 'active'])->group(function () {
 });
 
 Route::middleware(['auth', 'verified', 'active'])->group(function () {
+    Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::patch('notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
+    Route::patch('notifications/{notification}/read', [NotificationController::class, 'read'])->name('notifications.read');
+
     Route::resource('organization-units', OrganizationUnitController::class)
         ->parameters(['organization-units' => 'organizationUnit'])
         ->except('show');

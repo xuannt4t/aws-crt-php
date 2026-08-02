@@ -63,6 +63,11 @@ Trên VPS, cài tệp env rồi điền `APP_KEY` vừa sinh, mật khẩu DB/Re
 Reverb, R2 và SMTP. Token R2 phải có quyền trên đúng hai bucket attachments và
 backup, không dùng token toàn tài khoản.
 
+Bốn biến `VITE_REVERB_*` được đóng vào frontend ngay lúc GitHub Actions chạy
+`npm run build`, nên phải có trong `.env.production.example` của release. Host
+frontend là domain public, port `443`, scheme `https`; không dùng host nội bộ
+`127.0.0.1` như tiến trình Reverb trên VPS.
+
 ```bash
 sudo install -o deploy -g www-data -m 0640 \
   /tmp/.env.production.example /var/www/dormida/shared/.env
@@ -249,6 +254,7 @@ chứng restore được.
 
 ```bash
 sudo supervisorctl status
+sudo supervisorctl status dormida-reverb
 sudo systemctl status php8.3-fpm --no-pager
 redis-cli -a '<redis-password>' ping
 tail -n 200 /var/www/dormida/shared/storage/logs/laravel.log
@@ -257,5 +263,58 @@ sudo tail -n 200 /var/log/supervisor/dormida-queue.log
 sudo tail -n 200 /var/log/supervisor/dormida-reverb.log
 ```
 
+Trong DevTools → Network → WS, kết nối Reverb phải có status `101 Switching
+Protocols`. Nếu không có, kiểm tra `VITE_REVERB_HOST`, chứng chỉ HTTPS, location
+nginx `/app` và console trình duyệt. Queue worker phải ở trạng thái `RUNNING` vì
+notification database và broadcast được đưa qua queue.
+
 Nếu health check lỗi ngay sau deploy, xem log Laravel và nginx trước, sau đó
 kiểm tra `readlink -f /var/www/dormida/current` có trỏ đúng release mới không.
+
+## 10. Render Free + TiDB Cloud Starter (demo)
+
+`render.yaml` tạo đúng một Docker Web Service gói Free tại Singapore. Container
+dùng Nginx làm cổng public và Supervisor để chạy PHP-FPM, database queue,
+scheduler và Reverb. Không tạo Render Postgres, Key Value, worker, cron hay disk.
+
+Trước khi deploy, tạo `APP_KEY` bằng:
+
+```powershell
+php artisan key:generate --show
+```
+
+Trong TiDB Cloud, mở instance `dormida-work` → **Connect** → **Reset Password**.
+Chỉ dán password vào secret `DB_PASSWORD` của Render; không lưu trong repo hay
+log. Giữ **Monthly Spending Limit = 0 USD** để khi hết quota instance bị throttle
+thay vì phát sinh chi phí.
+
+Các giá trị kết nối không nhạy cảm đã được khai báo trong Blueprint:
+
+```dotenv
+DB_CONNECTION=mysql
+DB_HOST=gateway01.ap-southeast-1.prod.aws.tidbcloud.com
+DB_PORT=4000
+DB_DATABASE=dormida_work
+DB_USERNAME=T3FYYZVYsjJP5r2.root
+MYSQL_ATTR_SSL_CA=/etc/ssl/certs/ca-certificates.crt
+SESSION_DRIVER=database
+CACHE_STORE=database
+QUEUE_CONNECTION=database
+```
+
+Render Free có filesystem tạm. Ảnh và attachment lưu local có thể mất khi
+service restart, sleep hoặc redeploy; chỉ dùng upload local cho demo. Service cũng
+có thể sleep khi không có traffic và cần thời gian khởi động lại.
+
+Sau deploy, kiểm tra:
+
+1. `https://dormida-work.onrender.com/up` trả HTTP 200.
+2. Trang đăng nhập có title kết thúc bằng `DORMIDA WORK`.
+3. Đăng nhập được bằng user đã import và trang công việc có dữ liệu.
+4. DevTools → Network → WS hiển thị kết nối WSS status `101`.
+5. Tạo hoặc cập nhật công việc sinh thông báo chuông/toast tức thời.
+
+Nếu deploy lỗi, đọc log theo thứ tự: Docker build, `artisan migrate --force`,
+Supervisor, Nginx/PHP-FPM, queue, scheduler và Reverb. Migration hoặc `artisan
+optimize` lỗi sẽ làm entrypoint dừng ngay để Render không phục vụ bản deploy nửa
+hoàn chỉnh.
