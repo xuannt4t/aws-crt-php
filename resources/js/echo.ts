@@ -1,23 +1,27 @@
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
+import { resolveRealtimeOptions } from './Support/realtimeConfig';
 
-const key = import.meta.env.VITE_REVERB_APP_KEY;
-const scheme = import.meta.env.VITE_REVERB_SCHEME ?? 'http';
 const isBrowser = typeof window !== 'undefined';
 
 if (isBrowser) {
     window.Pusher = Pusher;
 }
 
-export const realtimeEcho =
-    isBrowser && key
-        ? new Echo({
-              broadcaster: 'reverb',
-              key,
-              wsHost: import.meta.env.VITE_REVERB_HOST ?? window.location.hostname,
-              wsPort: Number(import.meta.env.VITE_REVERB_PORT ?? 80),
-              wssPort: Number(import.meta.env.VITE_REVERB_PORT ?? 443),
-              forceTLS: scheme === 'https',
-              enabledTransports: ['ws', 'wss'],
-          })
-        : null;
+export const realtimeEcho = (() => {
+    if (!isBrowser) {
+        return null;
+    }
+
+    const options = resolveRealtimeOptions(import.meta.env, window.location);
+
+    if (!options.key) {
+        return null;
+    }
+
+    return new Echo({
+        broadcaster: 'reverb',
+        ...options,
+        key: options.key,
+    });
+})();
