@@ -4,6 +4,7 @@ use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrganizationUnitController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\TaskAttachmentController;
 use App\Http\Controllers\TaskCommentController;
 use App\Http\Controllers\TaskController;
@@ -60,6 +61,10 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
         ->scopeBindings()
         ->name('tasks.attachments.destroy');
     Route::resource('tasks', TaskController::class);
+
+    // Các route quản lý thành viên và đóng dự án sẽ được đăng ký ở đây trước
+    // Route::resource('projects', ...) ở các task sau (member/close routes).
+    Route::resource('projects', ProjectController::class);
 });
 
 require __DIR__.'/auth.php';
