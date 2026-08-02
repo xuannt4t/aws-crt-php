@@ -108,8 +108,10 @@ final class ProjectController extends Controller
             'project' => [
                 ...$project->toArray(),
                 'progress' => $project->calculateProgress(),
+                'open_task_count' => $project->openTasks()->count(),
             ],
             'members' => $members,
+            'users' => $this->activeUsers(),
             'tasks' => $tasks,
             'actions' => [
                 'update' => request()->user()->can('update', $project),

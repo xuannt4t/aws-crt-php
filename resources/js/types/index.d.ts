@@ -68,6 +68,7 @@ export interface TaskActivity {
 export interface Task {
     id: number;
     organization_unit_id: number;
+    project_id: number | null;
     parent_id: number | null;
     creator_id: number;
     assignee_id: number | null;
@@ -86,7 +87,41 @@ export interface Task {
     organization_unit?: Pick<OrganizationUnit, 'id' | 'name'>;
     creator?: Pick<User, 'id' | 'name' | 'avatar_url'>;
     assignee?: Pick<User, 'id' | 'name' | 'avatar_url'> | null;
+    project?: Pick<Project, 'id' | 'name' | 'code'> | null;
     status_histories?: TaskStatusHistory[];
+}
+
+export type ProjectStatus = 'planning' | 'active' | 'on_hold' | 'completed' | 'cancelled';
+
+export type ProjectMemberRole = 'manager' | 'member' | 'viewer';
+
+export interface Project {
+    id: number;
+    organization_unit_id: number;
+    owner_id: number;
+    code: string;
+    name: string;
+    description: string | null;
+    status: ProjectStatus;
+    start_date: string | null;
+    end_date: string | null;
+    closed_at: string | null;
+    close_reason: string | null;
+    progress?: number;
+    task_count?: number;
+    open_task_count?: number;
+    member_count?: number;
+    organization_unit?: Pick<OrganizationUnit, 'id' | 'name'>;
+    owner?: Pick<User, 'id' | 'name'>;
+}
+
+export interface ProjectMember {
+    id: number;
+    project_id: number;
+    user_id: number;
+    role: ProjectMemberRole;
+    joined_at: string | null;
+    user?: Pick<User, 'id' | 'name' | 'avatar_url'>;
 }
 
 export interface User {

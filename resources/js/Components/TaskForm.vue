@@ -7,13 +7,14 @@ import TextInput from '@/Components/TextInput.vue';
 import { taskPriorityLabels } from '@/Constants/task';
 import { Link, useForm, usePage } from '@inertiajs/vue3';
 import Editor from 'primevue/editor';
-import type { OrganizationUnit, PageProps, Task, TaskPriority, User } from '@/types';
+import type { OrganizationUnit, PageProps, Project, Task, TaskPriority, User } from '@/types';
 
 const props = defineProps<{
     task?: Pick<
         Task,
         | 'id'
         | 'organization_unit_id'
+        | 'project_id'
         | 'assignee_id'
         | 'title'
         | 'description'
@@ -25,6 +26,7 @@ const props = defineProps<{
     organizationUnits: Pick<OrganizationUnit, 'id' | 'name'>[];
     assignableUsers: Pick<User, 'id' | 'name'>[];
     priorities: TaskPriority[];
+    projects: Pick<Project, 'id' | 'name' | 'code'>[];
 }>();
 
 const page = usePage<PageProps>();
@@ -42,6 +44,7 @@ const toDateTimeLocal = (value: string | null | undefined) => {
 
 const form = useForm({
     organization_unit_id: props.task?.organization_unit_id ?? null,
+    project_id: props.task?.project_id ?? null,
     assignee_id: props.task?.assignee_id ?? null,
     title: props.task?.title ?? '',
     description: props.task?.description ?? '',
@@ -160,6 +163,16 @@ const handleSubmit = () => {
                         </option>
                     </select>
                     <InputError class="mt-2" :message="form.errors.organization_unit_id" />
+                </div>
+                <div>
+                    <InputLabel for="project_id" value="Dự án" />
+                    <select id="project_id" v-model="form.project_id" class="app-field">
+                        <option :value="null">Không thuộc dự án</option>
+                        <option v-for="project in projects" :key="project.id" :value="project.id">
+                            {{ project.code }} · {{ project.name }}
+                        </option>
+                    </select>
+                    <InputError class="mt-2" :message="form.errors.project_id" />
                 </div>
                 <div>
                     <InputLabel for="priority" value="Độ ưu tiên *" />
