@@ -306,6 +306,18 @@ Render Free có filesystem tạm. Ảnh và attachment lưu local có thể mấ
 service restart, sleep hoặc redeploy; chỉ dùng upload local cho demo. Service cũng
 có thể sleep khi không có traffic và cần thời gian khởi động lại.
 
+### Nạp dữ liệu demo
+
+Chạy trong Render Shell sau khi migration hoàn tất:
+
+```bash
+php artisan db:seed --class='Database\Seeders\DemoDataSeeder' --force
+```
+
+Seeder chỉ upsert các bản ghi có mã đơn vị, email người dùng và tiêu đề công việc
+demo cố định. Lệnh không truncate, không xoá dữ liệu ngoài bộ demo và có thể chạy
+lại mà không tạo bản ghi trùng.
+
 Sau deploy, kiểm tra:
 
 1. `https://dormida-work.onrender.com/up` trả HTTP 200.
