@@ -2,10 +2,12 @@
 
 use App\Enums\AuditAction;
 use App\Enums\PermissionName;
+use App\Enums\ProjectStatus;
 use App\Enums\TaskPriority;
 use App\Enums\TaskStatus;
 use App\Models\AuditLog;
 use App\Models\OrganizationUnit;
+use App\Models\Project;
 use App\Models\Task;
 use App\Models\TaskStatusHistory;
 use App\Models\User;
@@ -497,4 +499,100 @@ test('an invalid task transition does not write history', function () {
 
     expect($task->fresh()->status)->toBe(TaskStatus::Draft)
         ->and($task->statusHistories()->count())->toBe(0);
+});
+
+test('a task can be created and linked to an open project', function () {
+    $creator = userWithPermissions([PermissionName::TaskCreate->value]);
+    $unit = OrganizationUnit::factory()->create();
+    $project = Project::factory()->create(['status' => ProjectStatus::Active]);
+
+    $response = $this->actingAs($creator)->post(route('tasks.store'), [
+        'organization_unit_id' => $unit->id,
+        'project_id' => $project->id,
+        'title' => 'Công việc gắn dự án',
+        'priority' => TaskPriority::Medium->value,
+    ]);
+
+    $response->assertRedirect(route('tasks.index'));
+
+    $task = Task::where('title', 'Công việc gắn dự án')->firstOrFail();
+
+    expect($task->project_id)->toBe($project->id);
+});
+
+test('a task cannot be linked to a closed project', function () {
+    $creator = userWithPermissions([PermissionName::TaskCreate->value]);
+    $unit = OrganizationUnit::factory()->create();
+    $closedProject = Project::factory()->create(['status' => ProjectStatus::Completed]);
+
+    $response = $this->actingAs($creator)->post(route('tasks.store'), [
+        'organization_unit_id' => $unit->id,
+        'project_id' => $closedProject->id,
+        'title' => 'Công việc dự án đã đóng',
+        'priority' => TaskPriority::Medium->value,
+    ]);
+
+    $response->assertSessionHasErrors('project_id');
+    $this->assertDatabaseMissing('tasks', ['title' => 'Công việc dự án đã đóng']);
+});
+
+test('a task cannot be updated to link a cancelled project', function () {
+    $updater = userWithPermissions([PermissionName::TaskUpdate->value]);
+    $unit = OrganizationUnit::factory()->create();
+    $task = Task::factory()->create(['organization_unit_id' => $unit->id]);
+    $cancelledProject = Project::factory()->create(['status' => ProjectStatus::Cancelled]);
+
+    $response = $this->actingAs($updater)->put(route('tasks.update', $task), [
+        'organization_unit_id' => $unit->id,
+        'project_id' => $cancelledProject->id,
+        'title' => $task->title,
+        'priority' => $task->priority->value,
+    ]);
+
+    $response->assertSessionHasErrors('project_id');
+    expect($task->fresh()->project_id)->toBeNull();
+});
+
+test('tasks can be filtered by project', function () {
+    $viewer = userWithPermissions([PermissionName::TaskView->value]);
+    $project = Project::factory()->create();
+    $otherProject = Project::factory()->create();
+
+    Task::factory()->create(['project_id' => $project->id]);
+    Task::factory()->create(['project_id' => $otherProject->id]);
+    Task::factory()->create(['project_id' => null]);
+
+    $this->actingAs($viewer)
+        ->get(route('tasks.index', ['project_id' => $project->id]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('tasks.data', 1)
+            ->where('tasks.total', 1)
+            ->where('filters.project_id', (string) $project->id));
+});
+
+test('task create and edit pages expose only open projects', function () {
+    $creator = userWithPermissions([
+        PermissionName::TaskCreate->value,
+        PermissionName::TaskUpdate->value,
+        PermissionName::ProjectView->value,
+    ]);
+    $openProject = Project::factory()->create(['status' => ProjectStatus::Active]);
+    Project::factory()->create(['status' => ProjectStatus::Completed]);
+    Project::factory()->create(['status' => ProjectStatus::Cancelled]);
+    $task = Task::factory()->create();
+
+    $this->actingAs($creator)
+        ->get(route('tasks.create'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('projects', 1)
+            ->where('projects.0.id', $openProject->id));
+
+    $this->actingAs($creator)
+        ->get(route('tasks.edit', $task))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('projects', 1)
+            ->where('projects.0.id', $openProject->id));
 });

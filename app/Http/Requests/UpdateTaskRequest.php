@@ -3,7 +3,10 @@
 namespace App\Http\Requests;
 
 use App\Enums\PermissionName;
+use App\Enums\ProjectStatus;
 use App\Enums\TaskPriority;
+use App\Models\Project;
+use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -28,6 +31,12 @@ final class UpdateTaskRequest extends FormRequest
                 Rule::exists('tasks', 'id')
                     ->whereNull('deleted_at')
                     ->where('id', '!=', $this->route('task')->id),
+            ],
+            'project_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('projects', 'id')->whereNull('deleted_at'),
+                $this->rejectClosedProject(),
             ],
             'assignee_id' => [
                 Rule::prohibitedIf(fn () => ! $this->user()->can(PermissionName::TaskAssign->value)),
@@ -67,5 +76,23 @@ final class UpdateTaskRequest extends FormRequest
             'quantity_unit.max' => 'Đơn vị không được dài quá 30 ký tự.',
             'actual_quantity.prohibited' => 'Số lượng đã làm chỉ được cập nhật ở trang chi tiết công việc.',
         ];
+    }
+
+    private function rejectClosedProject(): Closure
+    {
+        return function (string $attribute, mixed $value, Closure $fail): void {
+            if ($value === null) {
+                return;
+            }
+
+            $isClosed = Project::query()
+                ->whereKey($value)
+                ->whereIn('status', [ProjectStatus::Completed->value, ProjectStatus::Cancelled->value])
+                ->exists();
+
+            if ($isClosed) {
+                $fail('Không thể gắn công việc vào dự án đã đóng.');
+            }
+        };
     }
 }
