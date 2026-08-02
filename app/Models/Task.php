@@ -19,6 +19,7 @@ final class Task extends Model
 
     protected $fillable = [
         'organization_unit_id',
+        'project_id',
         'parent_id',
         'creator_id',
         'assignee_id',
@@ -50,6 +51,11 @@ final class Task extends Model
     public function organizationUnit(): BelongsTo
     {
         return $this->belongsTo(OrganizationUnit::class);
+    }
+
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class);
     }
 
     public function parent(): BelongsTo
