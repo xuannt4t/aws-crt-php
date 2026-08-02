@@ -8,7 +8,9 @@ database và Reverb; bảo đảm người dùng không mất thông báo khi We
 
 ## Kiến trúc
 
-- Laravel lưu mọi thông báo vào bảng `notifications` chuẩn và broadcast cùng
+- Task activity phát domain event đồng bộ; notification queue dùng `afterCommit`
+  để chỉ chạy sau khi transaction nghiệp vụ thành công. Laravel lưu thông báo
+  vào bảng `notifications` chuẩn và broadcast cùng
   payload qua private channel `App.Models.User.{id}`.
 - Laravel Echo + `pusher-js` kết nối Reverb. Component chuông nạp 10 thông báo
   gần nhất từ endpoint JSON, sau đó ghép thông báo broadcast mới vào danh sách.
@@ -21,13 +23,13 @@ database và Reverb; bảo đảm người dùng không mất thông báo khi We
 
 ## Sự kiện và người nhận
 
-| Sự kiện | Người nhận |
-| --- | --- |
-| Giao hoặc đổi người phụ trách | Người phụ trách mới |
+| Sự kiện                              | Người nhận                   |
+| ------------------------------------ | ---------------------------- |
+| Giao hoặc đổi người phụ trách        | Người phụ trách mới          |
 | Đổi trạng thái hoặc tiến độ/số lượng | Người tạo và người phụ trách |
-| Thêm bình luận hoặc tệp | Người tạo và người phụ trách |
-| Sắp đến hạn trong 24 giờ | Người tạo và người phụ trách |
-| Đã quá hạn | Người tạo và người phụ trách |
+| Thêm bình luận hoặc tệp              | Người tạo và người phụ trách |
+| Sắp đến hạn trong 24 giờ             | Người tạo và người phụ trách |
+| Đã quá hạn                           | Người tạo và người phụ trách |
 
 Actor không nhận thông báo do chính mình tạo. Danh sách người nhận được khử
 trùng. Mỗi payload gồm `event`, `title`, `message`, `url`, `task_id`, `actor` và

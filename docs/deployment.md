@@ -63,6 +63,11 @@ Trên VPS, cài tệp env rồi điền `APP_KEY` vừa sinh, mật khẩu DB/Re
 Reverb, R2 và SMTP. Token R2 phải có quyền trên đúng hai bucket attachments và
 backup, không dùng token toàn tài khoản.
 
+Bốn biến `VITE_REVERB_*` được đóng vào frontend ngay lúc GitHub Actions chạy
+`npm run build`, nên phải có trong `.env.production.example` của release. Host
+frontend là domain public, port `443`, scheme `https`; không dùng host nội bộ
+`127.0.0.1` như tiến trình Reverb trên VPS.
+
 ```bash
 sudo install -o deploy -g www-data -m 0640 \
   /tmp/.env.production.example /var/www/dormida/shared/.env
@@ -249,6 +254,7 @@ chứng restore được.
 
 ```bash
 sudo supervisorctl status
+sudo supervisorctl status dormida-reverb
 sudo systemctl status php8.3-fpm --no-pager
 redis-cli -a '<redis-password>' ping
 tail -n 200 /var/www/dormida/shared/storage/logs/laravel.log
@@ -256,6 +262,11 @@ sudo tail -n 200 /var/log/nginx/error.log
 sudo tail -n 200 /var/log/supervisor/dormida-queue.log
 sudo tail -n 200 /var/log/supervisor/dormida-reverb.log
 ```
+
+Trong DevTools → Network → WS, kết nối Reverb phải có status `101 Switching
+Protocols`. Nếu không có, kiểm tra `VITE_REVERB_HOST`, chứng chỉ HTTPS, location
+nginx `/app` và console trình duyệt. Queue worker phải ở trạng thái `RUNNING` vì
+notification database và broadcast được đưa qua queue.
 
 Nếu health check lỗi ngay sau deploy, xem log Laravel và nginx trước, sau đó
 kiểm tra `readlink -f /var/www/dormida/current` có trỏ đúng release mới không.
