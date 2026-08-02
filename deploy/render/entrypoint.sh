@@ -20,6 +20,11 @@ envsubst '$PORT' \
 
 php artisan storage:link || true
 php artisan migrate --force
+
+if [ "${DORMIDA_SEED_DEMO:-false}" = "true" ]; then
+    php artisan db:seed --class='Database\Seeders\DemoDataSeeder' --force
+fi
+
 php artisan optimize
 
 exec /usr/bin/supervisord -n -c /etc/supervisor/supervisord.conf

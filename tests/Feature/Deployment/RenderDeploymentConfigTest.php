@@ -38,3 +38,12 @@ it('does not copy secrets or mutable development artifacts into the image', func
         ->and($ignore)->toContain('vendor')
         ->and($ignore)->toContain('storage/logs/*');
 });
+
+it('can seed idempotent demo data during a free render deploy', function () {
+    $blueprint = file_get_contents(base_path('render.yaml'));
+    $entrypoint = file_get_contents(base_path('deploy/render/entrypoint.sh'));
+
+    expect($blueprint)->toContain("- key: DORMIDA_SEED_DEMO\n        value: \"true\"")
+        ->and($entrypoint)->toContain('[ "${DORMIDA_SEED_DEMO:-false}" = "true" ]')
+        ->and($entrypoint)->toContain("db:seed --class='Database\\Seeders\\DemoDataSeeder' --force");
+});
