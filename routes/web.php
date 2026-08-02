@@ -4,6 +4,8 @@ use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrganizationUnitController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\ProjectMemberController;
 use App\Http\Controllers\TaskAttachmentController;
 use App\Http\Controllers\TaskCommentController;
 use App\Http\Controllers\TaskController;
@@ -60,6 +62,19 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
         ->scopeBindings()
         ->name('tasks.attachments.destroy');
     Route::resource('tasks', TaskController::class);
+
+    Route::post('projects/{project}/members', [ProjectMemberController::class, 'store'])
+        ->name('projects.members.store');
+    Route::patch('projects/{project}/members/{member}', [ProjectMemberController::class, 'update'])
+        ->scopeBindings()
+        ->name('projects.members.update');
+    Route::delete('projects/{project}/members/{member}', [ProjectMemberController::class, 'destroy'])
+        ->scopeBindings()
+        ->name('projects.members.destroy');
+
+    Route::patch('projects/{project}/close', [ProjectController::class, 'close'])->name('projects.close');
+
+    Route::resource('projects', ProjectController::class);
 });
 
 require __DIR__.'/auth.php';

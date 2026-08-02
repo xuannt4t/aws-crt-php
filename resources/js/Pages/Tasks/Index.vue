@@ -12,7 +12,7 @@ import { taskPriorityLabels, taskStatusClasses, taskStatusLabels } from '@/Const
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import MultiSelect from 'primevue/multiselect';
-import type { OrganizationUnit, PageProps, Task, TaskPriority, TaskStatus, User } from '@/types';
+import type { OrganizationUnit, PageProps, Project, Task, TaskPriority, TaskStatus, User } from '@/types';
 
 interface PaginationLink {
     url: string | null;
@@ -37,6 +37,7 @@ const props = defineProps<{
         status?: TaskStatus;
         priority?: TaskPriority;
         organization_unit_id?: number;
+        project_id?: number;
         assignee_ids?: number[];
         overdue?: boolean | string;
     };
@@ -44,6 +45,7 @@ const props = defineProps<{
     priorities: TaskPriority[];
     organizationUnits: Pick<OrganizationUnit, 'id' | 'name'>[];
     users: Pick<User, 'id' | 'name'>[];
+    projects: Pick<Project, 'id' | 'name' | 'code'>[];
 }>();
 
 const page = usePage<PageProps>();
@@ -56,6 +58,7 @@ const search = ref(props.filters.search ?? '');
 const status = ref(props.filters.status ?? '');
 const priority = ref(props.filters.priority ?? '');
 const organizationUnitId = ref<number | ''>(props.filters.organization_unit_id ?? '');
+const projectId = ref<number | ''>(props.filters.project_id ?? '');
 const assigneeIds = ref<number[]>(props.filters.assignee_ids ?? []);
 const assigneeOptions = computed(() =>
     props.users.map((user) => ({
@@ -81,6 +84,7 @@ const handleFilter = () => {
             status: status.value || undefined,
             priority: priority.value || undefined,
             organization_unit_id: organizationUnitId.value || undefined,
+            project_id: projectId.value || undefined,
             assignee_ids: assigneeIds.value.length > 0 ? assigneeIds.value : undefined,
             overdue: overdue.value ? 1 : undefined,
         },
@@ -102,6 +106,7 @@ const handleReset = () => {
     status.value = '';
     priority.value = '';
     organizationUnitId.value = '';
+    projectId.value = '';
     assigneeIds.value = [];
     overdue.value = false;
     handleFilter();
@@ -196,6 +201,15 @@ const paginationLabel = (label: string) => {
                         </option>
                     </select>
                 </label>
+                <label>
+                    <span class="mb-1.5 block text-xs font-bold text-slate-600">Dự án</span>
+                    <select v-model="projectId" class="app-field">
+                        <option value="">Tất cả</option>
+                        <option v-for="project in projects" :key="project.id" :value="project.id">
+                            {{ project.code }} · {{ project.name }}
+                        </option>
+                    </select>
+                </label>
             </div>
 
             <div class="mt-4 grid gap-4 xl:grid-cols-[minmax(320px,1fr)_auto_auto] xl:items-end">
@@ -268,12 +282,13 @@ const paginationLabel = (label: string) => {
             </AppEmptyState>
 
             <div v-else class="overflow-x-auto">
-                <table class="w-full min-w-[980px] border-collapse text-left">
+                <table class="w-full min-w-[1080px] border-collapse text-left">
                     <thead>
                         <tr class="border-b border-slate-100 bg-slate-50/70 text-xs font-bold text-slate-500">
                             <th class="px-5 py-3 sm:px-6">Công việc</th>
                             <th class="px-5 py-3">Trạng thái</th>
                             <th class="px-5 py-3">Đơn vị</th>
+                            <th class="px-5 py-3">Dự án</th>
                             <th class="px-5 py-3">Phụ trách</th>
                             <th class="px-5 py-3">Thời hạn</th>
                             <th v-if="canUpdate || canDelete" class="px-5 py-3 text-right">Thao tác</th>
@@ -304,6 +319,16 @@ const paginationLabel = (label: string) => {
                             </td>
                             <td class="px-5 py-4 text-sm font-medium text-slate-600">
                                 {{ task.organization_unit?.name }}
+                            </td>
+                            <td class="px-5 py-4 text-sm font-medium text-slate-600">
+                                <Link
+                                    v-if="task.project"
+                                    :href="route('projects.show', task.project.id)"
+                                    class="hover:text-brand-700"
+                                >
+                                    {{ task.project.name }}
+                                </Link>
+                                <span v-else class="text-xs text-slate-400">Không có</span>
                             </td>
                             <td class="px-5 py-4">
                                 <div v-if="task.assignee" class="flex items-center gap-2">

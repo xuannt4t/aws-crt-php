@@ -21,6 +21,7 @@ use App\Http\Requests\UpdateTaskProgressRequest;
 use App\Http\Requests\UpdateTaskQuantityRequest;
 use App\Http\Requests\UpdateTaskRequest;
 use App\Models\OrganizationUnit;
+use App\Models\Project;
 use App\Models\Task;
 use App\Models\TaskAttachment;
 use App\Models\User;
@@ -46,6 +47,7 @@ final class TaskController extends Controller
                 'organizationUnit:id,name',
                 'creator:id,name,avatar_path',
                 'assignee:id,name,avatar_path',
+                'project:id,name,code',
             ])
             ->when($filters['search'] ?? null, fn (Builder $query, string $search) => $query
                 ->where('title', 'like', "%{$search}%"))
@@ -57,6 +59,8 @@ final class TaskController extends Controller
                 ->where('organization_unit_id', $unitId))
             ->when($filters['assignee_ids'] ?? null, fn (Builder $query, array $assigneeIds) => $query
                 ->whereIn('assignee_id', $assigneeIds))
+            ->when($filters['project_id'] ?? null, fn (Builder $query, int $projectId) => $query
+                ->where('project_id', $projectId))
             ->when($request->boolean('overdue'), fn (Builder $query) => $query->overdue())
             ->latest('id')
             ->paginate(20)
@@ -73,6 +77,7 @@ final class TaskController extends Controller
             'priorities' => $this->enumValues(TaskPriority::cases()),
             'organizationUnits' => $this->organizationUnits(),
             'users' => $this->activeUsers(),
+            'projects' => $this->openProjects(),
         ]);
     }
 
@@ -84,6 +89,7 @@ final class TaskController extends Controller
             'organizationUnits' => $this->organizationUnits(),
             'assignableUsers' => $this->assignableUsers(includeCurrentUser: true),
             'priorities' => $this->enumValues(TaskPriority::cases()),
+            'projects' => $this->openProjects(),
         ]);
     }
 
@@ -95,6 +101,7 @@ final class TaskController extends Controller
             'organizationUnit:id,name',
             'creator:id,name,avatar_path',
             'assignee:id,name,avatar_path',
+            'project:id,name,code',
         ]);
 
         $comments = $task->comments()
@@ -176,6 +183,7 @@ final class TaskController extends Controller
             'task' => $task->only([
                 'id',
                 'organization_unit_id',
+                'project_id',
                 'parent_id',
                 'assignee_id',
                 'title',
@@ -188,6 +196,7 @@ final class TaskController extends Controller
             'organizationUnits' => $this->organizationUnits(),
             'assignableUsers' => $this->assignableUsers(),
             'priorities' => $this->enumValues(TaskPriority::cases()),
+            'projects' => $this->openProjects(),
         ]);
     }
 
@@ -300,6 +309,22 @@ final class TaskController extends Controller
             ->where('is_active', true)
             ->orderBy('name')
             ->get(['id', 'name'])
+            ->toArray();
+    }
+
+    /**
+     * @return array<int, array{id: int, name: string, code: string}>
+     */
+    private function openProjects(): array
+    {
+        $user = request()->user();
+
+        return Project::query()
+            ->open()
+            ->when(! $user->can(PermissionName::ProjectView->value), fn (Builder $query) => $query
+                ->whereHas('members', fn (Builder $inner) => $inner->where('user_id', $user->id)))
+            ->orderBy('name')
+            ->get(['id', 'name', 'code'])
             ->toArray();
     }
 

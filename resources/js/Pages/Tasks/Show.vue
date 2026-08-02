@@ -396,6 +396,19 @@ const paginationLabel = (label: string) => {
                         <dd class="mt-2 text-sm font-semibold text-slate-700">{{ task.organization_unit?.name }}</dd>
                     </div>
                     <div>
+                        <dt class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Dự án</dt>
+                        <dd class="mt-2 text-sm font-semibold text-slate-700">
+                            <Link
+                                v-if="task.project"
+                                :href="route('projects.show', task.project.id)"
+                                class="text-brand-700 hover:underline"
+                            >
+                                {{ task.project.name }}
+                            </Link>
+                            <span v-else class="text-slate-400">Không thuộc dự án</span>
+                        </dd>
+                    </div>
+                    <div>
                         <dt class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Thời hạn</dt>
                         <dd
                             class="mt-2 text-sm font-semibold"

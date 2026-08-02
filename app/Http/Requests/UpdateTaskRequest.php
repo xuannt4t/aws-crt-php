@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Enums\PermissionName;
 use App\Enums\TaskPriority;
+use App\Rules\ProjectIsOpen;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -28,6 +29,12 @@ final class UpdateTaskRequest extends FormRequest
                 Rule::exists('tasks', 'id')
                     ->whereNull('deleted_at')
                     ->where('id', '!=', $this->route('task')->id),
+            ],
+            'project_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('projects', 'id')->whereNull('deleted_at'),
+                new ProjectIsOpen,
             ],
             'assignee_id' => [
                 Rule::prohibitedIf(fn () => ! $this->user()->can(PermissionName::TaskAssign->value)),

@@ -14,7 +14,7 @@ interface NavigationItem {
     label: string;
     routeName: string;
     activePattern: string;
-    icon: 'dashboard' | 'building' | 'users' | 'shield' | 'tasks';
+    icon: 'dashboard' | 'building' | 'users' | 'shield' | 'tasks' | 'folder';
     permission?: string;
 }
 
@@ -36,6 +36,13 @@ const navigation: NavigationItem[] = [
         activePattern: 'tasks.*',
         icon: 'tasks',
         permission: 'task.view',
+    },
+    {
+        label: 'Dự án',
+        routeName: 'projects.index',
+        activePattern: 'projects.*',
+        icon: 'folder',
+        permission: 'project.view',
     },
     {
         label: 'Cơ cấu tổ chức',

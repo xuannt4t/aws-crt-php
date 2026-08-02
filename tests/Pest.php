@@ -62,3 +62,19 @@ function userWithPermissions(array $permissions = [], array $attributes = []): U
 
     return $user;
 }
+
+/**
+ * Headers to force Inertia to respond with JSON instead of a full HTML page,
+ * so tests do not depend on Vue page components already being built by Vite.
+ *
+ * @return array<string, string>
+ */
+function inertiaHeaders(): array
+{
+    $manifest = public_path('build/manifest.json');
+
+    return [
+        'X-Inertia' => 'true',
+        'X-Inertia-Version' => file_exists($manifest) ? hash_file('xxh128', $manifest) : '',
+    ];
+}

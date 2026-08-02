@@ -4,13 +4,14 @@ import AppPageHeader from '@/Components/AppPageHeader.vue';
 import TaskForm from '@/Components/TaskForm.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
-import type { OrganizationUnit, Task, TaskPriority, User } from '@/types';
+import type { OrganizationUnit, Project, Task, TaskPriority, User } from '@/types';
 
 defineProps<{
     task: Pick<
         Task,
         | 'id'
         | 'organization_unit_id'
+        | 'project_id'
         | 'assignee_id'
         | 'title'
         | 'description'
@@ -22,6 +23,7 @@ defineProps<{
     organizationUnits: Pick<OrganizationUnit, 'id' | 'name'>[];
     assignableUsers: Pick<User, 'id' | 'name'>[];
     priorities: TaskPriority[];
+    projects: Pick<Project, 'id' | 'name' | 'code'>[];
 }>();
 </script>
 
@@ -49,6 +51,7 @@ defineProps<{
             :organization-units="organizationUnits"
             :assignable-users="assignableUsers"
             :priorities="priorities"
+            :projects="projects"
         />
     </AuthenticatedLayout>
 </template>
