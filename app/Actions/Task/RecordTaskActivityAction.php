@@ -3,6 +3,7 @@
 namespace App\Actions\Task;
 
 use App\Enums\TaskActivityType;
+use App\Events\TaskActivityRecorded;
 use App\Models\Task;
 use App\Models\TaskActivity;
 use App\Models\User;
@@ -21,10 +22,14 @@ final class RecordTaskActivityAction
         TaskActivityType $type,
         array $payload = [],
     ): TaskActivity {
-        return $task->activities()->create([
+        $activity = $task->activities()->create([
             'actor_id' => $actor->id,
             'type' => $type,
             'payload' => $payload === [] ? null : $payload,
         ]);
+
+        TaskActivityRecorded::dispatch($activity->id);
+
+        return $activity;
     }
 }
