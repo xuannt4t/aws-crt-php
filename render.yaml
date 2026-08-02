@@ -1,0 +1,82 @@
+services:
+  - type: web
+    name: dormida-work
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /up
+    autoDeployTrigger: commit
+    envVars:
+      - key: APP_NAME
+        value: DORMIDA WORK
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_TIMEZONE
+        value: Asia/Ho_Chi_Minh
+      - key: APP_URL
+        value: https://dormida-work.onrender.com
+      - key: ASSET_URL
+        value: https://dormida-work.onrender.com
+      - key: APP_KEY
+        sync: false
+      - key: APP_LOCALE
+        value: vi
+      - key: APP_FALLBACK_LOCALE
+        value: vi
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: LOG_LEVEL
+        value: warning
+      - key: DB_CONNECTION
+        value: mysql
+      - key: DB_HOST
+        value: gateway01.ap-southeast-1.prod.aws.tidbcloud.com
+      - key: DB_PORT
+        value: "4000"
+      - key: DB_DATABASE
+        value: dormida_work
+      - key: DB_USERNAME
+        value: T3FYYZVYsjJP5r2.root
+      - key: DB_PASSWORD
+        sync: false
+      - key: MYSQL_ATTR_SSL_CA
+        value: /etc/ssl/certs/ca-certificates.crt
+      - key: SESSION_DRIVER
+        value: database
+      - key: SESSION_LIFETIME
+        value: "120"
+      - key: SESSION_SECURE_COOKIE
+        value: "true"
+      - key: CACHE_STORE
+        value: database
+      - key: QUEUE_CONNECTION
+        value: database
+      - key: BROADCAST_CONNECTION
+        value: reverb
+      - key: REVERB_APP_ID
+        value: dormida-work
+      - key: REVERB_APP_KEY
+        value: dormida-work-key
+      - key: REVERB_APP_SECRET
+        generateValue: true
+      - key: REVERB_HOST
+        value: 127.0.0.1
+      - key: REVERB_PORT
+        value: "8080"
+      - key: REVERB_SCHEME
+        value: http
+      - key: VITE_REVERB_APP_KEY
+        value: dormida-work-key
+      - key: VITE_REVERB_PORT
+        value: "443"
+      - key: VITE_REVERB_SCHEME
+        value: https
+      - key: FILESYSTEM_DISK
+        value: local
+      - key: DORMIDA_ATTACHMENT_DISK
+        value: local
+      - key: MAIL_MAILER
+        value: log

@@ -270,3 +270,51 @@ notification database và broadcast được đưa qua queue.
 
 Nếu health check lỗi ngay sau deploy, xem log Laravel và nginx trước, sau đó
 kiểm tra `readlink -f /var/www/dormida/current` có trỏ đúng release mới không.
+
+## 10. Render Free + TiDB Cloud Starter (demo)
+
+`render.yaml` tạo đúng một Docker Web Service gói Free tại Singapore. Container
+dùng Nginx làm cổng public và Supervisor để chạy PHP-FPM, database queue,
+scheduler và Reverb. Không tạo Render Postgres, Key Value, worker, cron hay disk.
+
+Trước khi deploy, tạo `APP_KEY` bằng:
+
+```powershell
+php artisan key:generate --show
+```
+
+Trong TiDB Cloud, mở instance `dormida-work` → **Connect** → **Reset Password**.
+Chỉ dán password vào secret `DB_PASSWORD` của Render; không lưu trong repo hay
+log. Giữ **Monthly Spending Limit = 0 USD** để khi hết quota instance bị throttle
+thay vì phát sinh chi phí.
+
+Các giá trị kết nối không nhạy cảm đã được khai báo trong Blueprint:
+
+```dotenv
+DB_CONNECTION=mysql
+DB_HOST=gateway01.ap-southeast-1.prod.aws.tidbcloud.com
+DB_PORT=4000
+DB_DATABASE=dormida_work
+DB_USERNAME=T3FYYZVYsjJP5r2.root
+MYSQL_ATTR_SSL_CA=/etc/ssl/certs/ca-certificates.crt
+SESSION_DRIVER=database
+CACHE_STORE=database
+QUEUE_CONNECTION=database
+```
+
+Render Free có filesystem tạm. Ảnh và attachment lưu local có thể mất khi
+service restart, sleep hoặc redeploy; chỉ dùng upload local cho demo. Service cũng
+có thể sleep khi không có traffic và cần thời gian khởi động lại.
+
+Sau deploy, kiểm tra:
+
+1. `https://dormida-work.onrender.com/up` trả HTTP 200.
+2. Trang đăng nhập có title kết thúc bằng `DORMIDA WORK`.
+3. Đăng nhập được bằng user đã import và trang công việc có dữ liệu.
+4. DevTools → Network → WS hiển thị kết nối WSS status `101`.
+5. Tạo hoặc cập nhật công việc sinh thông báo chuông/toast tức thời.
+
+Nếu deploy lỗi, đọc log theo thứ tự: Docker build, `artisan migrate --force`,
+Supervisor, Nginx/PHP-FPM, queue, scheduler và Reverb. Migration hoặc `artisan
+optimize` lỗi sẽ làm entrypoint dừng ngay để Render không phục vụ bản deploy nửa
+hoàn chỉnh.
