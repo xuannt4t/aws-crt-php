@@ -1,9 +1,12 @@
 <?php
 
 use App\Enums\PermissionName;
+use App\Enums\ProjectMemberRole;
+use App\Enums\ProjectStatus;
 use App\Enums\RoleName;
 use App\Models\AuditLog;
 use App\Models\OrganizationUnit;
+use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
 use Database\Seeders\DemoDataSeeder;
@@ -94,6 +97,49 @@ test('demo seeder creates organization units and users for administration review
     $response->assertRedirect(route('dashboard', absolute: false));
 });
 
+test('demo seeder creates one demo project per unit with members and attached tasks', function () {
+    Artisan::call('db:seed', ['--class' => DemoDataSeeder::class]);
+
+    $projectCodes = [
+        'PROJ-PRODUCT-01' => 'PRODUCT',
+        'PROJ-ENG-01' => 'ENGINEERING',
+        'PROJ-SALES-01' => 'SALES',
+        'PROJ-OPS-01' => 'OPERATIONS',
+    ];
+
+    expect(Project::query()->whereIn('code', array_keys($projectCodes))->count())->toBe(4);
+
+    foreach ($projectCodes as $code => $unitCode) {
+        $unitId = OrganizationUnit::query()->where('code', $unitCode)->value('id');
+
+        $project = Project::query()->where('code', $code)->firstOrFail();
+
+        expect($project->organization_unit_id)->toBe($unitId);
+
+        $ownerMembership = $project->members()
+            ->where('user_id', $project->owner_id)
+            ->firstOrFail();
+
+        expect($ownerMembership->role)->toBe(ProjectMemberRole::Manager)
+            ->and($project->owner->organization_unit_id)->toBe($unitId);
+
+        $roles = $project->members()->pluck('role')->map(fn (ProjectMemberRole $role): string => $role->value)->unique()->sort()->values()->all();
+
+        expect($roles)->toBe(['manager', 'member', 'viewer'])
+            ->and($project->members()->count())->toBeGreaterThanOrEqual(3)
+            ->and($project->members()->count())->toBeLessThanOrEqual(5)
+            ->and($project->tasks()->count())->toBeGreaterThan(0);
+    }
+
+    $completedProject = Project::query()->where('status', ProjectStatus::Completed->value)->firstOrFail();
+    expect($completedProject->closed_at)->not->toBeNull()
+        ->and($completedProject->close_reason)->toBeNull()
+        ->and($completedProject->openTasks()->count())->toBe(0);
+
+    expect(Project::query()->where('status', ProjectStatus::OnHold->value)->count())->toBe(1)
+        ->and(Project::query()->where('status', ProjectStatus::Active->value)->count())->toBe(2);
+});
+
 test('demo seeder can run repeatedly without creating duplicate data', function () {
     Artisan::call('db:seed', ['--class' => DemoDataSeeder::class]);
     Artisan::call('db:seed', ['--class' => DemoDataSeeder::class]);
@@ -123,8 +169,17 @@ test('demo seeder can run repeatedly without creating duplicate data', function 
         'operations.specialist@dormida.test',
     ];
 
+    $demoProjectCodes = [
+        'PROJ-PRODUCT-01',
+        'PROJ-ENG-01',
+        'PROJ-SALES-01',
+        'PROJ-OPS-01',
+    ];
+
     expect(OrganizationUnit::query()->whereIn('code', $demoUnitCodes)->count())->toBe(8)
         ->and(User::query()->whereIn('email', $demoUserEmails)->count())->toBe(11)
         ->and(AuditLog::query()->where('metadata->source', 'demo_seeder')->count())->toBe(1)
-        ->and(Task::query()->count())->toBe(18);
+        ->and(Task::query()->count())->toBe(18)
+        ->and(Project::query()->whereIn('code', $demoProjectCodes)->count())->toBe(4)
+        ->and(Project::query()->whereIn('code', $demoProjectCodes)->withCount('members')->get()->sum('members_count'))->toBe(13);
 });

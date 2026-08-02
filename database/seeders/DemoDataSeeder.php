@@ -3,11 +3,14 @@
 namespace Database\Seeders;
 
 use App\Enums\AuditAction;
+use App\Enums\ProjectMemberRole;
+use App\Enums\ProjectStatus;
 use App\Enums\RoleName;
 use App\Enums\TaskPriority;
 use App\Enums\TaskStatus;
 use App\Models\AuditLog;
 use App\Models\OrganizationUnit;
+use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
 use Carbon\CarbonInterface;
@@ -190,6 +193,12 @@ final class DemoDataSeeder extends Seeder
 
         $this->seedDemoAuditLog($inactiveEmployee);
         $this->seedDemoTasks(
+            productUnit: $productUnit,
+            engineeringUnit: $engineeringUnit,
+            salesUnit: $salesUnit,
+            operationsUnit: $operationsUnit,
+        );
+        $this->seedDemoProjects(
             productUnit: $productUnit,
             engineeringUnit: $engineeringUnit,
             salesUnit: $salesUnit,
@@ -497,6 +506,7 @@ final class DemoDataSeeder extends Seeder
         ?CarbonInterface $dueAt,
         int $progress = 0,
         ?CarbonInterface $completedAt = null,
+        ?Project $project = null,
     ): void {
         $task = Task::withTrashed()->updateOrCreate(
             [
@@ -506,6 +516,7 @@ final class DemoDataSeeder extends Seeder
             [
                 'creator_id' => $creator->id,
                 'assignee_id' => $assignee?->id,
+                'project_id' => $project?->id,
                 'description' => 'Dữ liệu mẫu phục vụ kiểm tra giao diện Task Core.',
                 'status' => $status,
                 'priority' => $priority,
@@ -518,5 +529,223 @@ final class DemoDataSeeder extends Seeder
         if ($task->trashed()) {
             $task->restore();
         }
+    }
+
+    private function seedDemoProjects(
+        OrganizationUnit $productUnit,
+        OrganizationUnit $engineeringUnit,
+        OrganizationUnit $salesUnit,
+        OrganizationUnit $operationsUnit,
+    ): void {
+        $director = User::query()->where('email', 'director@dormida.test')->firstOrFail();
+        $productLead = User::query()->where('email', 'product.lead@dormida.test')->firstOrFail();
+        $designer = User::query()->where('email', 'designer@dormida.test')->firstOrFail();
+        $productAnalyst = User::query()->where('email', 'product.analyst@dormida.test')->firstOrFail();
+        $engineeringLead = User::query()->where('email', 'engineering.lead@dormida.test')->firstOrFail();
+        $developer = User::query()->where('email', 'developer@dormida.test')->firstOrFail();
+        $salesLead = User::query()->where('email', 'sales.lead@dormida.test')->firstOrFail();
+        $accountExecutive = User::query()->where('email', 'account.executive@dormida.test')->firstOrFail();
+        $operations = User::query()->where('email', 'operations@dormida.test')->firstOrFail();
+        $operationsSpecialist = User::query()->where('email', 'operations.specialist@dormida.test')->firstOrFail();
+
+        $productProject = $this->upsertProject(
+            code: 'PROJ-PRODUCT-01',
+            name: 'Ra mắt tính năng Onboarding nâng cao',
+            description: 'Thiết kế và triển khai luồng onboarding mới cho khách hàng.',
+            unit: $productUnit,
+            owner: $productLead,
+            status: ProjectStatus::Active,
+            startDate: now()->subWeeks(2),
+            endDate: now()->addMonths(2),
+        );
+        $this->upsertProjectMember($productProject, $productLead, ProjectMemberRole::Manager);
+        $this->upsertProjectMember($productProject, $designer, ProjectMemberRole::Member);
+        $this->upsertProjectMember($productProject, $productAnalyst, ProjectMemberRole::Member);
+        $this->upsertProjectMember($productProject, $director, ProjectMemberRole::Viewer);
+
+        $engineeringProject = $this->upsertProject(
+            code: 'PROJ-ENG-01',
+            name: 'Nâng cấp hạ tầng API nội bộ',
+            description: 'Tạm dừng chờ đánh giá lại ngân sách hạ tầng quý tới.',
+            unit: $engineeringUnit,
+            owner: $engineeringLead,
+            status: ProjectStatus::OnHold,
+            startDate: now()->subMonth(),
+            endDate: null,
+        );
+        $this->upsertProjectMember($engineeringProject, $engineeringLead, ProjectMemberRole::Manager);
+        $this->upsertProjectMember($engineeringProject, $developer, ProjectMemberRole::Member);
+        $this->upsertProjectMember($engineeringProject, $director, ProjectMemberRole::Viewer);
+
+        $salesProject = $this->upsertProject(
+            code: 'PROJ-SALES-01',
+            name: 'Chiến dịch mở rộng khách hàng B2B',
+            description: 'Xây dựng danh sách khách hàng tiềm năng và tài liệu chào bán.',
+            unit: $salesUnit,
+            owner: $salesLead,
+            status: ProjectStatus::Active,
+            startDate: now()->subWeek(),
+            endDate: now()->addMonths(3),
+        );
+        $this->upsertProjectMember($salesProject, $salesLead, ProjectMemberRole::Manager);
+        $this->upsertProjectMember($salesProject, $accountExecutive, ProjectMemberRole::Member);
+        $this->upsertProjectMember($salesProject, $director, ProjectMemberRole::Viewer);
+
+        $operationsProject = $this->upsertProject(
+            code: 'PROJ-OPS-01',
+            name: 'Chuẩn hoá quy trình vận hành nội bộ',
+            description: 'Tổng hợp và chuẩn hoá báo cáo vận hành định kỳ.',
+            unit: $operationsUnit,
+            owner: $operations,
+            status: ProjectStatus::Completed,
+            startDate: now()->subMonths(2),
+            endDate: now()->subWeek(),
+            closedAt: now()->subDay(),
+        );
+        $this->upsertProjectMember($operationsProject, $operations, ProjectMemberRole::Manager);
+        $this->upsertProjectMember($operationsProject, $operationsSpecialist, ProjectMemberRole::Member);
+        $this->upsertProjectMember($operationsProject, $director, ProjectMemberRole::Viewer);
+
+        $this->upsertTask(
+            title: 'Phân tích phản hồi khách hàng quý III',
+            unit: $productUnit,
+            creator: $productLead,
+            assignee: $productAnalyst,
+            status: TaskStatus::InProgress,
+            priority: TaskPriority::High,
+            dueAt: now()->addDays(5),
+            progress: 40,
+            project: $productProject,
+        );
+
+        $this->upsertTask(
+            title: 'Xây dựng lộ trình sản phẩm quý IV',
+            unit: $productUnit,
+            creator: $productLead,
+            assignee: $productAnalyst,
+            status: TaskStatus::WaitingApproval,
+            priority: TaskPriority::Urgent,
+            dueAt: now()->addDays(2),
+            progress: 85,
+            project: $productProject,
+        );
+
+        $this->upsertTask(
+            title: 'Thiết lập giám sát hiệu năng API',
+            unit: $engineeringUnit,
+            creator: $engineeringLead,
+            assignee: $developer,
+            status: TaskStatus::InProgress,
+            priority: TaskPriority::Urgent,
+            dueAt: now()->addDays(4),
+            progress: 65,
+            project: $engineeringProject,
+        );
+
+        $this->upsertTask(
+            title: 'Nâng cấp quy trình sao lưu dữ liệu',
+            unit: $engineeringUnit,
+            creator: $engineeringLead,
+            assignee: $developer,
+            status: TaskStatus::WaitingReview,
+            priority: TaskPriority::High,
+            dueAt: now()->addDays(2),
+            progress: 90,
+            project: $engineeringProject,
+        );
+
+        $this->upsertTask(
+            title: 'Chuẩn bị danh sách khách hàng tiềm năng',
+            unit: $salesUnit,
+            creator: $salesLead,
+            assignee: $accountExecutive,
+            status: TaskStatus::InProgress,
+            priority: TaskPriority::High,
+            dueAt: now()->addDays(3),
+            progress: 50,
+            project: $salesProject,
+        );
+
+        $this->upsertTask(
+            title: 'Hoàn thiện bộ tài liệu chào bán doanh nghiệp',
+            unit: $salesUnit,
+            creator: $salesLead,
+            assignee: $accountExecutive,
+            status: TaskStatus::WaitingReview,
+            priority: TaskPriority::Urgent,
+            dueAt: now()->addDay(),
+            progress: 80,
+            project: $salesProject,
+        );
+
+        $this->upsertTask(
+            title: 'Tổng hợp số liệu vận hành tuần',
+            unit: $operationsUnit,
+            creator: $operations,
+            assignee: $operations,
+            status: TaskStatus::Completed,
+            priority: TaskPriority::Low,
+            dueAt: now()->subDay(),
+            progress: 100,
+            completedAt: now()->subHours(3),
+            project: $operationsProject,
+        );
+
+        $this->upsertTask(
+            title: 'Tổng hợp báo cáo điều hành tháng 7',
+            unit: $operationsUnit,
+            creator: $operations,
+            assignee: $operationsSpecialist,
+            status: TaskStatus::Completed,
+            priority: TaskPriority::Low,
+            dueAt: now()->subDays(2),
+            progress: 100,
+            completedAt: now()->subDay(),
+            project: $operationsProject,
+        );
+    }
+
+    private function upsertProject(
+        string $code,
+        string $name,
+        string $description,
+        OrganizationUnit $unit,
+        User $owner,
+        ProjectStatus $status,
+        ?CarbonInterface $startDate,
+        ?CarbonInterface $endDate,
+        ?CarbonInterface $closedAt = null,
+    ): Project {
+        $project = Project::withTrashed()->updateOrCreate(
+            ['code' => $code],
+            [
+                'organization_unit_id' => $unit->id,
+                'owner_id' => $owner->id,
+                'name' => $name,
+                'description' => $description,
+                'status' => $status,
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'closed_at' => $closedAt,
+                'close_reason' => null,
+            ],
+        );
+
+        if ($project->trashed()) {
+            $project->restore();
+        }
+
+        return $project;
+    }
+
+    private function upsertProjectMember(Project $project, User $user, ProjectMemberRole $role): void
+    {
+        $project->members()->updateOrCreate(
+            ['user_id' => $user->id],
+            [
+                'role' => $role,
+                'joined_at' => now(),
+            ],
+        );
     }
 }
