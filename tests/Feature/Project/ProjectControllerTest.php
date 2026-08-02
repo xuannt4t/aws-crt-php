@@ -37,12 +37,31 @@ test('a user with project view permission can list filtered paginated projects',
         ->assertJsonPath('props.projects.total', 21);
 });
 
-test('a user without project view permission cannot list projects', function () {
+test('a member without project view permission sees only their own projects on the index', function () {
+    $member = User::factory()->create();
+    $myProject = Project::factory()->create(['name' => 'Dự án của tôi']);
+    ProjectMember::factory()->create([
+        'project_id' => $myProject->id,
+        'user_id' => $member->id,
+        'role' => ProjectMemberRole::Member,
+    ]);
+    Project::factory()->count(3)->create();
+
+    $this->actingAs($member)
+        ->get(route('projects.index'), inertiaHeaders())
+        ->assertOk()
+        ->assertJsonCount(1, 'props.projects.data')
+        ->assertJsonPath('props.projects.data.0.id', $myProject->id);
+});
+
+test('a user without project view permission and without membership sees an empty project list', function () {
     $user = User::factory()->create();
+    Project::factory()->count(3)->create();
 
     $this->actingAs($user)
-        ->get(route('projects.index'))
-        ->assertForbidden();
+        ->get(route('projects.index'), inertiaHeaders())
+        ->assertOk()
+        ->assertJsonCount(0, 'props.projects.data');
 });
 
 test('project list exposes progress task count open task count and member count without N plus 1', function () {
@@ -226,6 +245,7 @@ test('a user with view permission can view project details with progress and act
     $viewer = userWithPermissions([
         PermissionName::ProjectView->value,
         PermissionName::ProjectUpdate->value,
+        PermissionName::TaskView->value,
     ]);
     $project = Project::factory()->create();
     ProjectMember::factory()->create(['project_id' => $project->id]);
@@ -239,6 +259,8 @@ test('a user with view permission can view project details with progress and act
         ->assertJsonPath('props.project.id', $project->id)
         ->assertJsonPath('props.project.progress', 50)
         ->assertJsonPath('props.actions.update', true)
+        ->assertJsonPath('props.actions.viewTasks', true)
+        ->assertJsonCount(2, 'props.tasks.data')
         ->assertJsonStructure(['props' => ['members', 'tasks']]);
 });
 
@@ -259,4 +281,174 @@ test('a user who is not a member and lacks project view permission cannot view t
     $this->actingAs($user)
         ->get(route('projects.show', $project), inertiaHeaders())
         ->assertForbidden();
+});
+
+test('the project list payload does not leak the raw progress average pseudo column', function () {
+    $viewer = userWithPermissions([PermissionName::ProjectView->value]);
+    $project = Project::factory()->create();
+    Task::factory()->create(['project_id' => $project->id, 'status' => TaskStatus::Todo, 'progress' => 33]);
+
+    $response = $this->actingAs($viewer)
+        ->get(route('projects.index'), inertiaHeaders())
+        ->assertOk();
+
+    expect($response->json('props.projects.data.0'))->not->toHaveKey('progress_average');
+});
+
+test('update cannot set the project status to a closed value', function (string $status) {
+    $updater = userWithPermissions([PermissionName::ProjectUpdate->value]);
+    $project = Project::factory()->create(['status' => ProjectStatus::Active]);
+
+    $this->actingAs($updater)
+        ->put(route('projects.update', $project), [
+            'organization_unit_id' => $project->organization_unit_id,
+            'owner_id' => $project->owner_id,
+            'code' => $project->code,
+            'name' => $project->name,
+            'status' => $status,
+        ])
+        ->assertSessionHasErrors('status');
+
+    $project->refresh();
+
+    expect($project->status)->toBe(ProjectStatus::Active)
+        ->and($project->closed_at)->toBeNull();
+})->with([ProjectStatus::Completed->value, ProjectStatus::Cancelled->value]);
+
+test('update cannot reopen a closed project', function () {
+    $updater = userWithPermissions([PermissionName::ProjectUpdate->value]);
+    $project = Project::factory()->create([
+        'status' => ProjectStatus::Completed,
+        'closed_at' => now(),
+        'close_reason' => 'Lý do đóng dự án ngoại lệ.',
+    ]);
+
+    $this->actingAs($updater)
+        ->put(route('projects.update', $project), [
+            'organization_unit_id' => $project->organization_unit_id,
+            'owner_id' => $project->owner_id,
+            'code' => $project->code,
+            'name' => $project->name,
+            'status' => ProjectStatus::Active->value,
+        ])
+        ->assertSessionHasErrors('status');
+
+    $project->refresh();
+
+    expect($project->status)->toBe(ProjectStatus::Completed)
+        ->and($project->closed_at)->not->toBeNull();
+});
+
+test('store cannot create a project directly in a closed status', function () {
+    $creator = userWithPermissions([PermissionName::ProjectCreate->value]);
+    $unit = OrganizationUnit::factory()->create();
+
+    $this->actingAs($creator)
+        ->post(route('projects.store'), [
+            'organization_unit_id' => $unit->id,
+            'owner_id' => $creator->id,
+            'code' => 'PRJ-CLOSED',
+            'name' => 'Dự án đóng sẵn',
+            'status' => ProjectStatus::Completed->value,
+        ])
+        ->assertSessionHasErrors('status');
+
+    $this->assertDatabaseMissing('projects', ['code' => 'PRJ-CLOSED']);
+});
+
+test('a project manager without the project update permission can edit ordinary fields', function () {
+    $manager = User::factory()->create();
+    $project = Project::factory()->create(['status' => ProjectStatus::Active]);
+    ProjectMember::factory()->create([
+        'project_id' => $project->id,
+        'user_id' => $manager->id,
+        'role' => ProjectMemberRole::Manager,
+    ]);
+
+    $this->actingAs($manager)
+        ->put(route('projects.update', $project), [
+            'organization_unit_id' => $project->organization_unit_id,
+            'owner_id' => $project->owner_id,
+            'code' => $project->code,
+            'name' => 'Tên dự án do quản lý cập nhật',
+        ])
+        ->assertRedirect(route('projects.index'))
+        ->assertSessionHasNoErrors();
+
+    expect($project->fresh()->name)->toBe('Tên dự án do quản lý cập nhật');
+});
+
+test('a project manager without the project update permission cannot change the owner or organization unit', function () {
+    $manager = User::factory()->create();
+    $project = Project::factory()->create(['status' => ProjectStatus::Active]);
+    ProjectMember::factory()->create([
+        'project_id' => $project->id,
+        'user_id' => $manager->id,
+        'role' => ProjectMemberRole::Manager,
+    ]);
+    $outsider = User::factory()->create();
+    $otherUnit = OrganizationUnit::factory()->create();
+
+    $this->actingAs($manager)
+        ->put(route('projects.update', $project), [
+            'organization_unit_id' => $otherUnit->id,
+            'owner_id' => $outsider->id,
+            'code' => $project->code,
+            'name' => $project->name,
+        ])
+        ->assertSessionHasErrors(['owner_id', 'organization_unit_id']);
+
+    $project->refresh();
+
+    expect($project->owner_id)->not->toBe($outsider->id)
+        ->and($project->organization_unit_id)->not->toBe($otherUnit->id);
+
+    $this->assertDatabaseMissing('project_members', [
+        'project_id' => $project->id,
+        'user_id' => $outsider->id,
+    ]);
+});
+
+test('a soft deleted project is absent from the index and 404s on show edit update and close', function () {
+    $admin = userWithPermissions([
+        PermissionName::ProjectView->value,
+        PermissionName::ProjectUpdate->value,
+        PermissionName::ProjectClose->value,
+    ]);
+    $project = Project::factory()->create(['status' => ProjectStatus::Active]);
+    $project->delete();
+
+    $this->actingAs($admin)
+        ->get(route('projects.index'), inertiaHeaders())
+        ->assertOk()
+        ->assertJsonCount(0, 'props.projects.data');
+
+    $this->actingAs($admin)->get(route('projects.show', $project->id))->assertNotFound();
+    $this->actingAs($admin)->get(route('projects.edit', $project->id))->assertNotFound();
+    $this->actingAs($admin)->put(route('projects.update', $project->id), [
+        'organization_unit_id' => $project->organization_unit_id,
+        'owner_id' => $project->owner_id,
+        'code' => $project->code,
+        'name' => $project->name,
+    ])->assertNotFound();
+    $this->actingAs($admin)->patch(route('projects.close', $project->id))->assertNotFound();
+});
+
+test('a viewer role member without task view permission does not receive the project task list', function () {
+    $viewerMember = User::factory()->create();
+    $project = Project::factory()->create();
+    ProjectMember::factory()->create([
+        'project_id' => $project->id,
+        'user_id' => $viewerMember->id,
+        'role' => ProjectMemberRole::Viewer,
+    ]);
+    Task::factory()->create(['project_id' => $project->id, 'title' => 'Công việc bí mật']);
+
+    $response = $this->actingAs($viewerMember)
+        ->get(route('projects.show', $project), inertiaHeaders())
+        ->assertOk()
+        ->assertJsonPath('props.actions.viewTasks', false)
+        ->assertJsonPath('props.tasks', null);
+
+    expect($response->getContent())->not->toContain('Công việc bí mật');
 });

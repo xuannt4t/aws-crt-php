@@ -232,3 +232,53 @@ test('a project manager without the manage members permission can still remove a
 
     $this->assertDatabaseMissing('project_members', ['id' => $member->id]);
 });
+
+test('a soft deleted user cannot be added as a project member', function () {
+    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value]);
+    $project = Project::factory()->create();
+    $deletedUser = User::factory()->create(['is_active' => true]);
+    $deletedUser->delete();
+
+    $this->actingAs($actor)
+        ->post(route('projects.members.store', $project), [
+            'user_id' => $deletedUser->id,
+            'role' => ProjectMemberRole::Member->value,
+        ])
+        ->assertSessionHasErrors('user_id');
+
+    $this->assertDatabaseMissing('project_members', [
+        'project_id' => $project->id,
+        'user_id' => $deletedUser->id,
+    ]);
+});
+
+test('scoped bindings reject a member id belonging to a different project on update', function () {
+    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value]);
+    $project = Project::factory()->create();
+    $otherProject = Project::factory()->create();
+    $foreignMember = ProjectMember::factory()->create([
+        'project_id' => $otherProject->id,
+        'role' => ProjectMemberRole::Member,
+    ]);
+
+    $this->actingAs($actor)
+        ->patch(route('projects.members.update', [$project->id, $foreignMember->id]), [
+            'role' => ProjectMemberRole::Manager->value,
+        ])
+        ->assertNotFound();
+
+    expect($foreignMember->fresh()->role)->toBe(ProjectMemberRole::Member);
+});
+
+test('scoped bindings reject a member id belonging to a different project on destroy', function () {
+    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value]);
+    $project = Project::factory()->create();
+    $otherProject = Project::factory()->create();
+    $foreignMember = ProjectMember::factory()->create(['project_id' => $otherProject->id]);
+
+    $this->actingAs($actor)
+        ->delete(route('projects.members.destroy', [$project->id, $foreignMember->id]))
+        ->assertNotFound();
+
+    $this->assertDatabaseHas('project_members', ['id' => $foreignMember->id]);
+});

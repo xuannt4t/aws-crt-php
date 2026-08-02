@@ -73,7 +73,7 @@ test('closing a project with open tasks and a valid reason closes it with an exc
         ->and($auditLog->metadata['open_task_ids'])->toBe([$openTask->id]);
 });
 
-test('closing an already closed project fails validation with a status error', function () {
+test('closing an already closed project fails validation with a close reason error', function () {
     $actor = userWithPermissions([PermissionName::ProjectClose->value]);
     $project = Project::factory()->create([
         'status' => ProjectStatus::Completed,
@@ -82,7 +82,7 @@ test('closing an already closed project fails validation with a status error', f
 
     $response = $this->actingAs($actor)->patch(route('projects.close', $project));
 
-    $response->assertSessionHasErrors('status');
+    $response->assertSessionHasErrors(['close_reason' => 'Dự án đã được đóng.']);
 });
 
 test('a user without close permission and not a manager cannot close a project', function () {

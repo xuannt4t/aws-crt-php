@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Enums\PermissionName;
 use App\Enums\TaskPriority;
 use App\Rules\ProjectIsOpen;
+use App\Rules\ProjectIsVisible;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -34,6 +35,7 @@ final class UpdateTaskRequest extends FormRequest
                 'nullable',
                 'integer',
                 Rule::exists('projects', 'id')->whereNull('deleted_at'),
+                new ProjectIsVisible($this->user()),
                 new ProjectIsOpen,
             ],
             'assignee_id' => [

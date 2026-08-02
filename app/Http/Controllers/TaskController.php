@@ -317,12 +317,9 @@ final class TaskController extends Controller
      */
     private function openProjects(): array
     {
-        $user = request()->user();
-
         return Project::query()
             ->open()
-            ->when(! $user->can(PermissionName::ProjectView->value), fn (Builder $query) => $query
-                ->whereHas('members', fn (Builder $inner) => $inner->where('user_id', $user->id)))
+            ->visibleTo(request()->user())
             ->orderBy('name')
             ->get(['id', 'name', 'code'])
             ->toArray();

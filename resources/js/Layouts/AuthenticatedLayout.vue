@@ -42,7 +42,8 @@ const navigation: NavigationItem[] = [
         routeName: 'projects.index',
         activePattern: 'projects.*',
         icon: 'folder',
-        permission: 'project.view',
+        // Không gate theo project.view: danh sách dự án mở cho mọi người dùng
+        // đã đăng nhập, nhưng chỉ hiển thị dự án họ là thành viên nếu thiếu quyền.
     },
     {
         label: 'Cơ cấu tổ chức',

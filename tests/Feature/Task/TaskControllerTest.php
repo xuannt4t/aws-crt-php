@@ -503,7 +503,7 @@ test('an invalid task transition does not write history', function () {
 });
 
 test('a task can be created and linked to an open project', function () {
-    $creator = userWithPermissions([PermissionName::TaskCreate->value]);
+    $creator = userWithPermissions([PermissionName::TaskCreate->value, PermissionName::ProjectView->value]);
     $unit = OrganizationUnit::factory()->create();
     $project = Project::factory()->create(['status' => ProjectStatus::Active]);
 
@@ -522,7 +522,7 @@ test('a task can be created and linked to an open project', function () {
 });
 
 test('a task cannot be linked to a closed project', function () {
-    $creator = userWithPermissions([PermissionName::TaskCreate->value]);
+    $creator = userWithPermissions([PermissionName::TaskCreate->value, PermissionName::ProjectView->value]);
     $unit = OrganizationUnit::factory()->create();
     $closedProject = Project::factory()->create(['status' => ProjectStatus::Completed]);
 
@@ -538,7 +538,7 @@ test('a task cannot be linked to a closed project', function () {
 });
 
 test('a task cannot be updated to link a cancelled project', function () {
-    $updater = userWithPermissions([PermissionName::TaskUpdate->value]);
+    $updater = userWithPermissions([PermissionName::TaskUpdate->value, PermissionName::ProjectView->value]);
     $unit = OrganizationUnit::factory()->create();
     $task = Task::factory()->create(['organization_unit_id' => $unit->id]);
     $cancelledProject = Project::factory()->create(['status' => ProjectStatus::Cancelled]);
@@ -613,4 +613,63 @@ test('a project member without project view permission still sees their open pro
         ->assertInertia(fn ($page) => $page
             ->has('projects', 1)
             ->where('projects.0.id', $memberProject->id));
+});
+
+test('a task cannot be attached to a project the actor cannot view', function () {
+    $creator = userWithPermissions([PermissionName::TaskCreate->value]);
+    $unit = OrganizationUnit::factory()->create();
+    $foreignProject = Project::factory()->create(['status' => ProjectStatus::Active]);
+
+    $this->actingAs($creator)
+        ->post(route('tasks.store'), [
+            'organization_unit_id' => $unit->id,
+            'project_id' => $foreignProject->id,
+            'title' => 'Công việc chèn trái phép',
+            'priority' => TaskPriority::Medium->value,
+        ])
+        ->assertSessionHasErrors(['project_id' => 'Bạn không có quyền gắn công việc vào dự án này.']);
+
+    $this->assertDatabaseMissing('tasks', ['project_id' => $foreignProject->id]);
+});
+
+test('a task cannot be moved into a project the actor cannot view', function () {
+    $updater = userWithPermissions([PermissionName::TaskUpdate->value]);
+    $task = Task::factory()->create(['project_id' => null]);
+    $foreignProject = Project::factory()->create(['status' => ProjectStatus::Active]);
+
+    $this->actingAs($updater)
+        ->put(route('tasks.update', $task), [
+            'organization_unit_id' => $task->organization_unit_id,
+            'project_id' => $foreignProject->id,
+            'title' => $task->title,
+            'priority' => $task->priority->value,
+        ])
+        ->assertSessionHasErrors('project_id');
+
+    expect($task->fresh()->project_id)->toBeNull();
+});
+
+test('a project member without project view permission can attach a task to their own project', function () {
+    $member = userWithPermissions([PermissionName::TaskCreate->value]);
+    $unit = OrganizationUnit::factory()->create();
+    $memberProject = Project::factory()->create(['status' => ProjectStatus::Active]);
+    ProjectMember::factory()->create([
+        'project_id' => $memberProject->id,
+        'user_id' => $member->id,
+    ]);
+
+    $this->actingAs($member)
+        ->post(route('tasks.store'), [
+            'organization_unit_id' => $unit->id,
+            'project_id' => $memberProject->id,
+            'title' => 'Công việc hợp lệ',
+            'priority' => TaskPriority::Medium->value,
+        ])
+        ->assertRedirect(route('tasks.index'))
+        ->assertSessionHasNoErrors();
+
+    $this->assertDatabaseHas('tasks', [
+        'project_id' => $memberProject->id,
+        'title' => 'Công việc hợp lệ',
+    ]);
 });

@@ -26,7 +26,9 @@ final class StoreProjectMemberRequest extends FormRequest
             'user_id' => [
                 'required',
                 'integer',
-                Rule::exists('users', 'id')->where('is_active', true),
+                Rule::exists('users', 'id')->where(fn ($query) => $query
+                    ->whereNull('deleted_at')
+                    ->where('is_active', true)),
                 Rule::unique('project_members', 'user_id')->where('project_id', $project->id),
             ],
             'role' => ['required', Rule::enum(ProjectMemberRole::class)],

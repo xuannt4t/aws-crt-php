@@ -42,6 +42,7 @@ const form = useForm({
 const handleSubmit = () => {
     const payload: Record<string, unknown> = { ...form.data() };
 
+    payload.code = String(payload.code ?? '').toUpperCase();
     payload.description = payload.description || null;
     payload.start_date = payload.start_date || null;
     payload.end_date = payload.end_date || null;
