@@ -9,7 +9,6 @@ use App\Actions\Task\UpdateTaskAction;
 use App\Actions\Task\UpdateTaskActualQuantityAction;
 use App\Actions\Task\UpdateTaskProgressAction;
 use App\Enums\PermissionName;
-use App\Enums\ProjectStatus;
 use App\Enums\TaskPriority;
 use App\Enums\TaskStatus;
 use App\Http\Requests\DispatchTaskRequest;
@@ -321,7 +320,7 @@ final class TaskController extends Controller
         $user = request()->user();
 
         return Project::query()
-            ->whereNotIn('status', [ProjectStatus::Completed->value, ProjectStatus::Cancelled->value])
+            ->open()
             ->when(! $user->can(PermissionName::ProjectView->value), fn (Builder $query) => $query
                 ->whereHas('members', fn (Builder $inner) => $inner->where('user_id', $user->id)))
             ->orderBy('name')

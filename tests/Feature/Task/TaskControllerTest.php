@@ -8,6 +8,7 @@ use App\Enums\TaskStatus;
 use App\Models\AuditLog;
 use App\Models\OrganizationUnit;
 use App\Models\Project;
+use App\Models\ProjectMember;
 use App\Models\Task;
 use App\Models\TaskStatusHistory;
 use App\Models\User;
@@ -595,4 +596,21 @@ test('task create and edit pages expose only open projects', function () {
         ->assertInertia(fn ($page) => $page
             ->has('projects', 1)
             ->where('projects.0.id', $openProject->id));
+});
+
+test('a project member without project view permission still sees their open project in the projects prop', function () {
+    $member = userWithPermissions([PermissionName::TaskCreate->value]);
+    $memberProject = Project::factory()->create(['status' => ProjectStatus::Active]);
+    ProjectMember::factory()->create([
+        'project_id' => $memberProject->id,
+        'user_id' => $member->id,
+    ]);
+    Project::factory()->create(['status' => ProjectStatus::Active]);
+
+    $this->actingAs($member)
+        ->get(route('tasks.create'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('projects', 1)
+            ->where('projects.0.id', $memberProject->id));
 });

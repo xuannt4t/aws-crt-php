@@ -6,6 +6,7 @@ use App\Enums\ProjectMemberRole;
 use App\Enums\ProjectStatus;
 use App\Enums\TaskStatus;
 use Database\Factories\ProjectFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -17,6 +18,14 @@ final class Project extends Model
 {
     /** @use HasFactory<ProjectFactory> */
     use HasFactory, SoftDeletes;
+
+    /**
+     * Trạng thái được xem là "đã đóng" — nguồn sự thật duy nhất, dùng bởi
+     * isClosed(), scopeOpen() và mọi rule xác thực cần biết dự án nào đã đóng.
+     *
+     * @var list<ProjectStatus>
+     */
+    private const CLOSED_STATUSES = [ProjectStatus::Completed, ProjectStatus::Cancelled];
 
     protected $fillable = [
         'organization_unit_id',
@@ -103,6 +112,19 @@ final class Project extends Model
 
     public function isClosed(): bool
     {
-        return in_array($this->status, [ProjectStatus::Completed, ProjectStatus::Cancelled], true);
+        return in_array($this->status, self::CLOSED_STATUSES, true);
+    }
+
+    public function scopeOpen(Builder $query): Builder
+    {
+        return $query->whereNotIn('status', self::closedStatusValues());
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function closedStatusValues(): array
+    {
+        return array_map(static fn (ProjectStatus $status): string => $status->value, self::CLOSED_STATUSES);
     }
 }
