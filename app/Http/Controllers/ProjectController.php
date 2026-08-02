@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Project\CloseProjectAction;
 use App\Actions\Project\CreateProjectAction;
 use App\Actions\Project\DeleteProjectAction;
 use App\Actions\Project\UpdateProjectAction;
 use App\Enums\ProjectStatus;
 use App\Enums\TaskStatus;
+use App\Http\Requests\CloseProjectRequest;
 use App\Http\Requests\IndexProjectRequest;
 use App\Http\Requests\StoreProjectRequest;
 use App\Http\Requests\UpdateProjectRequest;
@@ -161,6 +163,13 @@ final class ProjectController extends Controller
         $action->execute(request()->user(), $project);
 
         return Redirect::route('projects.index')->with('success', 'Xóa dự án thành công.');
+    }
+
+    public function close(CloseProjectRequest $request, Project $project, CloseProjectAction $action): RedirectResponse
+    {
+        $action->execute($request->user(), $project, $request->validated()['close_reason'] ?? null);
+
+        return Redirect::back()->with('success', 'Đã đóng dự án.');
     }
 
     /**

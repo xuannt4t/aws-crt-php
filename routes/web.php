@@ -72,8 +72,8 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
         ->scopeBindings()
         ->name('projects.members.destroy');
 
-    // Route quản lý đóng dự án sẽ được đăng ký ở đây trước Route::resource('projects', ...)
-    // ở task sau (close routes).
+    Route::patch('projects/{project}/close', [ProjectController::class, 'close'])->name('projects.close');
+
     Route::resource('projects', ProjectController::class);
 });
 
