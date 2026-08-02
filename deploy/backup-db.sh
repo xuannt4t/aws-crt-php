@@ -7,8 +7,17 @@ ENV_FILE=/var/www/dormida/shared/.env
 BACKUP_DIR=/var/backups/dormida
 RETENTION_DAYS=14
 
-# shellcheck disable=SC2046
-export $(grep -E '^(DB_|BACKUP_R2_)' "$ENV_FILE" | xargs -d '\n')
+# Nạp biến bằng `source` thay vì `xargs`: `source` bóc dấu nháy đúng cách,
+# nên mật khẩu chứa khoảng trắng hay ký tự đặc biệt vẫn nạp nguyên vẹn.
+set -a
+# shellcheck source=/dev/null
+source <(grep -E '^(DB_|R2_|BACKUP_R2_)[A-Z_]+=' "$ENV_FILE")
+set +a
+
+# aws CLI chỉ đọc AWS_*; dùng chung token R2 phạm vi hẹp cho hai bucket.
+export AWS_ACCESS_KEY_ID="$R2_ACCESS_KEY_ID"
+export AWS_SECRET_ACCESS_KEY="$R2_SECRET_ACCESS_KEY"
+export AWS_DEFAULT_REGION=auto
 
 mkdir -p "$BACKUP_DIR"
 STAMP=$(date +%Y%m%d-%H%M%S)
