@@ -149,11 +149,7 @@ const formatDateTime = (value: string) =>
             aria-label="Phân trang hoạt động"
         >
             <template v-for="link in activities.links" :key="link.label">
-                <span
-                    v-if="!link.url"
-                    class="rounded-lg px-3 py-1.5 text-xs text-slate-300"
-                    v-text="link.label"
-                />
+                <span v-if="!link.url" class="rounded-lg px-3 py-1.5 text-xs text-slate-300" v-text="link.label" />
                 <Link
                     v-else
                     :href="link.url"

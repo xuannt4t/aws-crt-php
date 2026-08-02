@@ -85,9 +85,7 @@ const formatDateTime = (value: string) =>
     <section class="app-panel overflow-hidden">
         <header class="border-b border-slate-100 px-5 py-4 sm:px-6">
             <h2 class="font-display text-base font-bold text-ink-950">Tệp đính kèm</h2>
-            <p class="mt-1 text-xs text-slate-500">
-                {{ attachments.length }} tệp trong công việc này.
-            </p>
+            <p class="mt-1 text-xs text-slate-500">{{ attachments.length }} tệp trong công việc này.</p>
         </header>
 
         <form v-if="canAttach" class="border-b border-slate-100 px-5 py-4 sm:px-6" @submit.prevent="submit">
@@ -107,16 +105,10 @@ const formatDateTime = (value: string) =>
                     chọn tệp từ máy
                 </button>
                 <p class="mt-2 text-xs text-slate-400">
-                    Tối đa {{ MAX_FILES }} tệp mỗi lần, mỗi tệp không quá 10MB. Hỗ trợ PDF, Word,
-                    Excel, PowerPoint, CSV, TXT, ZIP và ảnh.
+                    Tối đa {{ MAX_FILES }} tệp mỗi lần, mỗi tệp không quá 10MB. Hỗ trợ PDF, Word, Excel, PowerPoint,
+                    CSV, TXT, ZIP và ảnh.
                 </p>
-                <input
-                    ref="fileInput"
-                    type="file"
-                    multiple
-                    class="hidden"
-                    @change="onFileInputChange"
-                />
+                <input ref="fileInput" type="file" multiple class="hidden" @change="onFileInputChange" />
             </div>
 
             <ul v-if="form.files.length" class="mt-3 space-y-2">
@@ -148,9 +140,7 @@ const formatDateTime = (value: string) =>
                 <PrimaryButton :disabled="form.processing || !form.files.length">
                     {{ form.processing ? 'Đang tải lên...' : 'Tải lên' }}
                 </PrimaryButton>
-                <span v-if="form.progress" class="text-xs text-slate-500">
-                    {{ form.progress.percentage }}%
-                </span>
+                <span v-if="form.progress" class="text-xs text-slate-500"> {{ form.progress.percentage }}% </span>
             </div>
         </form>
 
@@ -165,8 +155,7 @@ const formatDateTime = (value: string) =>
                         {{ attachment.original_name }}
                     </p>
                     <p class="mt-0.5 truncate text-xs text-slate-500">
-                        {{ attachment.size_for_humans }} ·
-                        {{ attachment.uploader?.name ?? 'Tài khoản đã xóa' }} ·
+                        {{ attachment.size_for_humans }} · {{ attachment.uploader?.name ?? 'Tài khoản đã xóa' }} ·
                         <time :datetime="attachment.created_at">
                             {{ formatDateTime(attachment.created_at) }}
                         </time>
