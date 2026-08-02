@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { onMounted, watch } from 'vue';
-import { usePage } from '@inertiajs/vue3';
+import { onMounted, onUnmounted } from 'vue';
+import { router, usePage } from '@inertiajs/vue3';
 import Toast from 'primevue/toast';
 import { useToast } from 'primevue/usetoast';
 import type { PageProps } from '@/types';
 
 const page = usePage<PageProps>();
 const toast = useToast();
+let removeSuccessListener: (() => void) | undefined;
 
 const showSuccess = (message: string | null | undefined) => {
     if (!message) {
@@ -34,20 +35,22 @@ const showError = (message: string | null | undefined) => {
     });
 };
 
+const showFlash = (flash: PageProps['flash']) => {
+    showSuccess(flash.success);
+    showError(flash.error);
+};
+
 onMounted(() => {
-    showSuccess(page.props.flash.success);
-    showError(page.props.flash.error);
+    showFlash(page.props.flash);
+    removeSuccessListener = router.on('success', (event) => {
+        const nextPage = event.detail.page.props as unknown as PageProps;
+        showFlash(nextPage.flash);
+    });
 });
 
-watch(
-    () => page.props.flash.success,
-    (message) => showSuccess(message),
-);
-
-watch(
-    () => page.props.flash.error,
-    (message) => showError(message),
-);
+onUnmounted(() => {
+    removeSuccessListener?.();
+});
 </script>
 
 <template>

@@ -8,11 +8,10 @@ import { ZiggyVue } from '../../vendor/tightenco/ziggy';
 import PrimeVue from 'primevue/config';
 import ToastService from 'primevue/toastservice';
 import Aura from '@primeuix/themes/aura';
-
-const appName = import.meta.env.VITE_APP_NAME || 'Dormida Work';
+import { documentTitle } from '@/Support/documentTitle';
 
 createInertiaApp({
-    title: (title) => `${title} - ${appName}`,
+    title: documentTitle,
     resolve: (name) =>
         resolvePageComponent(`./Pages/${name}.vue`, import.meta.glob<DefineComponent>('./Pages/**/*.vue')),
     setup({ el, App, props, plugin }) {
