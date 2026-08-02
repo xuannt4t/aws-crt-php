@@ -15,8 +15,6 @@ use Throwable;
 
 final readonly class StoreTaskAttachmentAction
 {
-    private const DISK = 'local';
-
     public function __construct(
         private AuditLogger $auditLogger,
         private RecordTaskActivityAction $recordActivity,
@@ -31,12 +29,13 @@ final readonly class StoreTaskAttachmentAction
         // Toàn bộ thân hàm (vòng lặp ghi file lẫn DB::transaction) nằm trong một try/catch duy nhất
         // để bất kỳ lỗi nào xảy ra sau khi đã ghi một phần file đều dọn dẹp được file mồ côi.
         $storedPaths = [];
+        $disk = $this->disk();
 
         try {
             $rows = [];
 
             foreach ($files as $file) {
-                $path = $file->store("task-attachments/{$task->id}", self::DISK);
+                $path = $file->store("task-attachments/{$task->id}", $disk);
 
                 if (! is_string($path)) {
                     throw ValidationException::withMessages([
@@ -47,7 +46,7 @@ final readonly class StoreTaskAttachmentAction
                 $storedPaths[] = $path;
                 $rows[] = [
                     'uploader_id' => $actor->id,
-                    'disk' => self::DISK,
+                    'disk' => $disk,
                     'path' => $path,
                     'original_name' => $file->getClientOriginalName(),
                     // MIME thật do server phát hiện (khớp rule `mimetypes` đã validate),
@@ -85,19 +84,24 @@ final readonly class StoreTaskAttachmentAction
                 ]);
             });
         } catch (Throwable $exception) {
-            $this->discard($storedPaths);
+            $this->discard($disk, $storedPaths);
 
             throw $exception;
         }
     }
 
+    private function disk(): string
+    {
+        return (string) config('dormida.attachments.disk', 'local');
+    }
+
     /**
      * @param  list<string>  $paths
      */
-    private function discard(array $paths): void
+    private function discard(string $disk, array $paths): void
     {
         foreach ($paths as $path) {
-            Storage::disk(self::DISK)->delete($path);
+            Storage::disk($disk)->delete($path);
         }
     }
 }
