@@ -22,8 +22,12 @@ final class TaskNotification extends Notification implements ShouldQueue
         private readonly string $message,
         private readonly ?User $actor = null,
         private readonly ?string $deduplicationKey = null,
+        bool $afterCommit = true,
     ) {
-        $this->afterCommit();
+        if ($afterCommit) {
+            $this->afterCommit();
+        }
+
         $this->createdAt = now()->toIso8601String();
     }
 
