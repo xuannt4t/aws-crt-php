@@ -418,3 +418,47 @@ test('deleted attachments disappear from the task page', function () {
         ->assertOk()
         ->assertInertia(fn ($page) => $page->has('attachments', 0));
 });
+
+test('uploads land on the disk named in config', function () {
+    Storage::fake('archive');
+    config()->set('dormida.attachments.disk', 'archive');
+
+    $uploader = uploaderUser();
+    $task = Task::factory()->create();
+
+    $this->actingAs($uploader)
+        ->post(route('tasks.attachments.store', $task), [
+            'files' => [UploadedFile::fake()->create('ke-hoach.pdf', 40, 'application/pdf')],
+        ])
+        ->assertRedirect(route('tasks.show', $task));
+
+    $attachment = TaskAttachment::query()->sole();
+
+    expect($attachment->disk)->toBe('archive');
+    Storage::disk('archive')->assertExists($attachment->path);
+});
+
+test('files stored on an older disk stay downloadable after the default changes', function () {
+    Storage::fake('local');
+    Storage::fake('archive');
+
+    $uploader = uploaderUser();
+    $task = Task::factory()->create();
+
+    // Tệp cũ đã nằm trên disk `local` từ trước khi chuyển sang disk mới.
+    Storage::disk('local')->put('task-attachments/legacy.pdf', 'noi dung cu');
+    $attachment = TaskAttachment::factory()->create([
+        'task_id' => $task->id,
+        'uploader_id' => $uploader->id,
+        'disk' => 'local',
+        'path' => 'task-attachments/legacy.pdf',
+        'original_name' => 'legacy.pdf',
+    ]);
+
+    config()->set('dormida.attachments.disk', 'archive');
+
+    $this->actingAs($uploader)
+        ->get(route('tasks.attachments.download', [$task, $attachment]))
+        ->assertOk()
+        ->assertDownload('legacy.pdf');
+});
