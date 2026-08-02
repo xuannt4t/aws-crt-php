@@ -1,0 +1,109 @@
+name: Deploy
+
+on:
+    workflow_run:
+        workflows: ['CI']
+        types: [completed]
+        branches: [main]
+
+concurrency:
+    group: deploy-production
+    cancel-in-progress: false
+
+jobs:
+    deploy:
+        if: github.event.workflow_run.conclusion == 'success'
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  ref: ${{ github.event.workflow_run.head_sha }}
+
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: '8.3'
+                  extensions: mbstring, pdo_mysql, redis
+
+            - name: Install PHP dependencies
+              run: composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '22'
+                  cache: 'npm'
+
+            - name: Install JS dependencies
+              run: npm ci
+
+            - name: Build frontend
+              run: npm run build
+
+            - name: Configure SSH
+              run: |
+                  mkdir -p ~/.ssh
+                  echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+                  chmod 600 ~/.ssh/id_ed25519
+                  ssh-keyscan -p "${{ secrets.SSH_PORT }}" -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+
+            - name: Compute release name
+              id: release
+              run: echo "name=$(date +%Y%m%d-%H%M%S)" >> "$GITHUB_OUTPUT"
+
+            - name: Upload release
+              env:
+                  RELEASE: ${{ steps.release.outputs.name }}
+              run: |
+                  RELEASE_PATH="/var/www/dormida/releases/$RELEASE"
+                  ssh -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" "mkdir -p $RELEASE_PATH"
+                  rsync -az --delete \
+                    -e "ssh -p ${{ secrets.SSH_PORT }}" \
+                    --exclude '.git' \
+                    --exclude '.github' \
+                    --exclude 'node_modules' \
+                    --exclude 'tests' \
+                    --exclude 'storage' \
+                    --exclude '.env' \
+                    ./ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:$RELEASE_PATH/"
+
+            - name: Activate release
+              env:
+                  RELEASE: ${{ steps.release.outputs.name }}
+              run: |
+                  ssh -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" bash -euo pipefail <<EOF
+                  BASE=/var/www/dormida
+                  RELEASE_PATH=\$BASE/releases/$RELEASE
+
+                  ln -sfn \$BASE/shared/.env \$RELEASE_PATH/.env
+                  rm -rf \$RELEASE_PATH/storage
+                  ln -sfn \$BASE/shared/storage \$RELEASE_PATH/storage
+
+                  cd \$RELEASE_PATH
+                  php artisan migrate --force
+                  php artisan config:cache
+                  php artisan route:cache
+                  php artisan view:cache
+
+                  ln -sfnT \$RELEASE_PATH \$BASE/current.tmp
+                  mv -Tf \$BASE/current.tmp \$BASE/current
+
+                  sudo systemctl reload php8.3-fpm
+                  php \$BASE/current/artisan queue:restart
+                  sudo supervisorctl restart dormida-reverb
+
+                  cd \$BASE/releases
+                  ls -1dt */ | tail -n +6 | xargs -r rm -rf
+                  EOF
+
+            - name: Verify health
+              run: |
+                  code=000
+                  for i in 1 2 3 4 5; do
+                    code=$(curl -s -o /dev/null -w '%{http_code}' "https://${{ secrets.APP_HOST }}/up") || true
+                    if [ "$code" = "200" ]; then echo "healthy"; exit 0; fi
+                    sleep 5
+                  done
+                  echo "health check failed (last status: $code)"
+                  exit 1
