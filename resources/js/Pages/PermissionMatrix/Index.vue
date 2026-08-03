@@ -185,7 +185,7 @@ const submit = () => {
                         <tr class="border-b border-slate-100 bg-slate-50/70 text-xs font-bold text-slate-500">
                             <th class="sticky left-0 z-10 bg-slate-50/70 px-5 py-3 sm:px-6">Quyền</th>
                             <th v-for="role in roles" :key="role.id" class="px-3 py-3 text-center">
-                                <div class="flex flex-col items-center gap-1">
+                                <div class="flex items-center gap-1">
                                     <span>{{ role.label }}</span>
                                     <AppIcon
                                         v-if="isLockedRole(role.name)"

@@ -220,7 +220,7 @@ const paginationLabel = (label: string) => {
                                         </span>
                                     </div>
                                 </td>
-                                <td class="px-5 py-4">
+                                <td class="px-2 py-4">
                                     <span
                                         class="rounded-full px-2.5 py-1 text-xs font-bold"
                                         :class="taskStatusClasses[task.status]"
@@ -228,10 +228,10 @@ const paginationLabel = (label: string) => {
                                         {{ taskStatusLabels[task.status] }}
                                     </span>
                                 </td>
-                                <td class="px-5 py-4">
+                                <td class="px-2 py-4">
                                     <AppTaskPriorityBadge :priority="task.priority" />
                                 </td>
-                                <td class="px-5 py-4">
+                                <td class="px-2 py-4">
                                     <div v-if="task.assignee" class="flex items-center gap-2">
                                         <AppUserAvatar
                                             :name="task.assignee.name"
@@ -250,10 +250,10 @@ const paginationLabel = (label: string) => {
                                     </div>
                                     <span v-else class="text-xs text-slate-400">Chưa phân công</span>
                                 </td>
-                                <td class="px-5 py-4 text-sm font-medium text-slate-600">
+                                <td class="px-2 py-4 text-sm font-medium text-slate-600">
                                     {{ task.organization_unit?.name }}
                                 </td>
-                                <td class="px-5 py-4 text-sm font-medium text-slate-600">
+                                <td class="px-2 py-4 text-sm font-medium text-slate-600">
                                     <Link
                                         v-if="task.project"
                                         :href="route('projects.show', task.project.id)"
@@ -263,7 +263,7 @@ const paginationLabel = (label: string) => {
                                     </Link>
                                     <span v-else class="text-xs text-slate-400">Không có</span>
                                 </td>
-                                <td class="px-5 py-4">
+                                <td class="px-2 py-4">
                                     <p
                                         class="text-xs font-semibold"
                                         :class="task.is_overdue ? 'text-red-700' : 'text-slate-500'"
@@ -271,7 +271,7 @@ const paginationLabel = (label: string) => {
                                         {{ formatDueDate(task.due_at) }}
                                     </p>
                                 </td>
-                                <td class="px-5 py-4 text-sm font-medium text-slate-600">
+                                <td class="px-2 py-4 text-sm font-medium text-slate-600">
                                     {{ task.creator?.name }}
                                 </td>
                             </tr>

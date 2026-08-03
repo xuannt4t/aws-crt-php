@@ -110,11 +110,7 @@ Một module chỉ được coi là hoàn thành khi:
 - Tài liệu liên quan đã cập nhật.
 - Không còn placeholder hoặc TODO không giải thích.
 
-## 7. Triển khai
-
-Quy trình dựng server, deploy và rollback: [docs/deployment.md](docs/deployment.md).
-
-## 8. Cấu trúc
+## 7. Cấu trúc
 
 ```text
 ai-kit/
