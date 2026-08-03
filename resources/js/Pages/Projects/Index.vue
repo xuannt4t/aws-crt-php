@@ -209,7 +209,7 @@ const paginationLabel = (label: string) => {
                     </thead>
                     <tbody class="divide-y divide-slate-100">
                         <tr v-for="project in projects.data" :key="project.id" class="hover:bg-slate-50/60">
-                            <td class="px-5 py-4 text-sm font-bold text-slate-700 sm:px-6">
+                            <td class="px-2 py-4 text-sm font-bold text-slate-700 sm:px-6">
                                 {{ project.code }}
                             </td>
                             <td class="max-w-xs px-5 py-4">
@@ -220,25 +220,25 @@ const paginationLabel = (label: string) => {
                                     {{ project.name }}
                                 </Link>
                             </td>
-                            <td class="px-5 py-4 text-sm font-medium text-slate-600">
+                            <td class="px-2 py-4 text-sm font-medium text-slate-600">
                                 {{ project.organization_unit?.name }}
                             </td>
-                            <td class="px-5 py-4 text-sm font-medium text-slate-600">
+                            <td class="px-2 py-4 text-sm font-medium text-slate-600">
                                 {{ project.owner?.name }}
                             </td>
-                            <td class="px-5 py-4">
+                            <td class="px-2 py-4">
                                 <AppProjectStatusBadge :status="project.status" />
                             </td>
                             <td class="w-40 px-5 py-4">
                                 <ProjectProgressBar :progress="project.progress ?? 0" />
                             </td>
-                            <td class="px-5 py-4 text-sm font-semibold text-slate-600">
+                            <td class="px-2 py-4 text-sm font-semibold text-slate-600">
                                 {{ project.task_count ?? 0 }}
                                 <span v-if="project.open_task_count" class="text-xs font-normal text-slate-400">
                                     ({{ project.open_task_count }} mở)
                                 </span>
                             </td>
-                            <td class="px-5 py-4 text-sm font-semibold text-slate-600">
+                            <td class="px-2 py-4 text-sm font-semibold text-slate-600">
                                 {{ project.member_count ?? 0 }}
                             </td>
                         </tr>
