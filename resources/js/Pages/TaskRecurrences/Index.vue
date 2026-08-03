@@ -16,7 +16,7 @@ interface PaginationLink {
 }
 
 interface RecurrenceListItem extends TaskRecurrence {
-    description: string;
+    cadence: string;
     next_occurrence: string | null;
     organization_unit?: Pick<OrganizationUnit, 'id' | 'name'>;
     project?: Pick<Project, 'id' | 'name' | 'code'> | null;
@@ -45,7 +45,6 @@ const props = defineProps<{
     frequencies: { value: RecurrenceFrequency; label: string }[];
     organizationUnits: Pick<OrganizationUnit, 'id' | 'name'>[];
     users: Pick<User, 'id' | 'name'>[];
-    projects: Pick<Project, 'id' | 'name' | 'code'>[];
     can: {
         create: boolean;
     };
@@ -257,7 +256,7 @@ const paginationLabel = (label: string) => {
                                 </div>
                             </td>
                             <td class="px-5 py-4 text-sm font-medium text-slate-600">
-                                {{ recurrence.description }}
+                                {{ recurrence.cadence }}
                             </td>
                             <td class="px-5 py-4 text-sm font-medium text-slate-600">
                                 {{ recurrence.organization_unit?.name }}

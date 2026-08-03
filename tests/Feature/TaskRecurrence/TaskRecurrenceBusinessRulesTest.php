@@ -148,6 +148,35 @@ test('only a user with task assign permission can assign the template to someone
     ])->assertSessionHasNoErrors();
 });
 
+test('only a user with task assign permission can reassign an existing template to someone else', function () {
+    $creator = User::factory()->create();
+    grantPermissions($creator, [PermissionName::TaskUpdate->value]);
+    $unit = OrganizationUnit::factory()->create();
+    $otherUser = User::factory()->create(['is_active' => true]);
+
+    $recurrence = TaskRecurrence::factory()->daily()->create([
+        'creator_id' => $creator->id,
+        'organization_unit_id' => $unit->id,
+        'assignee_id' => $creator->id,
+    ]);
+
+    // Không có task.assign: không được leo thang bằng cách sửa mẫu đã tạo.
+    $this->actingAs($creator)->put(route('task-recurrences.update', $recurrence), [
+        ...baseRecurrencePayload($unit),
+        'assignee_id' => $otherUser->id,
+    ])->assertSessionHasErrors('assignee_id');
+
+    expect($recurrence->fresh()->assignee_id)->toBe($creator->id);
+
+    // Nhưng vẫn được giữ/đặt lại chính mình.
+    $this->actingAs($creator)->put(route('task-recurrences.update', $recurrence), [
+        ...baseRecurrencePayload($unit),
+        'assignee_id' => $creator->id,
+    ])->assertSessionHasNoErrors();
+
+    expect($recurrence->fresh()->assignee_id)->toBe($creator->id);
+});
+
 test('a user with task assign permission can assign the template to someone else', function () {
     $creator = userWithPermissions([
         PermissionName::TaskCreate->value,

@@ -7,6 +7,7 @@ use App\Models\OrganizationUnit;
 use App\Models\Task;
 use App\Models\TaskRecurrence;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 
 test('a user with task view permission can list filtered paginated recurrence templates', function () {
     $viewer = userWithPermissions([PermissionName::TaskView->value]);
@@ -25,18 +26,93 @@ test('a user with task view permission can list filtered paginated recurrence te
         ->assertJsonPath('props.recurrences.total', 21);
 });
 
-test('index exposes the vietnamese description and next occurrence for each template', function () {
+test('index exposes the vietnamese cadence and next occurrence for each template', function () {
     $viewer = userWithPermissions([PermissionName::TaskView->value]);
     TaskRecurrence::factory()->weekly([1])->create([
         'interval' => 1,
         'start_date' => '2026-08-01',
+        'description' => 'Nhớ mang biểu mẫu X',
     ]);
 
     $response = $this->actingAs($viewer)->get(route('task-recurrences.index'), inertiaHeaders());
 
     $response->assertOk()
-        ->assertJsonPath('props.recurrences.data.0.description', 'Thứ Hai hằng tuần')
+        ->assertJsonPath('props.recurrences.data.0.cadence', 'Thứ Hai hằng tuần')
+        ->assertJsonPath('props.recurrences.data.0.description', 'Nhớ mang biểu mẫu X')
         ->assertJsonPath('props.recurrences.data.0.next_occurrence', fn ($value) => $value !== null);
+});
+
+test('show keeps the free-text description separate from the generated cadence', function () {
+    $viewer = userWithPermissions([PermissionName::TaskView->value]);
+    $recurrence = TaskRecurrence::factory()->weekly([1])->create([
+        'interval' => 1,
+        'start_date' => '2026-08-01',
+        'description' => 'Nhớ mang biểu mẫu X',
+    ]);
+
+    $this->actingAs($viewer)->get(route('task-recurrences.show', $recurrence), inertiaHeaders())
+        ->assertOk()
+        ->assertJsonPath('props.recurrence.description', 'Nhớ mang biểu mẫu X')
+        ->assertJsonPath('props.recurrence.cadence', 'Thứ Hai hằng tuần');
+});
+
+test('index filters by organization unit', function () {
+    $viewer = userWithPermissions([PermissionName::TaskView->value]);
+    $unit = OrganizationUnit::factory()->create();
+    $otherUnit = OrganizationUnit::factory()->create();
+
+    $matching = TaskRecurrence::factory()->create(['organization_unit_id' => $unit->id]);
+    TaskRecurrence::factory()->create(['organization_unit_id' => $otherUnit->id]);
+
+    $this->actingAs($viewer)->get(route('task-recurrences.index', [
+        'organization_unit_id' => $unit->id,
+    ]), inertiaHeaders())
+        ->assertOk()
+        ->assertJsonCount(1, 'props.recurrences.data')
+        ->assertJsonPath('props.recurrences.data.0.id', $matching->id);
+});
+
+test('create and edit restrict assignable users the same way', function () {
+    $creator = User::factory()->create();
+    grantPermissions($creator, [PermissionName::TaskCreate->value, PermissionName::TaskUpdate->value]);
+    User::factory()->create(['is_active' => true]);
+
+    $recurrence = TaskRecurrence::factory()->daily()->create(['creator_id' => $creator->id]);
+
+    // Không có quyền task.assign: cả hai màn hình chỉ được thấy chính mình,
+    // nếu không Edit sẽ ẩn luôn ô phân công và khoá cứng người phụ trách.
+    $this->actingAs($creator)->get(route('task-recurrences.create'), inertiaHeaders())
+        ->assertOk()
+        ->assertJsonCount(1, 'props.assignableUsers')
+        ->assertJsonPath('props.assignableUsers.0.id', $creator->id);
+
+    $this->actingAs($creator)->get(route('task-recurrences.edit', $recurrence), inertiaHeaders())
+        ->assertOk()
+        ->assertJsonCount(1, 'props.assignableUsers')
+        ->assertJsonPath('props.assignableUsers.0.id', $creator->id);
+});
+
+test('create and edit expose every active user when the actor can assign', function () {
+    $creator = User::factory()->create(['is_active' => true]);
+    grantPermissions($creator, [
+        PermissionName::TaskCreate->value,
+        PermissionName::TaskUpdate->value,
+        PermissionName::TaskAssign->value,
+    ]);
+    User::factory()->count(2)->create(['is_active' => true]);
+
+    $recurrence = TaskRecurrence::factory()->daily()->create(['creator_id' => $creator->id]);
+
+    $createCount = $this->actingAs($creator)->get(route('task-recurrences.create'), inertiaHeaders())
+        ->assertOk()
+        ->json('props.assignableUsers');
+
+    $editCount = $this->actingAs($creator)->get(route('task-recurrences.edit', $recurrence), inertiaHeaders())
+        ->assertOk()
+        ->json('props.assignableUsers');
+
+    expect($createCount)->toBe($editCount)
+        ->and($createCount)->toHaveCount(3);
 });
 
 test('an inactive template has no next occurrence, consistently on index and show', function () {
@@ -286,7 +362,9 @@ test('switching frequency from monthly to weekly clears the abandoned day_of_mon
         ->and($recurrence->weekdays)->toBe([3]);
 });
 
-test('toggle flips is_active without touching last_generated_for', function () {
+test('toggling off flips is_active without touching last_generated_for, and toggling back on skips the paused window', function () {
+    Carbon::setTestNow('2026-08-10 09:00:00');
+
     $creator = User::factory()->create();
     grantPermissions($creator, [PermissionName::TaskUpdate->value]);
     $recurrence = TaskRecurrence::factory()->daily()->create([
@@ -308,8 +386,27 @@ test('toggle flips is_active without touching last_generated_for', function () {
 
     $recurrence->refresh();
 
+    // Bật lại phải đẩy mốc lên hôm qua, nếu không lần chạy kế tiếp sẽ sinh bù
+    // toàn bộ 2026-08-02 → 2026-08-09 (spec mục 4.3 cấm sinh bù quãng tắt).
     expect($recurrence->is_active)->toBeTrue()
-        ->and($recurrence->last_generated_for->toDateString())->toBe('2026-08-01');
+        ->and($recurrence->last_generated_for->toDateString())->toBe('2026-08-09');
+
+    Carbon::setTestNow();
+});
+
+test('toggling a template that has never generated leaves last_generated_for null', function () {
+    $creator = User::factory()->create();
+    grantPermissions($creator, [PermissionName::TaskUpdate->value]);
+    $recurrence = TaskRecurrence::factory()->daily()->create([
+        'creator_id' => $creator->id,
+        'is_active' => true,
+        'last_generated_for' => null,
+    ]);
+
+    $this->actingAs($creator)->patch(route('task-recurrences.toggle', $recurrence))->assertRedirect();
+    $this->actingAs($creator)->patch(route('task-recurrences.toggle', $recurrence))->assertRedirect();
+
+    expect($recurrence->fresh()->last_generated_for)->toBeNull();
 });
 
 test('a user without update rights cannot toggle a template', function () {
@@ -400,4 +497,27 @@ test('a soft deleted template 404s on show edit update toggle and destroy', func
     ])->assertNotFound();
     $this->actingAs($admin)->patch(route('task-recurrences.toggle', $recurrence->id))->assertNotFound();
     $this->actingAs($admin)->delete(route('task-recurrences.destroy', $recurrence->id))->assertNotFound();
+});
+
+test('a task from a soft deleted template still exposes the template with its deleted_at flag', function () {
+    $viewer = userWithPermissions([PermissionName::TaskView->value]);
+    $recurrence = TaskRecurrence::factory()->daily()->create();
+    $task = Task::factory()->create([
+        'organization_unit_id' => $recurrence->organization_unit_id,
+        'creator_id' => $recurrence->creator_id,
+        'task_recurrence_id' => $recurrence->id,
+        'recurrence_date' => '2026-08-03',
+    ]);
+
+    $this->actingAs($viewer)->get(route('tasks.show', $task), inertiaHeaders())
+        ->assertOk()
+        ->assertJsonPath('props.task.recurrence.deleted_at', null);
+
+    $recurrence->delete();
+
+    // Mẫu đã xoá mềm: giao diện cần deleted_at để hiển thị nhãn tĩnh thay vì
+    // link tới trang chi tiết mẫu (link đó sẽ 404).
+    $this->actingAs($viewer)->get(route('tasks.show', $task), inertiaHeaders())
+        ->assertOk()
+        ->assertJsonPath('props.task.recurrence.deleted_at', fn ($value) => $value !== null);
 });

@@ -89,7 +89,7 @@ export interface Task {
     creator?: Pick<User, 'id' | 'name' | 'avatar_url'>;
     assignee?: Pick<User, 'id' | 'name' | 'avatar_url'> | null;
     project?: Pick<Project, 'id' | 'name' | 'code'> | null;
-    recurrence?: Pick<TaskRecurrence, 'id' | 'title'> | null;
+    recurrence?: (Pick<TaskRecurrence, 'id' | 'title'> & { deleted_at?: string | null }) | null;
     status_histories?: TaskStatusHistory[];
 }
 
@@ -115,10 +115,10 @@ export interface TaskRecurrence {
     is_active: boolean;
     last_generated_for: string | null;
     /**
-     * On Index/Show responses the controller overwrites this with the
-     * server-generated Vietnamese cadence sentence (see RecurrenceSchedule::describe()).
-     * On Create/Edit it is the free-text notes field instead.
+     * Câu mô tả chu kỳ bằng tiếng Việt do server sinh
+     * (xem RecurrenceSchedule::describe()). Chỉ có trên response Index/Show.
      */
+    cadence?: string;
     next_occurrence?: string | null;
     organization_unit?: Pick<OrganizationUnit, 'id' | 'name'>;
     creator?: Pick<User, 'id' | 'name' | 'avatar_url'>;

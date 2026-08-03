@@ -44,12 +44,16 @@ final class GenerateTasksFromRecurrenceAction
             return 0;
         }
 
-        return DB::transaction(function () use ($recurrence, $occurrences): int {
+        // Dự án của mẫu không đổi giữa các kỳ trong cùng một lần chạy, nên chỉ
+        // phân giải (và cảnh báo) đúng một lần thay vì lặp lại mỗi kỳ.
+        $projectId = $this->resolveProjectId($recurrence);
+
+        return DB::transaction(function () use ($recurrence, $occurrences, $projectId): int {
             $created = 0;
             $lastOccurrence = null;
 
             foreach ($occurrences as $occurrence) {
-                if ($this->generateTask($recurrence, $occurrence)) {
+                if ($this->generateTask($recurrence, $occurrence, $projectId)) {
                     $created++;
                 }
 
@@ -64,11 +68,10 @@ final class GenerateTasksFromRecurrenceAction
         });
     }
 
-    private function generateTask(TaskRecurrence $recurrence, CarbonImmutable $occurrence): bool
+    private function generateTask(TaskRecurrence $recurrence, CarbonImmutable $occurrence, ?int $projectId): bool
     {
         try {
-            DB::transaction(function () use ($recurrence, $occurrence): void {
-                $projectId = $this->resolveProjectId($recurrence);
+            DB::transaction(function () use ($recurrence, $occurrence, $projectId): void {
                 $plannedQuantity = $recurrence->planned_quantity;
 
                 $task = Task::create([

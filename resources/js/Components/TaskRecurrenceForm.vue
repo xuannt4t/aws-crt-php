@@ -217,7 +217,7 @@ const handleSubmit = () => {
                             id="quantity_unit"
                             v-model="form.quantity_unit"
                             type="text"
-                            maxlength="30"
+                            maxlength="32"
                             class="mt-1 block w-full"
                             placeholder="hồ sơ, cuộc gọi..."
                             :disabled="!form.planned_quantity"

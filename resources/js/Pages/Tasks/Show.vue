@@ -234,13 +234,20 @@ const paginationLabel = (label: string) => {
                             Quá hạn
                         </span>
                         <Link
-                            v-if="task.recurrence"
+                            v-if="task.recurrence && !task.recurrence.deleted_at"
                             :href="route('task-recurrences.show', task.recurrence.id)"
                             class="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-2.5 py-1 text-xs font-bold text-brand-700 hover:bg-brand-100"
                         >
                             <AppIcon name="calendar" class="size-3.5" />
                             Sinh từ mẫu: {{ task.recurrence.title }}
                         </Link>
+                        <span
+                            v-else-if="task.recurrence"
+                            class="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-500"
+                        >
+                            <AppIcon name="calendar" class="size-3.5" />
+                            Sinh từ mẫu đã xóa: {{ task.recurrence.title }}
+                        </span>
                     </div>
 
                     <div class="mt-6">

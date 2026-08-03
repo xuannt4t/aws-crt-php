@@ -50,7 +50,7 @@ final class TaskRecurrenceController extends Controller
             ->paginate(20)
             ->through(fn (TaskRecurrence $recurrence): array => [
                 ...$recurrence->toArray(),
-                'description' => $schedule->describe($recurrence),
+                'cadence' => $schedule->describe($recurrence),
                 'next_occurrence' => $recurrence->is_active
                     ? $schedule->nextOccurrenceAfter($recurrence, now())?->toDateString()
                     : null,
@@ -63,7 +63,6 @@ final class TaskRecurrenceController extends Controller
             'frequencies' => $this->frequencyOptions(),
             'organizationUnits' => $this->organizationUnits(),
             'users' => $this->activeUsers(),
-            'projects' => $this->openProjects($request),
             'can' => [
                 'create' => $request->user()->can('create', TaskRecurrence::class),
             ],
@@ -105,7 +104,7 @@ final class TaskRecurrenceController extends Controller
         return Inertia::render('TaskRecurrences/Show', [
             'recurrence' => [
                 ...$taskRecurrence->toArray(),
-                'description' => $schedule->describe($taskRecurrence),
+                'cadence' => $schedule->describe($taskRecurrence),
                 'next_occurrence' => $taskRecurrence->is_active
                     ? $schedule->nextOccurrenceAfter($taskRecurrence, now())?->toDateString()
                     : null,
@@ -150,7 +149,7 @@ final class TaskRecurrenceController extends Controller
                 'is_active',
             ]),
             'organizationUnits' => $this->organizationUnits(),
-            'assignableUsers' => $this->assignableUsers($request),
+            'assignableUsers' => $this->assignableUsers($request, includeCurrentUser: true),
             'priorities' => $this->enumValues(TaskPriority::cases()),
             'frequencies' => $this->frequencyOptions(),
             'projects' => $this->openProjects($request),
