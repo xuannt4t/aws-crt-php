@@ -9,6 +9,7 @@ use App\Http\Controllers\ProjectMemberController;
 use App\Http\Controllers\TaskAttachmentController;
 use App\Http\Controllers\TaskCommentController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\TaskRecurrenceController;
 use App\Http\Controllers\UserController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -62,6 +63,11 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
         ->scopeBindings()
         ->name('tasks.attachments.destroy');
     Route::resource('tasks', TaskController::class);
+
+    Route::patch('task-recurrences/{taskRecurrence}/toggle', [TaskRecurrenceController::class, 'toggle'])
+        ->name('task-recurrences.toggle');
+    Route::resource('task-recurrences', TaskRecurrenceController::class)
+        ->parameters(['task-recurrences' => 'taskRecurrence']);
 
     Route::post('projects/{project}/members', [ProjectMemberController::class, 'store'])
         ->name('projects.members.store');

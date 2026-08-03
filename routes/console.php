@@ -11,3 +11,7 @@ Artisan::command('inspire', function () {
 Schedule::command('tasks:notify-deadlines')
     ->everyFiveMinutes()
     ->withoutOverlapping();
+
+Schedule::command('tasks:generate-recurring')
+    ->dailyAt('00:05')
+    ->withoutOverlapping();

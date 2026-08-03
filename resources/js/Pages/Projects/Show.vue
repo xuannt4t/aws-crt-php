@@ -53,12 +53,13 @@ const props = defineProps<{
     };
     members: ProjectMember[];
     users: Pick<User, 'id' | 'name'>[];
-    tasks: PaginatedTasks;
+    tasks: PaginatedTasks | null;
     actions: {
         update: boolean;
         delete: boolean;
         manageMembers: boolean;
         close: boolean;
+        viewTasks: boolean;
     };
 }>();
 
@@ -210,7 +211,7 @@ const paginationLabel = (label: string) => {
                     </div>
                 </section>
 
-                <section class="app-panel overflow-hidden">
+                <section v-if="actions.viewTasks && tasks" class="app-panel overflow-hidden">
                     <div class="border-b border-slate-100 px-5 py-4 sm:px-6">
                         <h2 class="font-display text-base font-bold text-ink-950">Công việc thuộc dự án</h2>
                         <p class="mt-1 text-xs text-slate-500">
@@ -309,9 +310,12 @@ const paginationLabel = (label: string) => {
                 </div>
                 <h2 class="mt-5 font-display text-lg font-bold tracking-[-0.02em] text-ink-950">Đóng dự án?</h2>
 
-                <p v-if="!hasOpenTasks" class="mt-2 text-sm leading-6 text-slate-500">
-                    Dự án không còn công việc mở. Bạn có thể đóng dự án ngay.
-                </p>
+                <template v-if="!hasOpenTasks">
+                    <p class="mt-2 text-sm leading-6 text-slate-500">
+                        Dự án không còn công việc mở. Bạn có thể đóng dự án ngay.
+                    </p>
+                    <InputError class="mt-2" :message="closeForm.errors.close_reason" />
+                </template>
 
                 <template v-else>
                     <div class="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-4">

@@ -48,6 +48,7 @@ final class TaskController extends Controller
                 'creator:id,name,avatar_path',
                 'assignee:id,name,avatar_path',
                 'project:id,name,code',
+                'recurrence:id,title,deleted_at',
             ])
             ->when($filters['search'] ?? null, fn (Builder $query, string $search) => $query
                 ->where('title', 'like', "%{$search}%"))
@@ -102,6 +103,7 @@ final class TaskController extends Controller
             'creator:id,name,avatar_path',
             'assignee:id,name,avatar_path',
             'project:id,name,code',
+            'recurrence:id,title,deleted_at',
         ]);
 
         $comments = $task->comments()
@@ -317,12 +319,9 @@ final class TaskController extends Controller
      */
     private function openProjects(): array
     {
-        $user = request()->user();
-
         return Project::query()
             ->open()
-            ->when(! $user->can(PermissionName::ProjectView->value), fn (Builder $query) => $query
-                ->whereHas('members', fn (Builder $inner) => $inner->where('user_id', $user->id)))
+            ->visibleTo(request()->user())
             ->orderBy('name')
             ->get(['id', 'name', 'code'])
             ->toArray();

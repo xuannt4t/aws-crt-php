@@ -17,8 +17,10 @@ final class CloseProjectAction
     public function execute(User $actor, Project $project, ?string $reason): Project
     {
         if ($project->isClosed()) {
+            // Gắn vào close_reason vì đó là trường duy nhất hộp thoại "Đóng dự
+            // án" trên Projects/Show.vue hiển thị lỗi.
             throw ValidationException::withMessages([
-                'status' => 'Dự án đã được đóng.',
+                'close_reason' => 'Dự án đã được đóng.',
             ]);
         }
 

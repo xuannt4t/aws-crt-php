@@ -14,9 +14,11 @@ use App\Http\Requests\StoreProjectRequest;
 use App\Http\Requests\UpdateProjectRequest;
 use App\Models\OrganizationUnit;
 use App\Models\Project;
+use App\Models\Task;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -28,6 +30,7 @@ final class ProjectController extends Controller
         $filters = $request->validated();
 
         $projects = Project::query()
+            ->visibleTo($request->user())
             ->with(['organizationUnit:id,name', 'owner:id,name'])
             ->withCount([
                 'tasks as task_count',
@@ -56,13 +59,23 @@ final class ProjectController extends Controller
                     ->where('user_id', $request->user()->id)))
             ->latest('id')
             ->paginate(20)
-            ->through(fn (Project $project): array => [
-                ...$project->toArray(),
-                'progress' => $project->progress_average === null ? 0 : (int) round((float) $project->progress_average),
-                'task_count' => $project->task_count,
-                'open_task_count' => $project->open_task_count,
-                'member_count' => $project->member_count,
-            ])
+            ->through(function (Project $project): array {
+                $data = $project->toArray();
+
+                // progress_average là cột giả của withAvg (chuỗi số thực), chỉ
+                // dùng để tính progress — không gửi ra Inertia.
+                unset($data['progress_average']);
+
+                return [
+                    ...$data,
+                    'progress' => $project->progress_average === null
+                        ? 0
+                        : (int) round((float) $project->progress_average),
+                    'task_count' => $project->task_count,
+                    'open_task_count' => $project->open_task_count,
+                    'member_count' => $project->member_count,
+                ];
+            })
             ->withQueryString();
 
         return Inertia::render('Projects/Index', [
@@ -85,24 +98,42 @@ final class ProjectController extends Controller
         ]);
     }
 
-    public function show(Project $project): Response
+    public function show(Request $request, Project $project): Response
     {
-        $this->authorize('view', $project);
-
-        $project->load(['organizationUnit:id,name', 'owner:id,name']);
+        $user = $request->user();
 
         $members = $project->members()
             ->with('user:id,name,avatar_path')
             ->get();
 
-        $tasks = $project->tasks()
-            ->with(['assignee:id,name,avatar_path'])
-            ->latest('id')
-            ->paginate(
-                perPage: 20,
-                pageName: 'tasks_page',
-            )
-            ->withQueryString();
+        // Nạp sẵn quan hệ members để isMember()/isManager() bên trong các policy
+        // dùng lại dữ liệu này thay vì bắn thêm truy vấn cho mỗi lần kiểm tra.
+        $project->setRelation('members', $members);
+
+        $this->authorize('view', $project);
+
+        $actions = [
+            'update' => $user->can('update', $project),
+            'delete' => $user->can('delete', $project),
+            'manageMembers' => $user->can('manageMembers', $project),
+            'close' => $user->can('close', $project),
+            'viewTasks' => $user->can('viewAny', Task::class),
+        ];
+
+        // Quan hệ members đã có prop riêng; bỏ khỏi model để không lặp trong payload.
+        $project->unsetRelation('members');
+        $project->load(['organizationUnit:id,name', 'owner:id,name']);
+
+        $tasks = $actions['viewTasks']
+            ? $project->tasks()
+                ->with(['assignee:id,name,avatar_path'])
+                ->latest('id')
+                ->paginate(
+                    perPage: 20,
+                    pageName: 'tasks_page',
+                )
+                ->withQueryString()
+            : null;
 
         return Inertia::render('Projects/Show', [
             'project' => [
@@ -113,12 +144,7 @@ final class ProjectController extends Controller
             'members' => $members,
             'users' => $this->activeUsers(),
             'tasks' => $tasks,
-            'actions' => [
-                'update' => request()->user()->can('update', $project),
-                'delete' => request()->user()->can('delete', $project),
-                'manageMembers' => request()->user()->can('manageMembers', $project),
-                'close' => request()->user()->can('close', $project),
-            ],
+            'actions' => $actions,
         ]);
     }
 
@@ -158,11 +184,11 @@ final class ProjectController extends Controller
         return Redirect::route('projects.index')->with('success', 'Cập nhật dự án thành công.');
     }
 
-    public function destroy(Project $project, DeleteProjectAction $action): RedirectResponse
+    public function destroy(Request $request, Project $project, DeleteProjectAction $action): RedirectResponse
     {
         $this->authorize('delete', $project);
 
-        $action->execute(request()->user(), $project);
+        $action->execute($request->user(), $project);
 
         return Redirect::route('projects.index')->with('success', 'Xóa dự án thành công.');
     }

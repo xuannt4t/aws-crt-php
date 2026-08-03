@@ -5,7 +5,7 @@ withDefaults(
     defineProps<{
         title: string;
         description: string;
-        icon?: 'building' | 'users' | 'tasks' | 'folder' | 'shield';
+        icon?: 'building' | 'users' | 'tasks' | 'folder' | 'shield' | 'calendar';
     }>(),
     {
         icon: 'tasks',

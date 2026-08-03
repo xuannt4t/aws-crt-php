@@ -33,6 +33,8 @@ final class Task extends Model
         'quantity_unit',
         'due_at',
         'completed_at',
+        'task_recurrence_id',
+        'recurrence_date',
     ];
 
     protected function casts(): array
@@ -45,6 +47,7 @@ final class Task extends Model
             'actual_quantity' => 'integer',
             'due_at' => 'datetime',
             'completed_at' => 'datetime',
+            'recurrence_date' => 'date',
         ];
     }
 
@@ -96,6 +99,11 @@ final class Task extends Model
     public function assignee(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assignee_id')->withTrashed();
+    }
+
+    public function recurrence(): BelongsTo
+    {
+        return $this->belongsTo(TaskRecurrence::class, 'task_recurrence_id')->withTrashed();
     }
 
     /**

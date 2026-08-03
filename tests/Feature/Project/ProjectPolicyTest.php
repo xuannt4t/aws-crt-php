@@ -6,14 +6,16 @@ use App\Models\Project;
 use App\Models\ProjectMember;
 use App\Models\User;
 
-test('viewAny and create require permission only', function () {
+test('viewAny is open to every authenticated user while create requires permission', function () {
     $viewer = userWithPermissions([PermissionName::ProjectView->value]);
     $creator = userWithPermissions([PermissionName::ProjectCreate->value]);
     $userWithoutPermission = User::factory()->create();
 
+    // Danh sách dự án mở cho mọi người dùng; nội dung được giới hạn bằng
+    // Project::scopeVisibleTo(), không bằng viewAny.
     expect($viewer->can('viewAny', Project::class))->toBeTrue()
+        ->and($userWithoutPermission->can('viewAny', Project::class))->toBeTrue()
         ->and($creator->can('create', Project::class))->toBeTrue()
-        ->and($userWithoutPermission->can('viewAny', Project::class))->toBeFalse()
         ->and($userWithoutPermission->can('create', Project::class))->toBeFalse();
 });
 

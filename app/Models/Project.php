@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PermissionName;
 use App\Enums\ProjectMemberRole;
 use App\Enums\ProjectStatus;
 use App\Enums\TaskStatus;
@@ -99,15 +100,55 @@ final class Project extends Model
 
     public function isMember(User $user): bool
     {
+        if ($this->relationLoaded('members')) {
+            return $this->members->contains(
+                static fn (ProjectMember $member): bool => (int) $member->user_id === (int) $user->id,
+            );
+        }
+
         return $this->members()->where('user_id', $user->id)->exists();
     }
 
     public function isManager(User $user): bool
     {
+        if ($this->relationLoaded('members')) {
+            return $this->members->contains(
+                static fn (ProjectMember $member): bool => (int) $member->user_id === (int) $user->id
+                    && $member->role === ProjectMemberRole::Manager,
+            );
+        }
+
         return $this->members()
             ->where('user_id', $user->id)
             ->where('role', ProjectMemberRole::Manager->value)
             ->exists();
+    }
+
+    /**
+     * Nguồn sự thật duy nhất cho "người dùng có thấy được dự án này không":
+     * quyền hệ thống project.view HOẶC là thành viên dự án. ProjectPolicy::view()
+     * uỷ quyền về đây, và scopeVisibleTo() là bản truy vấn tương đương.
+     */
+    public function isVisibleTo(User $user): bool
+    {
+        return $user->can(PermissionName::ProjectView->value)
+            || $this->isMember($user);
+    }
+
+    /**
+     * Bản truy vấn của isVisibleTo(): giới hạn danh sách dự án theo tầm nhìn
+     * của người dùng.
+     */
+    public function scopeVisibleTo(Builder $query, User $user): Builder
+    {
+        if ($user->can(PermissionName::ProjectView->value)) {
+            return $query;
+        }
+
+        return $query->whereHas(
+            'members',
+            fn (Builder $inner) => $inner->where('user_id', $user->id),
+        );
     }
 
     public function isClosed(): bool

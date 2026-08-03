@@ -8,15 +8,19 @@ use App\Models\User;
 
 final class ProjectPolicy
 {
+    /**
+     * Mọi người dùng đã đăng nhập đều mở được danh sách dự án; nội dung danh
+     * sách được giới hạn theo tầm nhìn bằng Project::scopeVisibleTo() — người
+     * không có quyền project.view chỉ thấy dự án mình là thành viên.
+     */
     public function viewAny(User $user): bool
     {
-        return $user->can(PermissionName::ProjectView->value);
+        return true;
     }
 
     public function view(User $user, Project $project): bool
     {
-        return $user->can(PermissionName::ProjectView->value)
-            || $project->isMember($user);
+        return $project->isVisibleTo($user);
     }
 
     public function create(User $user): bool
