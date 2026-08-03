@@ -49,6 +49,8 @@ test('role permission seeder creates the complete permission matrix', function (
             PermissionName::ReportViewAll,
             PermissionName::ReportExport,
             PermissionName::SystemViewAuditLogs,
+            PermissionName::TaskViewAll,
+            PermissionName::ProjectViewAll,
         ]),
         RoleName::DepartmentManager->value => $values([
             PermissionName::OrganizationView,
@@ -65,6 +67,8 @@ test('role permission seeder creates the complete permission matrix', function (
             PermissionName::ProjectView,
             PermissionName::ReportViewOwn,
             PermissionName::ReportViewDepartment,
+            PermissionName::TaskViewDepartment,
+            PermissionName::ProjectViewDepartment,
         ]),
         RoleName::ProjectManager->value => $values([
             PermissionName::OrganizationView,
@@ -85,6 +89,8 @@ test('role permission seeder creates the complete permission matrix', function (
             PermissionName::ProjectClose,
             PermissionName::ProjectExport,
             PermissionName::ReportViewOwn,
+            PermissionName::TaskViewOwn,
+            PermissionName::ProjectViewOwn,
         ]),
         RoleName::Employee->value => $values([
             PermissionName::OrganizationView,
@@ -96,6 +102,8 @@ test('role permission seeder creates the complete permission matrix', function (
             PermissionName::TaskSubmit,
             PermissionName::ProjectView,
             PermissionName::ReportViewOwn,
+            PermissionName::TaskViewOwn,
+            PermissionName::ProjectViewOwn,
         ]),
         RoleName::Auditor->value => $values([
             PermissionName::OrganizationView,
@@ -107,6 +115,8 @@ test('role permission seeder creates the complete permission matrix', function (
             PermissionName::ReportViewAll,
             PermissionName::ReportExport,
             PermissionName::SystemViewAuditLogs,
+            PermissionName::TaskViewAll,
+            PermissionName::ProjectViewAll,
         ]),
     ];
 
@@ -135,4 +145,45 @@ test('role permission seeder is idempotent and migrates legacy system admins', f
         ->and(Role::query()->count())->toBe(count(RoleName::cases()))
         ->and($legacyAdmin->fresh()->hasRole(RoleName::SystemAdmin->value))->toBeTrue()
         ->and($legacyAdmin->fresh()->getAllPermissions()->count())->toBe(count(PermissionName::cases()));
+});
+
+test('role permission seeder does not overwrite a role that already has permissions configured manually', function () {
+    $this->seed(RolePermissionSeeder::class);
+
+    $employeeRole = Role::findByName(RoleName::Employee->value, 'web');
+    $employeeRole->syncPermissions([PermissionName::TaskView->value]);
+
+    $this->seed(RolePermissionSeeder::class);
+
+    $actual = Role::findByName(RoleName::Employee->value, 'web')
+        ->permissions
+        ->pluck('name')
+        ->sort()
+        ->values()
+        ->all();
+
+    expect($actual)->toBe([PermissionName::TaskView->value]);
+});
+
+test('role permission seeder assigns baseline scope permissions for a brand new role', function () {
+    $this->seed(RolePermissionSeeder::class);
+
+    expect(
+        Role::findByName(RoleName::DepartmentManager->value, 'web')
+            ->permissions
+            ->pluck('name')
+            ->all()
+    )->toContain(PermissionName::TaskViewDepartment->value, PermissionName::ProjectViewDepartment->value)
+        ->and(
+            Role::findByName(RoleName::ProjectManager->value, 'web')
+                ->permissions
+                ->pluck('name')
+                ->all()
+        )->toContain(PermissionName::TaskViewOwn->value, PermissionName::ProjectViewOwn->value)
+        ->and(
+            Role::findByName(RoleName::Auditor->value, 'web')
+                ->permissions
+                ->pluck('name')
+                ->all()
+        )->toContain(PermissionName::TaskViewAll->value, PermissionName::ProjectViewAll->value);
 });

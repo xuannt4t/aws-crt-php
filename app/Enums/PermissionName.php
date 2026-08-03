@@ -26,6 +26,9 @@ enum PermissionName: string
     case TaskApprove = 'task.approve';
     case TaskReject = 'task.reject';
     case TaskExport = 'task.export';
+    case TaskViewOwn = 'task.view_own';
+    case TaskViewDepartment = 'task.view_department';
+    case TaskViewAll = 'task.view_all';
 
     case ProjectView = 'project.view';
     case ProjectCreate = 'project.create';
@@ -34,6 +37,9 @@ enum PermissionName: string
     case ProjectManageMembers = 'project.manage_members';
     case ProjectClose = 'project.close';
     case ProjectExport = 'project.export';
+    case ProjectViewOwn = 'project.view_own';
+    case ProjectViewDepartment = 'project.view_department';
+    case ProjectViewAll = 'project.view_all';
 
     case ReportViewOwn = 'report.view_own';
     case ReportViewDepartment = 'report.view_department';

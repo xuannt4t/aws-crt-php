@@ -21,7 +21,13 @@ final class RolePermissionSeeder extends Seeder
         }
 
         foreach ($this->rolePermissions() as $roleName => $permissions) {
-            Role::findOrCreate($roleName, 'web')->syncPermissions($permissions);
+            $role = Role::findOrCreate($roleName, 'web');
+
+            if ($role->permissions->isNotEmpty()) {
+                continue;
+            }
+
+            $role->syncPermissions($permissions);
         }
 
         User::query()
@@ -72,6 +78,8 @@ final class RolePermissionSeeder extends Seeder
                 PermissionName::ReportViewAll,
                 PermissionName::ReportExport,
                 PermissionName::SystemViewAuditLogs,
+                PermissionName::TaskViewAll,
+                PermissionName::ProjectViewAll,
             ]),
             RoleName::DepartmentManager->value => $this->values([
                 PermissionName::OrganizationView,
@@ -88,6 +96,8 @@ final class RolePermissionSeeder extends Seeder
                 PermissionName::ProjectView,
                 PermissionName::ReportViewOwn,
                 PermissionName::ReportViewDepartment,
+                PermissionName::TaskViewDepartment,
+                PermissionName::ProjectViewDepartment,
             ]),
             RoleName::ProjectManager->value => $this->values([
                 PermissionName::OrganizationView,
@@ -108,6 +118,8 @@ final class RolePermissionSeeder extends Seeder
                 PermissionName::ProjectClose,
                 PermissionName::ProjectExport,
                 PermissionName::ReportViewOwn,
+                PermissionName::TaskViewOwn,
+                PermissionName::ProjectViewOwn,
             ]),
             RoleName::Employee->value => $this->values([
                 PermissionName::OrganizationView,
@@ -119,6 +131,8 @@ final class RolePermissionSeeder extends Seeder
                 PermissionName::TaskSubmit,
                 PermissionName::ProjectView,
                 PermissionName::ReportViewOwn,
+                PermissionName::TaskViewOwn,
+                PermissionName::ProjectViewOwn,
             ]),
             RoleName::Auditor->value => $this->values([
                 PermissionName::OrganizationView,
@@ -130,6 +144,8 @@ final class RolePermissionSeeder extends Seeder
                 PermissionName::ReportViewAll,
                 PermissionName::ReportExport,
                 PermissionName::SystemViewAuditLogs,
+                PermissionName::TaskViewAll,
+                PermissionName::ProjectViewAll,
             ]),
         ];
     }
