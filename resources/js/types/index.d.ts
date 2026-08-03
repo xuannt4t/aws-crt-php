@@ -11,6 +11,26 @@ export interface Role {
     name: string;
 }
 
+export interface PermissionMatrixRole {
+    id: number;
+    name: string;
+    label: string;
+}
+
+export interface PermissionMatrixPermission {
+    name: string;
+    label: string;
+}
+
+export interface PermissionGroup {
+    key: string;
+    label: string;
+    permissions: PermissionMatrixPermission[];
+}
+
+/** Map tên vai trò → danh sách tên permission đang được gán. */
+export type PermissionMatrix = Record<string, string[]>;
+
 export type TaskStatus =
     'draft' | 'todo' | 'in_progress' | 'waiting_review' | 'waiting_approval' | 'completed' | 'cancelled';
 
