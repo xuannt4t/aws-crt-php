@@ -5,6 +5,7 @@ import AppPageHeader from '@/Components/AppPageHeader.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { isScopePermission } from '@/Support/permissionMatrix';
 import { Head, useForm, usePage } from '@inertiajs/vue3';
 import type { PageProps, PermissionGroup, PermissionMatrix, PermissionMatrixRole } from '@/types';
 
@@ -18,11 +19,9 @@ const props = defineProps<{
 const page = usePage<PageProps>();
 
 const SYSTEM_MANAGE_SETTINGS = 'system.manage_settings';
-const SCOPE_SUFFIX_PATTERN = /_(view_own|view_department|view_all)$/;
 
 const isLockedRole = (roleName: string) => props.lockedRoles.includes(roleName);
 const isHeldByCurrentUser = (roleName: string) => page.props.auth.roles.includes(roleName);
-const isScopePermission = (permissionName: string) => SCOPE_SUFFIX_PATTERN.test(permissionName);
 
 type CellState = Record<string, Record<string, boolean>>;
 
