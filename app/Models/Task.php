@@ -130,8 +130,21 @@ final class Task extends Model
     public function scopeOverdue(Builder $query): Builder
     {
         return $query
-            ->whereNotIn('status', [TaskStatus::Completed->value, TaskStatus::Cancelled->value])
+            ->whereNotIn('status', self::overdueExcludedStatuses())
             ->where('due_at', '<', now());
+    }
+
+    /**
+     * Các trạng thái không được tính là "trễ hạn" (spec §6.1), dùng chung bởi
+     * `scopeOverdue` và `App\Support\TaskSummary` — nguồn DUY NHẤT của danh
+     * sách này, để ô đếm "trễ hạn" luôn khớp với những dòng danh sách đánh
+     * dấu trễ hạn, kể cả khi định nghĩa này đổi trong tương lai.
+     *
+     * @return list<string>
+     */
+    public static function overdueExcludedStatuses(): array
+    {
+        return [TaskStatus::Completed->value, TaskStatus::Cancelled->value];
     }
 
     /**
