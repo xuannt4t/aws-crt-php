@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Enums\DataScope;
+use App\Enums\ProjectMemberRole;
+use App\Enums\ProjectTaskVisibility;
 use App\Enums\TaskPriority;
 use App\Enums\TaskStatus;
 use App\Support\DataScopeResolver;
@@ -173,25 +175,32 @@ final class Task extends Model
         $query
             ->where('assignee_id', $user->id)
             ->orWhere('creator_id', $user->id)
-            ->orWhereHas(
-                'project',
-                fn (Builder $projectQuery) => $projectQuery->whereHas(
-                    'members',
-                    fn (Builder $memberQuery) => $memberQuery->where('user_id', $user->id),
-                ),
-            )
+            ->orWhereHas('project', fn (Builder $projectQuery) => $this->addProjectMembershipCondition($projectQuery, $user))
             ->orWhereHas('parent', function (Builder $parentQuery) use ($user): void {
                 $parentQuery
                     ->where('assignee_id', $user->id)
                     ->orWhere('creator_id', $user->id)
-                    ->orWhereHas(
-                        'project',
-                        fn (Builder $projectQuery) => $projectQuery->whereHas(
-                            'members',
-                            fn (Builder $memberQuery) => $memberQuery->where('user_id', $user->id),
-                        ),
-                    );
+                    ->orWhereHas('project', fn (Builder $projectQuery) => $this->addProjectMembershipCondition($projectQuery, $user));
             });
+    }
+
+    /**
+     * Điều kiện "thành viên dự án với hiệu lực xem toàn bộ việc" (spec §4.1,
+     * mục 3) — nơi DUY NHẤT của rule này trong scopeVisibleTo, dùng lại y hệt
+     * cho việc trực tiếp và cho việc cha (một cấp). Thành viên vai trò
+     * `manager` luôn đạt điều kiện này bất kể cột task_visibility lưu gì,
+     * khớp với ProjectMember::effectiveTaskVisibility().
+     */
+    private function addProjectMembershipCondition(Builder $projectQuery, User $user): Builder
+    {
+        return $projectQuery->whereHas(
+            'members',
+            fn (Builder $memberQuery) => $memberQuery
+                ->where('user_id', $user->id)
+                ->where(fn (Builder $visibilityQuery) => $visibilityQuery
+                    ->where('task_visibility', ProjectTaskVisibility::All->value)
+                    ->orWhere('role', ProjectMemberRole::Manager->value)),
+        );
     }
 
     public function isOverdue(): bool

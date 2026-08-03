@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\PermissionName;
+use App\Enums\ProjectMemberRole;
 use App\Enums\TaskStatus;
 use App\Models\OrganizationUnit;
 use App\Models\Project;
@@ -34,17 +35,41 @@ test('own scope shows a task created by the user', function () {
         ->and($ids)->not->toContain($other->id);
 });
 
-test('own scope shows a task in a project the user is a member of', function () {
+test('own scope does not show a colleague task in a project the user is a plain member of', function () {
+    // Thay đổi hành vi có chủ đích (spec §4.1 mục 3, cập nhật cùng
+    // ProjectMemberTaskVisibilityTest): thành viên thường ("own", mặc định
+    // của factory) không còn tự động thấy mọi việc của dự án — chỉ những
+    // thành viên có hiệu lực "all" (cột task_visibility = all hoặc vai trò
+    // manager) mới thấy. Chi tiết đầy đủ nằm ở
+    // tests/Feature/Project/ProjectMemberTaskVisibilityTest.php.
     $user = userWithPermissions([PermissionName::TaskView->value]);
     $project = Project::factory()->create();
     ProjectMember::factory()->create(['project_id' => $project->id, 'user_id' => $user->id]);
-    $mine = Task::factory()->create(['project_id' => $project->id]);
+    $colleagueTask = Task::factory()->create(['project_id' => $project->id]);
     $otherProject = Project::factory()->create();
     $other = Task::factory()->create(['project_id' => $otherProject->id]);
 
     $ids = Task::query()->visibleTo($user)->pluck('id');
 
-    expect($ids)->toContain($mine->id)
+    expect($ids)->not->toContain($colleagueTask->id)
+        ->and($ids)->not->toContain($other->id);
+});
+
+test('own scope shows a colleague task in a project where the user has all task visibility', function () {
+    $user = userWithPermissions([PermissionName::TaskView->value]);
+    $project = Project::factory()->create();
+    ProjectMember::factory()->allTaskVisibility()->create([
+        'project_id' => $project->id,
+        'user_id' => $user->id,
+        'role' => ProjectMemberRole::Member,
+    ]);
+    $colleagueTask = Task::factory()->create(['project_id' => $project->id]);
+    $otherProject = Project::factory()->create();
+    $other = Task::factory()->create(['project_id' => $otherProject->id]);
+
+    $ids = Task::query()->visibleTo($user)->pluck('id');
+
+    expect($ids)->toContain($colleagueTask->id)
         ->and($ids)->not->toContain($other->id);
 });
 
