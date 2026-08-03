@@ -23,6 +23,18 @@ final class RolePermissionSeeder extends Seeder
         foreach ($this->rolePermissions() as $roleName => $permissions) {
             $role = Role::findOrCreate($roleName, 'web');
 
+            // system_admin luôn giữ TOÀN BỘ permission — đây chính là bất biến
+            // mà UpdatePermissionMatrixRequest và màn hình ma trận đang khẳng
+            // định. Nếu bỏ qua vai trò này khi nó đã có quyền, mọi permission
+            // mới thêm ở bản phát hành sau sẽ không bao giờ được cấp trên bản
+            // cài đặt cũ (seeder bỏ qua, ma trận từ chối sửa) trong khi giao
+            // diện vẫn hiển thị đã tích. Vì vậy luôn đồng bộ cưỡng bức.
+            if ($roleName === RoleName::SystemAdmin->value) {
+                $role->syncPermissions($permissions);
+
+                continue;
+            }
+
             if ($role->permissions->isNotEmpty()) {
                 continue;
             }

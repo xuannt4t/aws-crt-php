@@ -420,7 +420,7 @@ test('a user without update rights cannot toggle a template', function () {
 });
 
 test('a user with task delete permission can soft delete a template without touching generated tasks', function () {
-    $deleter = userWithPermissions([PermissionName::TaskDelete->value]);
+    $deleter = userWithPermissions([PermissionName::TaskDelete->value, PermissionName::TaskViewAll->value]);
     $recurrence = TaskRecurrence::factory()->daily()->create();
     $task = Task::factory()->create([
         'task_recurrence_id' => $recurrence->id,

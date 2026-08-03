@@ -122,8 +122,17 @@ final class UpdatePermissionMatrixRequest extends FormRequest
                 return;
             }
 
+            // Kiểm tra cả enum lẫn bảng roles: UpdateRolePermissionsAction gọi
+            // Role::findByName() và sẽ ném RoleDoesNotExist (lỗi 500) nếu một
+            // vai trò có trong enum nhưng chưa được seed vào CSDL.
+            $existingRoleNames = Role::query()
+                ->where('guard_name', 'web')
+                ->pluck('name')
+                ->all();
+
             foreach (array_keys($value) as $roleName) {
-                if (! in_array($roleName, $this->roleValues(), true)) {
+                if (! in_array($roleName, $this->roleValues(), true)
+                    || ! in_array($roleName, $existingRoleNames, true)) {
                     $fail("Vai trò \"{$roleName}\" không tồn tại.");
                 }
             }

@@ -187,3 +187,38 @@ test('role permission seeder assigns baseline scope permissions for a brand new 
                 ->all()
         )->toContain(PermissionName::TaskViewAll->value, PermissionName::ProjectViewAll->value);
 });
+
+test('re-running the seeder re-grants a permission missing from system admin while leaving a customised role alone', function () {
+    $this->seed(RolePermissionSeeder::class);
+
+    // Mô phỏng bản cài đặt cũ: bản phát hành mới thêm một permission mà
+    // vai trò system_admin trên máy khách chưa được cấp.
+    Role::findByName(RoleName::SystemAdmin->value, 'web')
+        ->revokePermissionTo(PermissionName::SystemManageSettings->value);
+
+    Role::findByName(RoleName::Employee->value, 'web')
+        ->syncPermissions([PermissionName::TaskView->value]);
+
+    $this->seed(RolePermissionSeeder::class);
+
+    $expected = collect(PermissionName::cases())
+        ->map(static fn (PermissionName $permission): string => $permission->value)
+        ->sort()
+        ->values()
+        ->all();
+
+    $adminPermissions = Role::findByName(RoleName::SystemAdmin->value, 'web')
+        ->permissions
+        ->pluck('name')
+        ->sort()
+        ->values()
+        ->all();
+
+    expect($adminPermissions)->toBe($expected)
+        ->and(
+            Role::findByName(RoleName::Employee->value, 'web')
+                ->permissions
+                ->pluck('name')
+                ->all()
+        )->toBe([PermissionName::TaskView->value]);
+});

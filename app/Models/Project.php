@@ -86,9 +86,16 @@ final class Project extends Model
         ]);
     }
 
-    public function calculateProgress(): int
+    /**
+     * Tiến độ trung bình của dự án. Truyền $viewer để chỉ tính trên những công
+     * việc người đó thấy được (Task::scopeVisibleTo) — dùng cho màn hình hiển
+     * thị, nơi con số phải khớp với danh sách việc bên cạnh. Bỏ trống khi cần
+     * con số toàn dự án cho nghiệp vụ.
+     */
+    public function calculateProgress(?User $viewer = null): int
     {
         $progress = $this->tasks()
+            ->when($viewer, fn (Builder $query, User $user) => $query->visibleTo($user))
             ->where('status', '!=', TaskStatus::Cancelled->value)
             ->avg('progress');
 

@@ -180,3 +180,35 @@ test('the generated task list on the recurrence detail page is filtered by the v
 
     expect($response->json('props.tasks.data.*.id'))->not->toContain($colleaguesTask->id);
 });
+
+test('opening the edit page of a template outside the scope returns 403', function () {
+    $user = User::factory()->create();
+    grantPermissions($user, [
+        PermissionName::TaskView->value,
+        PermissionName::TaskUpdate->value,
+    ]);
+    $outOfScope = TaskRecurrence::factory()->create();
+    $inScope = TaskRecurrence::factory()->create(['creator_id' => $user->id]);
+
+    $this->actingAs($user)
+        ->get(route('task-recurrences.edit', $outOfScope))
+        ->assertForbidden();
+
+    $this->actingAs($user)
+        ->get(route('task-recurrences.edit', $inScope))
+        ->assertOk();
+});
+
+test('deleting a template outside the scope is rejected', function () {
+    $user = userWithPermissions([
+        PermissionName::TaskView->value,
+        PermissionName::TaskDelete->value,
+    ]);
+    $outOfScope = TaskRecurrence::factory()->create();
+
+    $this->actingAs($user)
+        ->delete(route('task-recurrences.destroy', $outOfScope))
+        ->assertForbidden();
+
+    $this->assertNotSoftDeleted($outOfScope);
+});

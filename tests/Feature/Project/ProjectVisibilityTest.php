@@ -2,6 +2,7 @@
 
 use App\Enums\PermissionName;
 use App\Enums\ProjectStatus;
+use App\Enums\TaskStatus;
 use App\Models\OrganizationUnit;
 use App\Models\Project;
 use App\Models\ProjectMember;
@@ -172,4 +173,72 @@ test('a project view_all holder who is not a member only sees own tasks on the p
         ->assertJsonPath('props.tasks.data.0.id', $mine->id);
 
     expect($response->json('props.tasks.data.*.id'))->not->toContain($colleaguesTask->id);
+});
+
+test('opening the edit page of a project outside the scope returns 403', function () {
+    $user = userWithPermissions([
+        PermissionName::ProjectView->value,
+        PermissionName::ProjectUpdate->value,
+    ]);
+    $outOfScope = Project::factory()->create();
+    $inScope = Project::factory()->create();
+    ProjectMember::factory()->create(['project_id' => $inScope->id, 'user_id' => $user->id]);
+
+    $this->actingAs($user)
+        ->get(route('projects.edit', $outOfScope))
+        ->assertForbidden();
+
+    $this->actingAs($user)
+        ->get(route('projects.edit', $inScope))
+        ->assertOk();
+});
+
+test('deleting a project outside the scope is rejected', function () {
+    $user = userWithPermissions([
+        PermissionName::ProjectView->value,
+        PermissionName::ProjectDelete->value,
+    ]);
+    $outOfScope = Project::factory()->create();
+
+    $this->actingAs($user)
+        ->delete(route('projects.destroy', $outOfScope))
+        ->assertForbidden();
+
+    $this->assertNotSoftDeleted($outOfScope);
+});
+
+test('the project aggregates count only the tasks the viewer can see', function () {
+    // Số liệu tổng hợp phải khớp với danh sách công việc bên cạnh: người xem
+    // chỉ có phạm vi own nên chỉ đếm được công việc của chính mình.
+    $viewer = userWithPermissions([
+        PermissionName::ProjectView->value,
+        PermissionName::ProjectViewAll->value,
+        PermissionName::TaskView->value,
+    ]);
+    $project = Project::factory()->create();
+
+    Task::factory()->create([
+        'project_id' => $project->id,
+        'assignee_id' => $viewer->id,
+        'status' => TaskStatus::Todo,
+        'progress' => 40,
+    ]);
+    Task::factory()->count(3)->create([
+        'project_id' => $project->id,
+        'status' => TaskStatus::Todo,
+        'progress' => 100,
+    ]);
+
+    $this->actingAs($viewer)
+        ->get(route('projects.show', $project), inertiaHeaders())
+        ->assertOk()
+        ->assertJsonPath('props.project.open_task_count', 1)
+        ->assertJsonPath('props.project.progress', 40);
+
+    $this->actingAs($viewer)
+        ->get(route('projects.index'), inertiaHeaders())
+        ->assertOk()
+        ->assertJsonPath('props.projects.data.0.task_count', 1)
+        ->assertJsonPath('props.projects.data.0.open_task_count', 1)
+        ->assertJsonPath('props.projects.data.0.progress', 40);
 });

@@ -6,6 +6,11 @@ use App\Models\OrganizationUnit;
 use App\Models\Project;
 use App\Models\ProjectMember;
 use App\Models\Task;
+use App\Models\TaskAttachment;
+use App\Models\TaskComment;
+use App\Models\User;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 test('own scope shows a task assigned to the user', function () {
     $user = userWithPermissions([PermissionName::TaskView->value]);
@@ -201,4 +206,103 @@ test('search filter still applies correctly when combined with the own scope', f
         ->assertInertia(fn ($page) => $page
             ->has('tasks.data', 1)
             ->where('tasks.data.0.id', $matching->id));
+});
+
+test('opening the edit page of a task outside the scope returns 403', function () {
+    // Trang sửa để lộ đúng phần nội dung mà trang xem đã che (tiêu đề, mô tả,
+    // dự án, người phụ trách, đơn vị, hạn) nên phải chịu cùng phạm vi dữ liệu.
+    $user = userWithPermissions([
+        PermissionName::TaskView->value,
+        PermissionName::TaskUpdate->value,
+    ]);
+    $outOfScope = Task::factory()->create();
+    $inScope = Task::factory()->create(['assignee_id' => $user->id]);
+
+    $this->actingAs($user)
+        ->get(route('tasks.edit', $outOfScope))
+        ->assertForbidden();
+
+    $this->actingAs($user)
+        ->get(route('tasks.edit', $inScope))
+        ->assertOk();
+});
+
+test('downloading an attachment of a task outside the scope returns 403', function () {
+    Storage::fake('local');
+
+    $user = userWithPermissions([PermissionName::TaskView->value]);
+    $outOfScope = Task::factory()->create();
+    $path = "task-attachments/{$outOfScope->id}/bi-mat.pdf";
+    Storage::disk('local')->put($path, 'noi dung tep');
+    $attachment = TaskAttachment::factory()->for($outOfScope)->create(['path' => $path]);
+
+    $this->actingAs($user)
+        ->get(route('tasks.attachments.download', [$outOfScope, $attachment]))
+        ->assertForbidden();
+});
+
+test('deleting a task outside the scope is rejected', function () {
+    $user = userWithPermissions([
+        PermissionName::TaskView->value,
+        PermissionName::TaskDelete->value,
+    ]);
+    $outOfScope = Task::factory()->create();
+
+    $this->actingAs($user)
+        ->delete(route('tasks.destroy', $outOfScope))
+        ->assertForbidden();
+
+    $this->assertNotSoftDeleted($outOfScope);
+});
+
+test('assigning or dispatching a task outside the scope is rejected', function () {
+    $user = userWithPermissions([
+        PermissionName::TaskView->value,
+        PermissionName::TaskAssign->value,
+    ]);
+    $outOfScope = Task::factory()->create([
+        'status' => TaskStatus::Draft,
+        'assignee_id' => User::factory()->create()->id,
+    ]);
+
+    expect($user->can('assign', $outOfScope))->toBeFalse()
+        ->and($user->can('dispatch', $outOfScope))->toBeFalse();
+
+    $this->actingAs($user)
+        ->patch(route('tasks.dispatch', $outOfScope))
+        ->assertForbidden();
+
+    expect($outOfScope->fresh()->status)->toBe(TaskStatus::Draft);
+});
+
+test('commenting on a task outside the scope is rejected', function () {
+    $user = userWithPermissions([
+        PermissionName::TaskView->value,
+        PermissionName::TaskComment->value,
+    ]);
+    $outOfScope = Task::factory()->create();
+
+    $this->actingAs($user)
+        ->post(route('tasks.comments.store', $outOfScope), ['body' => 'Không được phép trao đổi.'])
+        ->assertForbidden();
+
+    expect(TaskComment::query()->count())->toBe(0);
+});
+
+test('attaching a file to a task outside the scope is rejected', function () {
+    Storage::fake('local');
+
+    $user = userWithPermissions([
+        PermissionName::TaskView->value,
+        PermissionName::TaskComment->value,
+    ]);
+    $outOfScope = Task::factory()->create();
+
+    $this->actingAs($user)
+        ->post(route('tasks.attachments.store', $outOfScope), [
+            'files' => [UploadedFile::fake()->create('bao-cao.pdf', 10, 'application/pdf')],
+        ])
+        ->assertForbidden();
+
+    expect(TaskAttachment::query()->count())->toBe(0);
 });

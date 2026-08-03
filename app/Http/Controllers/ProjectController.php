@@ -28,20 +28,27 @@ final class ProjectController extends Controller
     public function index(IndexProjectRequest $request): Response
     {
         $filters = $request->validated();
+        $user = $request->user();
 
+        // Các số liệu tổng hợp đi qua Task::visibleTo() giống hệt danh sách
+        // công việc: một con số toàn hệ thống đặt cạnh danh sách đã lọc theo
+        // người xem vừa gây khó hiểu vừa để lộ tín hiệu về dữ liệu ngoài phạm vi.
         $projects = Project::query()
-            ->visibleTo($request->user())
+            ->visibleTo($user)
             ->with(['organizationUnit:id,name', 'owner:id,name'])
             ->withCount([
-                'tasks as task_count',
-                'tasks as open_task_count' => fn (Builder $query) => $query->whereNotIn('status', [
-                    TaskStatus::Completed->value,
-                    TaskStatus::Cancelled->value,
-                ]),
+                'tasks as task_count' => fn (Builder $query) => $query->visibleTo($user),
+                'tasks as open_task_count' => fn (Builder $query) => $query
+                    ->visibleTo($user)
+                    ->whereNotIn('status', [
+                        TaskStatus::Completed->value,
+                        TaskStatus::Cancelled->value,
+                    ]),
                 'members as member_count',
             ])
             ->withAvg([
                 'tasks as progress_average' => fn (Builder $query) => $query
+                    ->visibleTo($user)
                     ->where('status', '!=', TaskStatus::Cancelled->value),
             ], 'progress')
             ->when($filters['search'] ?? null, fn (Builder $query, string $search) => $query
@@ -139,8 +146,8 @@ final class ProjectController extends Controller
         return Inertia::render('Projects/Show', [
             'project' => [
                 ...$project->toArray(),
-                'progress' => $project->calculateProgress(),
-                'open_task_count' => $project->openTasks()->count(),
+                'progress' => $project->calculateProgress($user),
+                'open_task_count' => $project->openTasks()->visibleTo($user)->count(),
             ],
             'members' => $members,
             'users' => $this->activeUsers(),

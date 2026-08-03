@@ -227,7 +227,9 @@ test('a user with assign permission can assign a task', function () {
 });
 
 test('a user with update permission can update content without changing assignment', function () {
-    $updater = userWithPermissions([PermissionName::TaskUpdate->value]);
+    // task.view_all: sửa/xoá/giao một công việc nay còn đòi công việc đó nằm
+    // trong phạm vi dữ liệu của người thao tác.
+    $updater = userWithPermissions([PermissionName::TaskUpdate->value, PermissionName::TaskViewAll->value]);
     $assignee = User::factory()->create();
     $unit = OrganizationUnit::factory()->create();
     $task = Task::factory()->create([
@@ -250,7 +252,7 @@ test('a user with update permission can update content without changing assignme
 });
 
 test('task status and progress cannot be changed through CRUD update', function () {
-    $updater = userWithPermissions([PermissionName::TaskUpdate->value]);
+    $updater = userWithPermissions([PermissionName::TaskUpdate->value, PermissionName::TaskViewAll->value]);
     $task = Task::factory()->create();
 
     $response = $this->actingAs($updater)->put(route('tasks.update', $task), [
@@ -267,7 +269,7 @@ test('task status and progress cannot be changed through CRUD update', function 
 });
 
 test('a user with delete permission can soft delete a task and creates audit log', function () {
-    $deleter = userWithPermissions([PermissionName::TaskDelete->value]);
+    $deleter = userWithPermissions([PermissionName::TaskDelete->value, PermissionName::TaskViewAll->value]);
     $task = Task::factory()->create();
 
     $response = $this->actingAs($deleter)->delete(route('tasks.destroy', $task));
@@ -457,7 +459,7 @@ test('a recall request cannot move a task from an unexpected status', function (
 });
 
 test('a draft task without assignee cannot be dispatched', function () {
-    $dispatcher = userWithPermissions([PermissionName::TaskAssign->value]);
+    $dispatcher = userWithPermissions([PermissionName::TaskAssign->value, PermissionName::TaskViewAll->value]);
     $task = Task::factory()->create([
         'assignee_id' => null,
         'status' => TaskStatus::Draft,
@@ -548,6 +550,7 @@ test('a task cannot be linked to a closed project', function () {
 test('a task cannot be updated to link a cancelled project', function () {
     $updater = userWithPermissions([
         PermissionName::TaskUpdate->value,
+        PermissionName::TaskViewAll->value,
         PermissionName::ProjectView->value,
         PermissionName::ProjectViewAll->value,
     ]);
@@ -588,6 +591,7 @@ test('task create and edit pages expose only open projects', function () {
     $creator = userWithPermissions([
         PermissionName::TaskCreate->value,
         PermissionName::TaskUpdate->value,
+        PermissionName::TaskViewAll->value,
         PermissionName::ProjectView->value,
         PermissionName::ProjectViewAll->value,
     ]);
@@ -646,7 +650,7 @@ test('a task cannot be attached to a project the actor cannot view', function ()
 });
 
 test('a task cannot be moved into a project the actor cannot view', function () {
-    $updater = userWithPermissions([PermissionName::TaskUpdate->value]);
+    $updater = userWithPermissions([PermissionName::TaskUpdate->value, PermissionName::TaskViewAll->value]);
     $task = Task::factory()->create(['project_id' => null]);
     $foreignProject = Project::factory()->create(['status' => ProjectStatus::Active]);
 

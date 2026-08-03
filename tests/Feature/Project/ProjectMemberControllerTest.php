@@ -9,7 +9,7 @@ use App\Models\ProjectMember;
 use App\Models\User;
 
 test('a user with manage members permission can add a member and creates audit log', function () {
-    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value]);
+    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value, PermissionName::ProjectViewAll->value]);
     $project = Project::factory()->create();
     $newMember = User::factory()->create(['is_active' => true]);
 
@@ -77,7 +77,7 @@ test('an outsider without permission cannot add a member', function () {
 });
 
 test('adding the same user twice fails validation', function () {
-    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value]);
+    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value, PermissionName::ProjectViewAll->value]);
     $project = Project::factory()->create();
     $existingMember = ProjectMember::factory()->create(['project_id' => $project->id]);
 
@@ -90,7 +90,7 @@ test('adding the same user twice fails validation', function () {
 });
 
 test('adding a member requires an active user and a valid role', function () {
-    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value]);
+    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value, PermissionName::ProjectViewAll->value]);
     $project = Project::factory()->create();
     $inactiveUser = User::factory()->create(['is_active' => false]);
 
@@ -112,7 +112,7 @@ test('adding a member requires an active user and a valid role', function () {
 });
 
 test('a user with manage members permission can update a member role and creates audit log', function () {
-    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value]);
+    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value, PermissionName::ProjectViewAll->value]);
     $project = Project::factory()->create();
     $member = ProjectMember::factory()->create([
         'project_id' => $project->id,
@@ -150,7 +150,7 @@ test('an outsider without permission cannot update a member role', function () {
 });
 
 test('the project owner cannot be demoted below manager', function () {
-    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value]);
+    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value, PermissionName::ProjectViewAll->value]);
     $project = Project::factory()->create();
     $ownerMember = ProjectMember::factory()->create([
         'project_id' => $project->id,
@@ -171,7 +171,7 @@ test('the project owner cannot be demoted below manager', function () {
 });
 
 test('a user with manage members permission can remove a member and creates audit log', function () {
-    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value]);
+    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value, PermissionName::ProjectViewAll->value]);
     $project = Project::factory()->create();
     $member = ProjectMember::factory()->create(['project_id' => $project->id]);
 
@@ -200,7 +200,7 @@ test('an outsider without permission cannot remove a member', function () {
 });
 
 test('the project owner cannot be removed from members', function () {
-    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value]);
+    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value, PermissionName::ProjectViewAll->value]);
     $project = Project::factory()->create();
     $ownerMember = ProjectMember::factory()->create([
         'project_id' => $project->id,
@@ -234,7 +234,7 @@ test('a project manager without the manage members permission can still remove a
 });
 
 test('a soft deleted user cannot be added as a project member', function () {
-    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value]);
+    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value, PermissionName::ProjectViewAll->value]);
     $project = Project::factory()->create();
     $deletedUser = User::factory()->create(['is_active' => true]);
     $deletedUser->delete();
@@ -253,7 +253,7 @@ test('a soft deleted user cannot be added as a project member', function () {
 });
 
 test('scoped bindings reject a member id belonging to a different project on update', function () {
-    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value]);
+    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value, PermissionName::ProjectViewAll->value]);
     $project = Project::factory()->create();
     $otherProject = Project::factory()->create();
     $foreignMember = ProjectMember::factory()->create([
@@ -271,7 +271,7 @@ test('scoped bindings reject a member id belonging to a different project on upd
 });
 
 test('scoped bindings reject a member id belonging to a different project on destroy', function () {
-    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value]);
+    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value, PermissionName::ProjectViewAll->value]);
     $project = Project::factory()->create();
     $otherProject = Project::factory()->create();
     $foreignMember = ProjectMember::factory()->create(['project_id' => $otherProject->id]);

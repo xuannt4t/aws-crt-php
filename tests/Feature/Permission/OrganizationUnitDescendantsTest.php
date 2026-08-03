@@ -36,3 +36,16 @@ test('descendant ids of does not hang on cyclic parent child data', function () 
 
     expect($result)->toEqualCanonicalizing([$a->id, $b->id]);
 });
+
+test('descendant ids of still returns the subtree under a soft deleted mid tree unit', function () {
+    // Nếu phép duyệt cây bỏ qua đơn vị đã xoá mềm, cả nhánh con bị cắt rời và
+    // người dùng phạm vi phòng ban âm thầm mất quyền xem dữ liệu ở nhánh đó.
+    $root = OrganizationUnit::factory()->create();
+    $middle = OrganizationUnit::factory()->create(['parent_id' => $root->id]);
+    $leaf = OrganizationUnit::factory()->create(['parent_id' => $middle->id]);
+
+    $middle->delete();
+
+    expect(OrganizationUnit::descendantIdsOf($root->id))
+        ->toEqualCanonicalizing([$root->id, $middle->id, $leaf->id]);
+});

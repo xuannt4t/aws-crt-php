@@ -250,6 +250,7 @@ test('uploading several files records a single activity for the request', functi
 
     $uploader = userWithPermissions([
         PermissionName::TaskView->value,
+        PermissionName::TaskViewAll->value,
         PermissionName::TaskComment->value,
     ]);
     $task = Task::factory()->create();
@@ -274,6 +275,7 @@ test('deleting an attachment records an activity that survives the soft delete',
 
     $uploader = userWithPermissions([
         PermissionName::TaskView->value,
+        PermissionName::TaskViewAll->value,
         PermissionName::TaskComment->value,
     ]);
     $task = Task::factory()->create();
@@ -297,6 +299,7 @@ test('a failed upload leaves no orphaned activity', function () {
 
     $uploader = userWithPermissions([
         PermissionName::TaskView->value,
+        PermissionName::TaskViewAll->value,
         PermissionName::TaskComment->value,
     ]);
     $task = Task::factory()->create();
@@ -313,6 +316,7 @@ test('a transaction failure during upload leaves no orphaned activity or attachm
 
     $uploader = userWithPermissions([
         PermissionName::TaskView->value,
+        PermissionName::TaskViewAll->value,
         PermissionName::TaskComment->value,
     ]);
     $task = Task::factory()->create();
@@ -352,6 +356,7 @@ test('rows already inserted inside the transaction are rolled back when recordin
 
     $uploader = userWithPermissions([
         PermissionName::TaskView->value,
+        PermissionName::TaskViewAll->value,
         PermissionName::TaskComment->value,
     ]);
     $task = Task::factory()->create();

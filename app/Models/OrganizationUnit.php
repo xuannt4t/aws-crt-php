@@ -48,11 +48,16 @@ class OrganizationUnit extends Model
      * depth. Fetches all (id, parent_id) pairs in a single query and walks
      * the tree in PHP, guarding against cyclic parent/child data.
      *
+     * Đơn vị đã xoá mềm vẫn được đưa vào phép duyệt cây: nếu bỏ chúng ra, một
+     * đơn vị trung gian bị xoá mềm sẽ cắt rời toàn bộ nhánh con khỏi kết quả và
+     * người dùng phạm vi "phòng ban" âm thầm mất quyền xem các bản ghi ở nhánh
+     * đó.
+     *
      * @return list<int>
      */
     public static function descendantIdsOf(int $unitId): array
     {
-        $parentById = static::query()->pluck('parent_id', 'id');
+        $parentById = static::query()->withTrashed()->pluck('parent_id', 'id');
 
         if (! $parentById->has($unitId)) {
             return [];
