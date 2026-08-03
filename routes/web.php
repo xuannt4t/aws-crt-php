@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrganizationUnitController;
+use App\Http\Controllers\PermissionMatrixController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectMemberController;
@@ -47,6 +48,8 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
     Route::patch('users/{user}/disable', [UserController::class, 'disable'])->name('users.disable');
     Route::patch('users/{user}/enable', [UserController::class, 'enable'])->name('users.enable');
     Route::get('audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+    Route::get('permission-matrix', [PermissionMatrixController::class, 'index'])->name('permission-matrix.index');
+    Route::put('permission-matrix', [PermissionMatrixController::class, 'update'])->name('permission-matrix.update');
     Route::patch('tasks/{task}/dispatch', [TaskController::class, 'dispatch'])->name('tasks.dispatch');
     Route::patch('tasks/{task}/start', [TaskController::class, 'start'])->name('tasks.start');
     Route::patch('tasks/{task}/submit', [TaskController::class, 'submit'])->name('tasks.submit');

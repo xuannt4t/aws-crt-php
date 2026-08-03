@@ -20,4 +20,5 @@ enum AuditAction: string
     case ProjectMemberAdded = 'project.member_added';
     case ProjectMemberRoleUpdated = 'project.member_role_updated';
     case ProjectMemberRemoved = 'project.member_removed';
+    case RolePermissionsUpdated = 'role.permissions_updated';
 }
