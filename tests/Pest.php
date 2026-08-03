@@ -64,6 +64,23 @@ function userWithPermissions(array $permissions = [], array $attributes = []): U
 }
 
 /**
+ * Gán permission cho một user đã tồn tại (vd. người tạo mẫu định kỳ cần giữ
+ * nguyên id để so khớp creator_id), tạo permission nếu chưa có.
+ *
+ * @param  list<string>  $permissions
+ */
+function grantPermissions(User $user, array $permissions): User
+{
+    foreach ($permissions as $permission) {
+        Permission::findOrCreate($permission, 'web');
+    }
+
+    $user->syncPermissions($permissions);
+
+    return $user;
+}
+
+/**
  * Headers to force Inertia to respond with JSON instead of a full HTML page,
  * so tests do not depend on Vue page components already being built by Vite.
  *
