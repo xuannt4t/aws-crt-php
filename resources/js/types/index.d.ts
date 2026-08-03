@@ -36,6 +36,43 @@ export type TaskStatus =
 
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
 
+/** Ba bối cảnh của màn công việc (spec §5.1) — do route quyết định, không đổi được bằng query string. */
+export type TaskContext = 'overview' | 'project' | 'department';
+
+/** Tên các bộ lọc khúc 2 mà server cho phép vẽ (spec §6.2) — luôn là tập con của danh sách này. */
+export type TaskFilterKey =
+    | 'search'
+    | 'organization_unit_id'
+    | 'project_id'
+    | 'assignee_ids'
+    | 'status'
+    | 'priority';
+
+export interface TaskIndexFilters {
+    search?: string;
+    status?: TaskStatus;
+    priority?: TaskPriority;
+    organization_unit_id?: number;
+    project_id?: number;
+    assignee_ids?: number[];
+    overdue?: boolean | string;
+}
+
+/**
+ * Tóm tắt thống kê của khúc 1 (spec §6.1). `earliest_created` là MIN(created_at)
+ * — tasks không có cột ngày bắt đầu riêng — KHÔNG phải "ngày bắt đầu".
+ */
+export interface TaskSummary {
+    total: number;
+    not_started: number;
+    in_progress: number;
+    waiting_approval: number;
+    completed: number;
+    overdue: number;
+    earliest_created: string | null;
+    latest_due: string | null;
+}
+
 export interface TaskStatusHistory {
     id: number;
     task_id: number;
