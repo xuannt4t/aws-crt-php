@@ -20,7 +20,8 @@ final class ProjectPolicy
 
     public function view(User $user, Project $project): bool
     {
-        return $project->isVisibleTo($user);
+        return $user->can(PermissionName::ProjectView->value)
+            && Project::query()->whereKey($project->getKey())->visibleTo($user)->exists();
     }
 
     public function create(User $user): bool

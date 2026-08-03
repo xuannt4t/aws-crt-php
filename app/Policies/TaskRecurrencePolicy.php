@@ -15,7 +15,8 @@ final class TaskRecurrencePolicy
 
     public function view(User $user, TaskRecurrence $taskRecurrence): bool
     {
-        return $user->can(PermissionName::TaskView->value);
+        return $user->can(PermissionName::TaskView->value)
+            && TaskRecurrence::query()->whereKey($taskRecurrence->getKey())->visibleTo($user)->exists();
     }
 
     public function create(User $user): bool

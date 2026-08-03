@@ -14,7 +14,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 test('a user with project view permission can list filtered paginated projects', function () {
-    $viewer = userWithPermissions([PermissionName::ProjectView->value]);
+    $viewer = userWithPermissions([PermissionName::ProjectView->value, PermissionName::ProjectViewAll->value]);
     $unit = OrganizationUnit::factory()->create();
 
     Project::factory()->count(21)->create([
@@ -65,7 +65,7 @@ test('a user without project view permission and without membership sees an empt
 });
 
 test('project list exposes progress task count open task count and member count without N plus 1', function () {
-    $viewer = userWithPermissions([PermissionName::ProjectView->value]);
+    $viewer = userWithPermissions([PermissionName::ProjectView->value, PermissionName::ProjectViewAll->value]);
     $project = Project::factory()->create();
     ProjectMember::factory()->count(2)->create(['project_id' => $project->id]);
     Task::factory()->create(['project_id' => $project->id, 'status' => TaskStatus::Completed, 'progress' => 100]);
@@ -244,8 +244,10 @@ test('a user without delete permission cannot delete a project', function () {
 test('a user with view permission can view project details with progress and actions', function () {
     $viewer = userWithPermissions([
         PermissionName::ProjectView->value,
+        PermissionName::ProjectViewAll->value,
         PermissionName::ProjectUpdate->value,
         PermissionName::TaskView->value,
+        PermissionName::TaskViewAll->value,
     ]);
     $project = Project::factory()->create();
     ProjectMember::factory()->create(['project_id' => $project->id]);
@@ -264,14 +266,28 @@ test('a user with view permission can view project details with progress and act
         ->assertJsonStructure(['props' => ['members', 'tasks']]);
 });
 
-test('a member without project view permission can still view the project', function () {
+test('a project member with the view gate permission can view the project via the own scope', function () {
+    // Hai lớp tách bạch (spec §3.1): thành viên tự nhiên nằm trong phạm vi
+    // "own" nhờ tư cách thành viên, nhưng vẫn cần cổng project.view — không có
+    // cổng thì bị chặn dù đang ở trong phạm vi, đó là mô hình hai lớp có chủ đích.
     $member = User::factory()->create();
+    grantPermissions($member, [PermissionName::ProjectView->value]);
     $project = Project::factory()->create();
     ProjectMember::factory()->create(['project_id' => $project->id, 'user_id' => $member->id]);
 
     $this->actingAs($member)
         ->get(route('projects.show', $project), inertiaHeaders())
         ->assertOk();
+});
+
+test('a member without the project view gate permission cannot view the project even though membership is in scope', function () {
+    $member = User::factory()->create();
+    $project = Project::factory()->create();
+    ProjectMember::factory()->create(['project_id' => $project->id, 'user_id' => $member->id]);
+
+    $this->actingAs($member)
+        ->get(route('projects.show', $project), inertiaHeaders())
+        ->assertForbidden();
 });
 
 test('a user who is not a member and lacks project view permission cannot view the project', function () {
@@ -284,7 +300,7 @@ test('a user who is not a member and lacks project view permission cannot view t
 });
 
 test('the project list payload does not leak the raw progress average pseudo column', function () {
-    $viewer = userWithPermissions([PermissionName::ProjectView->value]);
+    $viewer = userWithPermissions([PermissionName::ProjectView->value, PermissionName::ProjectViewAll->value]);
     $project = Project::factory()->create();
     Task::factory()->create(['project_id' => $project->id, 'status' => TaskStatus::Todo, 'progress' => 33]);
 
@@ -436,6 +452,7 @@ test('a soft deleted project is absent from the index and 404s on show edit upda
 
 test('a viewer role member without task view permission does not receive the project task list', function () {
     $viewerMember = User::factory()->create();
+    grantPermissions($viewerMember, [PermissionName::ProjectView->value]);
     $project = Project::factory()->create();
     ProjectMember::factory()->create([
         'project_id' => $project->id,

@@ -126,6 +126,7 @@ final class ProjectController extends Controller
 
         $tasks = $actions['viewTasks']
             ? $project->tasks()
+                ->visibleTo($user)
                 ->with(['assignee:id,name,avatar_path'])
                 ->latest('id')
                 ->paginate(

@@ -19,34 +19,53 @@ test('viewAny is open to every authenticated user while create requires permissi
         ->and($userWithoutPermission->can('create', Project::class))->toBeFalse();
 });
 
-test('view is allowed by permission or any project membership', function () {
+test('view requires the project view gate, then the scope: membership satisfies own, view_all reaches every project', function () {
+    // Hai lớp tách bạch (spec §3.1): project.view mở cổng vào module,
+    // project.view_own/department/all quyết định thấy bản ghi nào. Thành viên
+    // dự án tự nhiên nằm trong phạm vi "own", nhưng vẫn cần cổng project.view
+    // — thành viên không có quyền này bị chặn ở cổng, đúng như thiết kế hai lớp.
     $project = Project::factory()->create();
 
-    $permittedNonMember = userWithPermissions([PermissionName::ProjectView->value]);
-    $manager = User::factory()->create();
+    $nonMemberWithViewAll = userWithPermissions([
+        PermissionName::ProjectView->value,
+        PermissionName::ProjectViewAll->value,
+    ]);
+
+    $manager = userWithPermissions([PermissionName::ProjectView->value]);
     ProjectMember::factory()->create([
         'project_id' => $project->id,
         'user_id' => $manager->id,
         'role' => ProjectMemberRole::Manager,
     ]);
-    $member = User::factory()->create();
+
+    $member = userWithPermissions([PermissionName::ProjectView->value]);
     ProjectMember::factory()->create([
         'project_id' => $project->id,
         'user_id' => $member->id,
         'role' => ProjectMemberRole::Member,
     ]);
-    $viewerRoleUser = User::factory()->create();
+
+    $viewerRoleUser = userWithPermissions([PermissionName::ProjectView->value]);
     ProjectMember::factory()->create([
         'project_id' => $project->id,
         'user_id' => $viewerRoleUser->id,
         'role' => ProjectMemberRole::Viewer,
     ]);
+
+    $memberWithoutGate = User::factory()->create();
+    ProjectMember::factory()->create([
+        'project_id' => $project->id,
+        'user_id' => $memberWithoutGate->id,
+        'role' => ProjectMemberRole::Member,
+    ]);
+
     $outsider = User::factory()->create();
 
-    expect($permittedNonMember->can('view', $project))->toBeTrue()
+    expect($nonMemberWithViewAll->can('view', $project))->toBeTrue()
         ->and($manager->can('view', $project))->toBeTrue()
         ->and($member->can('view', $project))->toBeTrue()
         ->and($viewerRoleUser->can('view', $project))->toBeTrue()
+        ->and($memberWithoutGate->can('view', $project))->toBeFalse()
         ->and($outsider->can('view', $project))->toBeFalse();
 });
 

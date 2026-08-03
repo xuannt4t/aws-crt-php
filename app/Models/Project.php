@@ -2,10 +2,11 @@
 
 namespace App\Models;
 
-use App\Enums\PermissionName;
+use App\Enums\DataScope;
 use App\Enums\ProjectMemberRole;
 use App\Enums\ProjectStatus;
 use App\Enums\TaskStatus;
+use App\Support\DataScopeResolver;
 use Database\Factories\ProjectFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -125,27 +126,46 @@ final class Project extends Model
     }
 
     /**
-     * Nguồn sự thật duy nhất cho "người dùng có thấy được dự án này không":
-     * quyền hệ thống project.view HOẶC là thành viên dự án. ProjectPolicy::view()
-     * uỷ quyền về đây, và scopeVisibleTo() là bản truy vấn tương đương.
-     */
-    public function isVisibleTo(User $user): bool
-    {
-        return $user->can(PermissionName::ProjectView->value)
-            || $this->isMember($user);
-    }
-
-    /**
-     * Bản truy vấn của isVisibleTo(): giới hạn danh sách dự án theo tầm nhìn
-     * của người dùng.
+     * Giới hạn danh sách dự án theo phạm vi dữ liệu hiệu lực của người dùng
+     * (spec §4.2). Đây là định nghĩa DUY NHẤT của "dự án nào người dùng thấy
+     * được" — mở rộng từ Project::scopeVisibleTo() có sẵn từ Sprint 3, không
+     * phải cơ chế mới song song. ProjectPolicy::view() hỏi lại chính scope
+     * này thay vì viết lại điều kiện, để danh sách và xem trực tiếp qua URL
+     * luôn đồng nhất.
+     *
+     * Toàn bộ điều kiện "own" (và phần bổ sung của "department") nằm trong MỘT
+     * closure where(...) duy nhất — nếu tách các orWhere ra ngoài, chúng sẽ phá
+     * vỡ những điều kiện lọc khác đã có sẵn trên query (tìm kiếm, trạng thái,
+     * đơn vị, chủ dự án, only_mine...).
      */
     public function scopeVisibleTo(Builder $query, User $user): Builder
     {
-        if ($user->can(PermissionName::ProjectView->value)) {
+        $scope = app(DataScopeResolver::class)->forProjects($user);
+
+        if ($scope === DataScope::All) {
             return $query;
         }
 
-        return $query->whereHas(
+        if ($scope === DataScope::Own || $user->organization_unit_id === null) {
+            return $query->where(fn (Builder $q) => $this->addOwnConditions($q, $user));
+        }
+
+        $unitIds = OrganizationUnit::descendantIdsOf($user->organization_unit_id);
+
+        return $query->where(function (Builder $q) use ($user, $unitIds): void {
+            $this->addOwnConditions($q, $user);
+            $q->orWhereIn('organization_unit_id', $unitIds);
+        });
+    }
+
+    /**
+     * Thêm điều kiện "own" (spec §4.2) vào một closure where() đã có sẵn: dự
+     * án mà người dùng là thành viên. Owner luôn là thành viên vai trò
+     * manager nên chủ dự án tự nhiên nằm trong phạm vi này.
+     */
+    private function addOwnConditions(Builder $query, User $user): void
+    {
+        $query->whereHas(
             'members',
             fn (Builder $inner) => $inner->where('user_id', $user->id),
         );

@@ -197,7 +197,11 @@ test('a user with task assign permission can assign the template to someone else
 });
 
 test('project id must belong to an open project', function () {
-    $creator = userWithPermissions([PermissionName::TaskCreate->value]);
+    $creator = userWithPermissions([
+        PermissionName::TaskCreate->value,
+        PermissionName::ProjectView->value,
+        PermissionName::ProjectViewAll->value,
+    ]);
     $unit = OrganizationUnit::factory()->create();
     $closedProject = Project::factory()->create(['status' => ProjectStatus::Completed]);
 

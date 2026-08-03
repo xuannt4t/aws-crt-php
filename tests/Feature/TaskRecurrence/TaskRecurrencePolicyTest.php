@@ -5,7 +5,9 @@ use App\Models\TaskRecurrence;
 use App\Models\User;
 
 test('viewAny and view require task view permission', function () {
-    $viewer = userWithPermissions([PermissionName::TaskView->value]);
+    // "view" cần cả cổng task.view lẫn phạm vi (spec §3.1); viewer ở đây giữ
+    // task.view_all nên phạm vi không giới hạn mẫu ngẫu nhiên bên dưới.
+    $viewer = userWithPermissions([PermissionName::TaskView->value, PermissionName::TaskViewAll->value]);
     $outsider = User::factory()->create();
     $recurrence = TaskRecurrence::factory()->create();
 

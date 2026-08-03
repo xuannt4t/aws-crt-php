@@ -10,7 +10,7 @@ use App\Models\User;
 use Illuminate\Support\Carbon;
 
 test('a user with task view permission can list filtered paginated recurrence templates', function () {
-    $viewer = userWithPermissions([PermissionName::TaskView->value]);
+    $viewer = userWithPermissions([PermissionName::TaskView->value, PermissionName::TaskViewAll->value]);
     $unit = OrganizationUnit::factory()->create();
 
     TaskRecurrence::factory()->count(21)->create(['organization_unit_id' => $unit->id]);
@@ -27,7 +27,7 @@ test('a user with task view permission can list filtered paginated recurrence te
 });
 
 test('index exposes the vietnamese cadence and next occurrence for each template', function () {
-    $viewer = userWithPermissions([PermissionName::TaskView->value]);
+    $viewer = userWithPermissions([PermissionName::TaskView->value, PermissionName::TaskViewAll->value]);
     TaskRecurrence::factory()->weekly([1])->create([
         'interval' => 1,
         'start_date' => '2026-08-01',
@@ -43,7 +43,7 @@ test('index exposes the vietnamese cadence and next occurrence for each template
 });
 
 test('show keeps the free-text description separate from the generated cadence', function () {
-    $viewer = userWithPermissions([PermissionName::TaskView->value]);
+    $viewer = userWithPermissions([PermissionName::TaskView->value, PermissionName::TaskViewAll->value]);
     $recurrence = TaskRecurrence::factory()->weekly([1])->create([
         'interval' => 1,
         'start_date' => '2026-08-01',
@@ -57,7 +57,7 @@ test('show keeps the free-text description separate from the generated cadence',
 });
 
 test('index filters by organization unit', function () {
-    $viewer = userWithPermissions([PermissionName::TaskView->value]);
+    $viewer = userWithPermissions([PermissionName::TaskView->value, PermissionName::TaskViewAll->value]);
     $unit = OrganizationUnit::factory()->create();
     $otherUnit = OrganizationUnit::factory()->create();
 
@@ -116,7 +116,7 @@ test('create and edit expose every active user when the actor can assign', funct
 });
 
 test('an inactive template has no next occurrence, consistently on index and show', function () {
-    $viewer = userWithPermissions([PermissionName::TaskView->value]);
+    $viewer = userWithPermissions([PermissionName::TaskView->value, PermissionName::TaskViewAll->value]);
     $recurrence = TaskRecurrence::factory()->weekly([1])->create([
         'interval' => 1,
         'start_date' => '2026-08-01',
@@ -133,7 +133,7 @@ test('an inactive template has no next occurrence, consistently on index and sho
 });
 
 test('index filters by search', function () {
-    $viewer = userWithPermissions([PermissionName::TaskView->value]);
+    $viewer = userWithPermissions([PermissionName::TaskView->value, PermissionName::TaskViewAll->value]);
 
     $matching = TaskRecurrence::factory()->create(['title' => 'Họp giao ban']);
     TaskRecurrence::factory()->create(['title' => 'Việc khác']);
@@ -147,7 +147,7 @@ test('index filters by search', function () {
 });
 
 test('index filters by assignee', function () {
-    $viewer = userWithPermissions([PermissionName::TaskView->value]);
+    $viewer = userWithPermissions([PermissionName::TaskView->value, PermissionName::TaskViewAll->value]);
     $assignee = User::factory()->create();
 
     $matching = TaskRecurrence::factory()->create(['assignee_id' => $assignee->id]);
@@ -162,7 +162,7 @@ test('index filters by assignee', function () {
 });
 
 test('index filters by frequency', function () {
-    $viewer = userWithPermissions([PermissionName::TaskView->value]);
+    $viewer = userWithPermissions([PermissionName::TaskView->value, PermissionName::TaskViewAll->value]);
 
     $matching = TaskRecurrence::factory()->create([
         'frequency' => RecurrenceFrequency::Daily,
@@ -181,7 +181,7 @@ test('index filters by frequency', function () {
 });
 
 test('index filters by active state', function () {
-    $viewer = userWithPermissions([PermissionName::TaskView->value]);
+    $viewer = userWithPermissions([PermissionName::TaskView->value, PermissionName::TaskViewAll->value]);
 
     $matching = TaskRecurrence::factory()->create(['is_active' => true]);
     TaskRecurrence::factory()->create(['is_active' => false]);
@@ -462,6 +462,10 @@ test('show returns the template with generated tasks and available actions', fun
         'task_recurrence_id' => $recurrence->id,
         'recurrence_date' => '2026-08-01',
         'organization_unit_id' => $recurrence->organization_unit_id,
+        // Danh sách công việc sinh ra trên trang chi tiết mẫu đi qua
+        // Task::visibleTo() — creator_id gán về $creator để việc này nằm
+        // trong phạm vi "own" của người xem.
+        'creator_id' => $creator->id,
     ]);
 
     $this->actingAs($creator)

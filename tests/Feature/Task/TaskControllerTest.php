@@ -503,7 +503,11 @@ test('an invalid task transition does not write history', function () {
 });
 
 test('a task can be created and linked to an open project', function () {
-    $creator = userWithPermissions([PermissionName::TaskCreate->value, PermissionName::ProjectView->value]);
+    $creator = userWithPermissions([
+        PermissionName::TaskCreate->value,
+        PermissionName::ProjectView->value,
+        PermissionName::ProjectViewAll->value,
+    ]);
     $unit = OrganizationUnit::factory()->create();
     $project = Project::factory()->create(['status' => ProjectStatus::Active]);
 
@@ -522,7 +526,11 @@ test('a task can be created and linked to an open project', function () {
 });
 
 test('a task cannot be linked to a closed project', function () {
-    $creator = userWithPermissions([PermissionName::TaskCreate->value, PermissionName::ProjectView->value]);
+    $creator = userWithPermissions([
+        PermissionName::TaskCreate->value,
+        PermissionName::ProjectView->value,
+        PermissionName::ProjectViewAll->value,
+    ]);
     $unit = OrganizationUnit::factory()->create();
     $closedProject = Project::factory()->create(['status' => ProjectStatus::Completed]);
 
@@ -538,7 +546,11 @@ test('a task cannot be linked to a closed project', function () {
 });
 
 test('a task cannot be updated to link a cancelled project', function () {
-    $updater = userWithPermissions([PermissionName::TaskUpdate->value, PermissionName::ProjectView->value]);
+    $updater = userWithPermissions([
+        PermissionName::TaskUpdate->value,
+        PermissionName::ProjectView->value,
+        PermissionName::ProjectViewAll->value,
+    ]);
     $unit = OrganizationUnit::factory()->create();
     $task = Task::factory()->create(['organization_unit_id' => $unit->id]);
     $cancelledProject = Project::factory()->create(['status' => ProjectStatus::Cancelled]);
@@ -577,6 +589,7 @@ test('task create and edit pages expose only open projects', function () {
         PermissionName::TaskCreate->value,
         PermissionName::TaskUpdate->value,
         PermissionName::ProjectView->value,
+        PermissionName::ProjectViewAll->value,
     ]);
     $openProject = Project::factory()->create(['status' => ProjectStatus::Active]);
     Project::factory()->create(['status' => ProjectStatus::Completed]);
