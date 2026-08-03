@@ -72,6 +72,7 @@ export interface Task {
     parent_id: number | null;
     creator_id: number;
     assignee_id: number | null;
+    task_recurrence_id?: number | null;
     title: string;
     description: string | null;
     description_html?: string | null;
@@ -88,7 +89,41 @@ export interface Task {
     creator?: Pick<User, 'id' | 'name' | 'avatar_url'>;
     assignee?: Pick<User, 'id' | 'name' | 'avatar_url'> | null;
     project?: Pick<Project, 'id' | 'name' | 'code'> | null;
+    recurrence?: Pick<TaskRecurrence, 'id' | 'title'> | null;
     status_histories?: TaskStatusHistory[];
+}
+
+export type RecurrenceFrequency = 'daily' | 'weekly' | 'monthly' | 'quarterly';
+
+export interface TaskRecurrence {
+    id: number;
+    organization_unit_id: number;
+    project_id: number | null;
+    creator_id: number;
+    assignee_id: number | null;
+    title: string;
+    description: string | null;
+    priority: TaskPriority;
+    planned_quantity: number | null;
+    quantity_unit: string | null;
+    frequency: RecurrenceFrequency;
+    interval: number;
+    weekdays: number[] | null;
+    day_of_month: number | null;
+    start_date: string;
+    due_time: string | null;
+    is_active: boolean;
+    last_generated_for: string | null;
+    /**
+     * On Index/Show responses the controller overwrites this with the
+     * server-generated Vietnamese cadence sentence (see RecurrenceSchedule::describe()).
+     * On Create/Edit it is the free-text notes field instead.
+     */
+    next_occurrence?: string | null;
+    organization_unit?: Pick<OrganizationUnit, 'id' | 'name'>;
+    creator?: Pick<User, 'id' | 'name' | 'avatar_url'>;
+    assignee?: Pick<User, 'id' | 'name' | 'avatar_url'> | null;
+    project?: Pick<Project, 'id' | 'name' | 'code'> | null;
 }
 
 export type ProjectStatus = 'planning' | 'active' | 'on_hold' | 'completed' | 'cancelled';

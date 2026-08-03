@@ -14,7 +14,7 @@ interface NavigationItem {
     label: string;
     routeName: string;
     activePattern: string;
-    icon: 'dashboard' | 'building' | 'users' | 'shield' | 'tasks' | 'folder';
+    icon: 'dashboard' | 'building' | 'users' | 'shield' | 'tasks' | 'folder' | 'calendar';
     permission?: string;
 }
 
@@ -35,6 +35,13 @@ const navigation: NavigationItem[] = [
         routeName: 'tasks.index',
         activePattern: 'tasks.*',
         icon: 'tasks',
+        permission: 'task.view',
+    },
+    {
+        label: 'Việc định kỳ',
+        routeName: 'task-recurrences.index',
+        activePattern: 'task-recurrences.*',
+        icon: 'calendar',
         permission: 'task.view',
     },
     {
