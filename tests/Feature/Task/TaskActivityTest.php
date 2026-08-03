@@ -380,7 +380,7 @@ test('rows already inserted inside the transaction are rolled back when recordin
 });
 
 test('task details expose paginated activities newest first', function () {
-    $viewer = userWithPermissions([PermissionName::TaskView->value]);
+    $viewer = userWithPermissions([PermissionName::TaskView->value, PermissionName::TaskViewAll->value]);
     $task = Task::factory()->create();
 
     TaskActivity::factory()->count(31)->for($task)->create();
@@ -398,7 +398,7 @@ test('task details expose paginated activities newest first', function () {
 });
 
 test('the timeline keeps activities whose actor was soft deleted', function () {
-    $viewer = userWithPermissions([PermissionName::TaskView->value]);
+    $viewer = userWithPermissions([PermissionName::TaskView->value, PermissionName::TaskViewAll->value]);
     $task = Task::factory()->create();
     $actor = User::factory()->create(['name' => 'Người đã nghỉ']);
 
@@ -412,7 +412,7 @@ test('the timeline keeps activities whose actor was soft deleted', function () {
 });
 
 test('the timeline does not issue one query per actor', function () {
-    $viewer = userWithPermissions([PermissionName::TaskView->value]);
+    $viewer = userWithPermissions([PermissionName::TaskView->value, PermissionName::TaskViewAll->value]);
     $task = Task::factory()->create();
 
     foreach (range(1, 10) as $index) {
@@ -435,7 +435,7 @@ test('the timeline does not issue one query per actor', function () {
 });
 
 test('the task page no longer sends status histories', function () {
-    $viewer = userWithPermissions([PermissionName::TaskView->value]);
+    $viewer = userWithPermissions([PermissionName::TaskView->value, PermissionName::TaskViewAll->value]);
     $task = Task::factory()->create();
 
     $this->actingAs($viewer)

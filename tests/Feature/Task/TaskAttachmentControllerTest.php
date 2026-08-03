@@ -375,7 +375,11 @@ test('another user cannot delete an attachment they did not upload', function ()
 test('task details expose attachments with per user delete permission', function () {
     Storage::fake('local');
 
-    $uploader = uploaderUser();
+    $uploader = userWithPermissions([
+        PermissionName::TaskView->value,
+        PermissionName::TaskComment->value,
+        PermissionName::TaskViewAll->value,
+    ]);
     $task = Task::factory()->create();
 
     $own = TaskAttachment::factory()->for($task)->for($uploader, 'uploader')->create([
@@ -402,7 +406,7 @@ test('task details expose attachments with per user delete permission', function
 test('a viewer without the comment permission cannot attach from the task page', function () {
     $task = Task::factory()->create();
 
-    $this->actingAs(userWithPermissions([PermissionName::TaskView->value]))
+    $this->actingAs(userWithPermissions([PermissionName::TaskView->value, PermissionName::TaskViewAll->value]))
         ->get(route('tasks.show', $task))
         ->assertOk()
         ->assertInertia(fn ($page) => $page->where('actions.attach', false));
@@ -413,7 +417,7 @@ test('deleted attachments disappear from the task page', function () {
     $attachment = TaskAttachment::factory()->for($task)->create();
     $attachment->delete();
 
-    $this->actingAs(userWithPermissions([PermissionName::TaskView->value]))
+    $this->actingAs(userWithPermissions([PermissionName::TaskView->value, PermissionName::TaskViewAll->value]))
         ->get(route('tasks.show', $task))
         ->assertOk()
         ->assertInertia(fn ($page) => $page->has('attachments', 0));

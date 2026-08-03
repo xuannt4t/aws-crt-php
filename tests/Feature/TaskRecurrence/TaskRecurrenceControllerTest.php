@@ -500,7 +500,7 @@ test('a soft deleted template 404s on show edit update toggle and destroy', func
 });
 
 test('a task from a soft deleted template still exposes the template with its deleted_at flag', function () {
-    $viewer = userWithPermissions([PermissionName::TaskView->value]);
+    $viewer = userWithPermissions([PermissionName::TaskView->value, PermissionName::TaskViewAll->value]);
     $recurrence = TaskRecurrence::factory()->daily()->create();
     $task = Task::factory()->create([
         'organization_unit_id' => $recurrence->organization_unit_id,

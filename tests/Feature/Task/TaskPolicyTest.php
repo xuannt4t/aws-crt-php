@@ -5,7 +5,7 @@ use App\Models\Task;
 use App\Models\User;
 
 test('task permissions control each policy ability', function () {
-    $viewer = userWithPermissions([PermissionName::TaskView->value]);
+    $viewer = userWithPermissions([PermissionName::TaskView->value, PermissionName::TaskViewAll->value]);
     $creator = userWithPermissions([PermissionName::TaskCreate->value]);
     $updater = userWithPermissions([PermissionName::TaskUpdate->value]);
     $deleter = userWithPermissions([PermissionName::TaskDelete->value]);

@@ -53,7 +53,7 @@ test('a user without task view permission cannot view tasks', function () {
 });
 
 test('tasks can be filtered by multiple assignees', function () {
-    $viewer = userWithPermissions([PermissionName::TaskView->value]);
+    $viewer = userWithPermissions([PermissionName::TaskView->value, PermissionName::TaskViewAll->value]);
     $firstAssignee = User::factory()->create();
     $secondAssignee = User::factory()->create();
     $otherAssignee = User::factory()->create();
@@ -74,7 +74,7 @@ test('tasks can be filtered by multiple assignees', function () {
 });
 
 test('a user with view permission can view task details and transition history', function () {
-    $viewer = userWithPermissions([PermissionName::TaskView->value]);
+    $viewer = userWithPermissions([PermissionName::TaskView->value, PermissionName::TaskViewAll->value]);
     $task = Task::factory()->create();
     TaskStatusHistory::create([
         'task_id' => $task->id,
@@ -103,7 +103,7 @@ test('a user with view permission can view task details and transition history',
 });
 
 test('task details expose only sanitized rich text', function () {
-    $viewer = userWithPermissions([PermissionName::TaskView->value]);
+    $viewer = userWithPermissions([PermissionName::TaskView->value, PermissionName::TaskViewAll->value]);
     $task = Task::factory()->create([
         'description' => '<h2>Yêu cầu</h2><p><strong>An toàn</strong></p><img src=x onerror=alert(1)><script>alert(1)</script>',
     ]);
@@ -555,7 +555,7 @@ test('a task cannot be updated to link a cancelled project', function () {
 });
 
 test('tasks can be filtered by project', function () {
-    $viewer = userWithPermissions([PermissionName::TaskView->value]);
+    $viewer = userWithPermissions([PermissionName::TaskView->value, PermissionName::TaskViewAll->value]);
     $project = Project::factory()->create();
     $otherProject = Project::factory()->create();
 

@@ -15,7 +15,8 @@ final class TaskPolicy
 
     public function view(User $user, Task $task): bool
     {
-        return $user->can(PermissionName::TaskView->value);
+        return $user->can(PermissionName::TaskView->value)
+            && Task::query()->whereKey($task->getKey())->visibleTo($user)->exists();
     }
 
     public function create(User $user): bool

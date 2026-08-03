@@ -50,6 +50,7 @@ final class TaskController extends Controller
                 'project:id,name,code',
                 'recurrence:id,title,deleted_at',
             ])
+            ->visibleTo($request->user())
             ->when($filters['search'] ?? null, fn (Builder $query, string $search) => $query
                 ->where('title', 'like', "%{$search}%"))
             ->when($filters['status'] ?? null, fn (Builder $query, string $status) => $query
