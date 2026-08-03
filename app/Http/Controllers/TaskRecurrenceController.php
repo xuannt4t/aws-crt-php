@@ -51,7 +51,9 @@ final class TaskRecurrenceController extends Controller
             ->through(fn (TaskRecurrence $recurrence): array => [
                 ...$recurrence->toArray(),
                 'description' => $schedule->describe($recurrence),
-                'next_occurrence' => $schedule->nextOccurrenceAfter($recurrence, now())?->toDateString(),
+                'next_occurrence' => $recurrence->is_active
+                    ? $schedule->nextOccurrenceAfter($recurrence, now())?->toDateString()
+                    : null,
             ])
             ->withQueryString();
 

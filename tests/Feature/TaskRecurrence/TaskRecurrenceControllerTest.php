@@ -39,27 +39,78 @@ test('index exposes the vietnamese description and next occurrence for each temp
         ->assertJsonPath('props.recurrences.data.0.next_occurrence', fn ($value) => $value !== null);
 });
 
-test('index filters by search assignee frequency and active state', function () {
+test('an inactive template has no next occurrence, consistently on index and show', function () {
     $viewer = userWithPermissions([PermissionName::TaskView->value]);
-    $assignee = User::factory()->create();
-
-    $matching = TaskRecurrence::factory()->create([
-        'title' => 'Họp giao ban',
-        'assignee_id' => $assignee->id,
-        'frequency' => RecurrenceFrequency::Daily,
+    $recurrence = TaskRecurrence::factory()->weekly([1])->create([
         'interval' => 1,
-        'weekdays' => null,
-        'is_active' => true,
-    ]);
-    TaskRecurrence::factory()->create([
-        'title' => 'Việc khác',
+        'start_date' => '2026-08-01',
         'is_active' => false,
     ]);
 
+    $this->actingAs($viewer)->get(route('task-recurrences.index'), inertiaHeaders())
+        ->assertOk()
+        ->assertJsonPath('props.recurrences.data.0.next_occurrence', null);
+
+    $this->actingAs($viewer)->get(route('task-recurrences.show', $recurrence), inertiaHeaders())
+        ->assertOk()
+        ->assertJsonPath('props.recurrence.next_occurrence', null);
+});
+
+test('index filters by search', function () {
+    $viewer = userWithPermissions([PermissionName::TaskView->value]);
+
+    $matching = TaskRecurrence::factory()->create(['title' => 'Họp giao ban']);
+    TaskRecurrence::factory()->create(['title' => 'Việc khác']);
+
     $this->actingAs($viewer)->get(route('task-recurrences.index', [
         'search' => 'Họp',
+    ]), inertiaHeaders())
+        ->assertOk()
+        ->assertJsonCount(1, 'props.recurrences.data')
+        ->assertJsonPath('props.recurrences.data.0.id', $matching->id);
+});
+
+test('index filters by assignee', function () {
+    $viewer = userWithPermissions([PermissionName::TaskView->value]);
+    $assignee = User::factory()->create();
+
+    $matching = TaskRecurrence::factory()->create(['assignee_id' => $assignee->id]);
+    TaskRecurrence::factory()->create(['assignee_id' => null]);
+
+    $this->actingAs($viewer)->get(route('task-recurrences.index', [
         'assignee_id' => $assignee->id,
+    ]), inertiaHeaders())
+        ->assertOk()
+        ->assertJsonCount(1, 'props.recurrences.data')
+        ->assertJsonPath('props.recurrences.data.0.id', $matching->id);
+});
+
+test('index filters by frequency', function () {
+    $viewer = userWithPermissions([PermissionName::TaskView->value]);
+
+    $matching = TaskRecurrence::factory()->create([
+        'frequency' => RecurrenceFrequency::Daily,
+        'interval' => 1,
+        'weekdays' => null,
+        'day_of_month' => null,
+    ]);
+    TaskRecurrence::factory()->weekly([1])->create();
+
+    $this->actingAs($viewer)->get(route('task-recurrences.index', [
         'frequency' => RecurrenceFrequency::Daily->value,
+    ]), inertiaHeaders())
+        ->assertOk()
+        ->assertJsonCount(1, 'props.recurrences.data')
+        ->assertJsonPath('props.recurrences.data.0.id', $matching->id);
+});
+
+test('index filters by active state', function () {
+    $viewer = userWithPermissions([PermissionName::TaskView->value]);
+
+    $matching = TaskRecurrence::factory()->create(['is_active' => true]);
+    TaskRecurrence::factory()->create(['is_active' => false]);
+
+    $this->actingAs($viewer)->get(route('task-recurrences.index', [
         'is_active' => true,
     ]), inertiaHeaders())
         ->assertOk()
@@ -179,6 +230,60 @@ test('updating a template does not change tasks already generated from it', func
 
     expect($task->fresh()->title)->toBe('Tiêu đề gốc')
         ->and($recurrence->fresh()->title)->toBe('Tiêu đề sau khi sửa');
+});
+
+test('switching frequency from weekly to monthly clears the abandoned weekdays column', function () {
+    $creator = User::factory()->create();
+    grantPermissions($creator, [PermissionName::TaskUpdate->value]);
+    $recurrence = TaskRecurrence::factory()->weekly([1, 5])->create([
+        'creator_id' => $creator->id,
+        'start_date' => '2026-08-01',
+    ]);
+
+    expect($recurrence->weekdays)->toBe([1, 5]);
+
+    $this->actingAs($creator)->put(route('task-recurrences.update', $recurrence), [
+        'organization_unit_id' => $recurrence->organization_unit_id,
+        'title' => $recurrence->title,
+        'priority' => $recurrence->priority->value,
+        'frequency' => RecurrenceFrequency::Monthly->value,
+        'interval' => 1,
+        'day_of_month' => 5,
+        'start_date' => $recurrence->start_date->toDateString(),
+    ])->assertRedirect(route('task-recurrences.index'));
+
+    $recurrence->refresh();
+
+    expect($recurrence->frequency)->toBe(RecurrenceFrequency::Monthly)
+        ->and($recurrence->weekdays)->toBeNull()
+        ->and($recurrence->day_of_month)->toBe(5);
+});
+
+test('switching frequency from monthly to weekly clears the abandoned day_of_month column', function () {
+    $creator = User::factory()->create();
+    grantPermissions($creator, [PermissionName::TaskUpdate->value]);
+    $recurrence = TaskRecurrence::factory()->monthly(15)->create([
+        'creator_id' => $creator->id,
+        'start_date' => '2026-08-01',
+    ]);
+
+    expect($recurrence->day_of_month)->toBe(15);
+
+    $this->actingAs($creator)->put(route('task-recurrences.update', $recurrence), [
+        'organization_unit_id' => $recurrence->organization_unit_id,
+        'title' => $recurrence->title,
+        'priority' => $recurrence->priority->value,
+        'frequency' => RecurrenceFrequency::Weekly->value,
+        'interval' => 1,
+        'weekdays' => [3],
+        'start_date' => $recurrence->start_date->toDateString(),
+    ])->assertRedirect(route('task-recurrences.index'));
+
+    $recurrence->refresh();
+
+    expect($recurrence->frequency)->toBe(RecurrenceFrequency::Weekly)
+        ->and($recurrence->day_of_month)->toBeNull()
+        ->and($recurrence->weekdays)->toBe([3]);
 });
 
 test('toggle flips is_active without touching last_generated_for', function () {
