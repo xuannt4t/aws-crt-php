@@ -6,6 +6,7 @@
 - Sprint 1 — Identity: hoàn tất Authentication, User, Organization, Role & Permission và Audit Log nền tảng.
 - Sprint 2 — Task Core: hoàn tất; đã hoàn tất Task CRUD, người phụ trách chính, filter, phân trang, comment, luồng `draft → todo → in_progress → waiting_review` có history, Attachment (upload, tải xuống có kiểm quyền, xoá mềm kèm audit) và Activity timeline hợp nhất.
 - Sprint 3 — Project: hoàn tất; đã hoàn tất Project CRUD, quản lý thành viên dự án (`manager`/`member`/`viewer`), gán Task theo project, đóng dự án (kiểm tra công việc mở) và dữ liệu demo/tài liệu.
+- Công việc lặp lại định kỳ: hoàn tất; mẫu lặp `task_recurrences` (ngày/tuần/tháng/quý), lệnh `tasks:generate-recurring` chạy 00:05 hằng ngày sinh công việc từ mẫu, CRUD mẫu, bật/tắt và trang "Việc định kỳ".
 - Công việc kế tiếp: Sprint 4 — Approval.
 
 ## Sprint 0 — Foundation
