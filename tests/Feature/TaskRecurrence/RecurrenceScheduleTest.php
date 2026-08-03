@@ -107,6 +107,25 @@ test('weekly occurrences never fall before start_date even when the week already
     ]);
 });
 
+test('weekly occurrences with interval greater than one skip a non-qualifying week when from lands mid-cycle', function () {
+    // 2026-08-03 is a Monday (week 0, qualifying). Week 1 (2026-08-10..16) is
+    // non-qualifying. `from` lands mid-week inside that non-qualifying week.
+    $recurrence = TaskRecurrence::factory()->weekly([1])->make([
+        'start_date' => '2026-08-03',
+        'interval' => 2,
+    ]);
+
+    $dates = schedule()->occurrencesBetween(
+        $recurrence,
+        CarbonImmutable::parse('2026-08-12'),
+        CarbonImmutable::parse('2026-08-24'),
+    );
+
+    expect(array_map(fn (CarbonImmutable $d) => $d->toDateString(), $dates))->toBe([
+        '2026-08-17',
+    ]);
+});
+
 // --- monthly ---
 
 test('monthly occurrences fall on day_of_month for each interval month', function () {
@@ -211,7 +230,7 @@ test('quarterly occurrences respect interval greater than one', function () {
 
 // --- boundaries ---
 
-test('occurrences never fall earlier than start_date even when from is earlier', function () {
+test('daily occurrences never fall earlier than start_date even when from is earlier', function () {
     $recurrence = TaskRecurrence::factory()->daily()->make([
         'start_date' => '2026-08-05',
     ]);
@@ -224,6 +243,60 @@ test('occurrences never fall earlier than start_date even when from is earlier',
 
     expect(array_map(fn (CarbonImmutable $d) => $d->toDateString(), $dates))->toBe([
         '2026-08-05', '2026-08-06', '2026-08-07',
+    ]);
+});
+
+test('weekly occurrences never fall earlier than start_date even when from is earlier', function () {
+    // start_date is Monday 2026-08-10; the earlier Monday 2026-08-03 must
+    // never be emitted even though `from` reaches back before it.
+    $recurrence = TaskRecurrence::factory()->weekly([1])->make([
+        'start_date' => '2026-08-10',
+    ]);
+
+    $dates = schedule()->occurrencesBetween(
+        $recurrence,
+        CarbonImmutable::parse('2026-08-01'),
+        CarbonImmutable::parse('2026-08-24'),
+    );
+
+    expect(array_map(fn (CarbonImmutable $d) => $d->toDateString(), $dates))->toBe([
+        '2026-08-10', '2026-08-17', '2026-08-24',
+    ]);
+});
+
+test('monthly occurrences never fall earlier than start_date even when from is earlier', function () {
+    // day_of_month is 1, but start_date is the 15th, so the qualifying
+    // occurrence in the start month (the 1st) must be skipped.
+    $recurrence = TaskRecurrence::factory()->monthly(1)->make([
+        'start_date' => '2026-03-15',
+    ]);
+
+    $dates = schedule()->occurrencesBetween(
+        $recurrence,
+        CarbonImmutable::parse('2026-01-01'),
+        CarbonImmutable::parse('2026-05-31'),
+    );
+
+    expect(array_map(fn (CarbonImmutable $d) => $d->toDateString(), $dates))->toBe([
+        '2026-04-01', '2026-05-01',
+    ]);
+});
+
+test('quarterly occurrences never fall earlier than start_date even when from is earlier', function () {
+    // day_of_month is 1, but start_date is the 15th, so the qualifying
+    // occurrence in the start month (the 1st) must be skipped.
+    $recurrence = TaskRecurrence::factory()->quarterly(1)->make([
+        'start_date' => '2026-03-15',
+    ]);
+
+    $dates = schedule()->occurrencesBetween(
+        $recurrence,
+        CarbonImmutable::parse('2026-01-01'),
+        CarbonImmutable::parse('2026-09-30'),
+    );
+
+    expect(array_map(fn (CarbonImmutable $d) => $d->toDateString(), $dates))->toBe([
+        '2026-06-01', '2026-09-01',
     ]);
 });
 
@@ -257,7 +330,7 @@ test('occurrences between returns an empty list when until is before the effecti
     expect($dates)->toBe([]);
 });
 
-test('occurrences between terminates sensibly for a far future until bound', function () {
+test('occurrences between truncates at the iteration cap for a far future until bound', function () {
     $recurrence = TaskRecurrence::factory()->daily(1)->make([
         'start_date' => '2026-08-01',
     ]);
@@ -268,8 +341,14 @@ test('occurrences between terminates sensibly for a far future until bound', fun
         CarbonImmutable::parse('2126-08-01'),
     );
 
-    expect($dates)->not->toBeEmpty()
-        ->and($dates[0]->toDateString())->toBe('2026-08-01');
+    // MAX_ITERATIONS = 10000: exactly 10000 daily dates are produced,
+    // starting at start_date and stopping short of the 100-year until bound.
+    $expectedLast = CarbonImmutable::parse('2026-08-01')->addDays(9999);
+
+    expect($dates)->toHaveCount(10000)
+        ->and($dates[0]->toDateString())->toBe('2026-08-01')
+        ->and(end($dates)->toDateString())->toBe($expectedLast->toDateString())
+        ->and($expectedLast->toDateString())->not->toBe('2126-08-01');
 });
 
 // --- next occurrence after ---
@@ -292,6 +371,20 @@ test('next occurrence after skips the current occurrence on the same day', funct
     $next = schedule()->nextOccurrenceAfter($recurrence, CarbonImmutable::parse('2026-08-03 00:00:00'));
 
     expect($next?->toDateString())->toBe('2026-08-10');
+});
+
+test('next occurrence after finds a long cadence quarterly occurrence within the full search horizon', function () {
+    // interval = 52 on a quarterly template is a 156-month (13-year) cadence.
+    // Searching right after the first occurrence means the next one is
+    // ~13 years away, requiring the search to reach the full 20-year horizon.
+    $recurrence = TaskRecurrence::factory()->quarterly(15)->make([
+        'start_date' => '2020-01-15',
+        'interval' => 52,
+    ]);
+
+    $next = schedule()->nextOccurrenceAfter($recurrence, CarbonImmutable::parse('2020-01-16'));
+
+    expect($next?->toDateString())->toBe('2033-01-15');
 });
 
 test('next occurrence after never returns a date earlier than start_date', function () {

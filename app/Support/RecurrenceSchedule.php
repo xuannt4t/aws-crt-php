@@ -51,16 +51,12 @@ final class RecurrenceSchedule
         $start = $this->toDate($recurrence->start_date);
         $searchFrom = $this->toDate($after)->addDay()->max($start);
 
-        $horizonYears = 2;
-
-        while ($horizonYears <= 20) {
+        foreach ([2, 10, 20] as $horizonYears) {
             $occurrences = $this->occurrencesBetween($recurrence, $searchFrom, $searchFrom->addYears($horizonYears));
 
             if ($occurrences !== []) {
                 return $occurrences[0];
             }
-
-            $horizonYears *= 5;
         }
 
         return null;
