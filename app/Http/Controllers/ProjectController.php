@@ -7,6 +7,7 @@ use App\Actions\Project\CreateProjectAction;
 use App\Actions\Project\DeleteProjectAction;
 use App\Actions\Project\UpdateProjectAction;
 use App\Enums\ProjectStatus;
+use App\Enums\ProjectTaskVisibility;
 use App\Enums\TaskStatus;
 use App\Http\Requests\CloseProjectRequest;
 use App\Http\Requests\IndexProjectRequest;
@@ -14,6 +15,7 @@ use App\Http\Requests\StoreProjectRequest;
 use App\Http\Requests\UpdateProjectRequest;
 use App\Models\OrganizationUnit;
 use App\Models\Project;
+use App\Models\ProjectMember;
 use App\Models\Task;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
@@ -131,6 +133,11 @@ final class ProjectController extends Controller
         $project->unsetRelation('members');
         $project->load(['organizationUnit:id,name', 'owner:id,name']);
 
+        $membersPayload = $members->map(fn (ProjectMember $member): array => [
+            ...$member->toArray(),
+            'effective_task_visibility' => $member->effectiveTaskVisibility()->value,
+        ])->all();
+
         $tasks = $actions['viewTasks']
             ? $project->tasks()
                 ->visibleTo($user)
@@ -149,10 +156,11 @@ final class ProjectController extends Controller
                 'progress' => $project->calculateProgress($user),
                 'open_task_count' => $project->openTasks()->visibleTo($user)->count(),
             ],
-            'members' => $members,
+            'members' => $membersPayload,
             'users' => $this->activeUsers(),
             'tasks' => $tasks,
             'actions' => $actions,
+            'taskVisibilityOptions' => $this->taskVisibilityOptions(),
         ]);
     }
 
@@ -239,5 +247,19 @@ final class ProjectController extends Controller
             ->orderBy('name')
             ->get(['id', 'name'])
             ->toArray();
+    }
+
+    /**
+     * @return array<int, array{value: string, label: string}>
+     */
+    private function taskVisibilityOptions(): array
+    {
+        return array_map(
+            static fn (ProjectTaskVisibility $case): array => [
+                'value' => $case->value,
+                'label' => $case->label(),
+            ],
+            ProjectTaskVisibility::cases(),
+        );
     }
 }

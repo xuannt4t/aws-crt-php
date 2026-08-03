@@ -5,14 +5,15 @@ import AppConfirmDialog from '@/Components/AppConfirmDialog.vue';
 import AppUserAvatar from '@/Components/AppUserAvatar.vue';
 import InputError from '@/Components/InputError.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
-import { projectMemberRoleLabels } from '@/Constants/project';
+import { projectMemberRoleLabels, projectTaskVisibilityLabels } from '@/Constants/project';
 import { router, useForm } from '@inertiajs/vue3';
-import type { ProjectMember, ProjectMemberRole, User } from '@/types';
+import type { ProjectMember, ProjectMemberRole, ProjectTaskVisibility, User } from '@/types';
 
 const props = defineProps<{
     projectId: number;
     members: ProjectMember[];
     users: Pick<User, 'id' | 'name'>[];
+    taskVisibilityOptions: { value: ProjectTaskVisibility; label: string }[];
     canManage: boolean;
 }>();
 
@@ -27,6 +28,7 @@ const availableUsers = computed(() => {
 const addForm = useForm({
     user_id: null as number | null,
     role: 'member' as ProjectMemberRole,
+    task_visibility: 'own' as ProjectTaskVisibility,
 });
 
 const updatingMemberId = ref<number | null>(null);
@@ -40,12 +42,18 @@ const submitAdd = () => {
     });
 };
 
-const updateRole = (member: ProjectMember, role: ProjectMemberRole) => {
+const updateMember = (
+    member: ProjectMember,
+    changes: { role?: ProjectMemberRole; task_visibility?: ProjectTaskVisibility },
+) => {
     updatingMemberId.value = member.id;
 
     router.patch(
         route('projects.members.update', [props.projectId, member.id]),
-        { role },
+        {
+            role: changes.role ?? member.role,
+            task_visibility: changes.task_visibility ?? member.task_visibility,
+        },
         {
             preserveScroll: true,
             onFinish: () => {
@@ -98,6 +106,15 @@ const confirmRemove = () => {
                 </select>
                 <InputError class="mt-2" :message="addForm.errors.role" />
             </div>
+            <div class="w-full sm:w-48">
+                <label class="mb-1.5 block text-xs font-bold text-slate-600" for="member-task-visibility">Quyền xem việc</label>
+                <select id="member-task-visibility" v-model="addForm.task_visibility" class="app-field">
+                    <option v-for="option in taskVisibilityOptions" :key="option.value" :value="option.value">
+                        {{ option.label }}
+                    </option>
+                </select>
+                <InputError class="mt-2" :message="addForm.errors.task_visibility" />
+            </div>
             <PrimaryButton :disabled="addForm.processing || !addForm.user_id">
                 {{ addForm.processing ? 'Đang thêm...' : 'Thêm' }}
             </PrimaryButton>
@@ -125,7 +142,7 @@ const confirmRemove = () => {
                         :value="member.role"
                         :disabled="updatingMemberId === member.id"
                         aria-label="Đổi vai trò thành viên"
-                        @change="updateRole(member, ($event.target as HTMLSelectElement).value as ProjectMemberRole)"
+                        @change="updateMember(member, { role: ($event.target as HTMLSelectElement).value as ProjectMemberRole })"
                     >
                         <option v-for="role in roles" :key="role" :value="role">
                             {{ projectMemberRoleLabels[role] }}
@@ -134,6 +151,33 @@ const confirmRemove = () => {
                     <span v-else class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
                         {{ projectMemberRoleLabels[member.role] }}
                     </span>
+
+                    <template v-if="canManage">
+                        <select
+                            v-if="member.role !== 'manager'"
+                            class="app-field h-9 w-44 py-1 text-xs"
+                            :value="member.task_visibility"
+                            :disabled="updatingMemberId === member.id"
+                            aria-label="Đổi quyền xem việc của thành viên"
+                            @change="
+                                updateMember(member, {
+                                    task_visibility: ($event.target as HTMLSelectElement).value as ProjectTaskVisibility,
+                                })
+                            "
+                        >
+                            <option v-for="option in taskVisibilityOptions" :key="option.value" :value="option.value">
+                                {{ option.label }}
+                            </option>
+                        </select>
+                        <span
+                            v-else
+                            class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-500"
+                            title="Quản lý dự án luôn thấy toàn bộ việc của dự án, không thể đổi."
+                        >
+                            {{ projectTaskVisibilityLabels.all }}
+                        </span>
+                    </template>
+
                     <AppActionButton
                         v-if="canManage"
                         icon="trash"

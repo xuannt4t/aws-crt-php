@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Enums\ProjectMemberRole;
+use App\Enums\ProjectTaskVisibility;
 use App\Models\Project;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -32,6 +33,7 @@ final class StoreProjectMemberRequest extends FormRequest
                 Rule::unique('project_members', 'user_id')->where('project_id', $project->id),
             ],
             'role' => ['required', Rule::enum(ProjectMemberRole::class)],
+            'task_visibility' => ['nullable', Rule::enum(ProjectTaskVisibility::class)],
         ];
     }
 
@@ -44,6 +46,7 @@ final class StoreProjectMemberRequest extends FormRequest
             'user_id.unique' => 'Người dùng này đã là thành viên của dự án.',
             'role.required' => 'Vui lòng chọn vai trò.',
             'role.enum' => 'Vai trò không hợp lệ.',
+            'task_visibility.enum' => 'Quyền xem việc không hợp lệ.',
         ];
     }
 }

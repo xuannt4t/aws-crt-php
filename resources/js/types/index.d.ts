@@ -150,6 +150,8 @@ export type ProjectStatus = 'planning' | 'active' | 'on_hold' | 'completed' | 'c
 
 export type ProjectMemberRole = 'manager' | 'member' | 'viewer';
 
+export type ProjectTaskVisibility = 'own' | 'all';
+
 export interface Project {
     id: number;
     organization_unit_id: number;
@@ -175,6 +177,9 @@ export interface ProjectMember {
     project_id: number;
     user_id: number;
     role: ProjectMemberRole;
+    task_visibility: ProjectTaskVisibility;
+    /** Hiệu lực thực tế: luôn "all" khi role là "manager", bất kể task_visibility. */
+    effective_task_visibility: ProjectTaskVisibility;
     joined_at: string | null;
     user?: Pick<User, 'id' | 'name' | 'avatar_url'>;
 }
