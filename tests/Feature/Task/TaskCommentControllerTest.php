@@ -8,6 +8,7 @@ use App\Models\User;
 test('a user with task view and comment permissions can comment on a task', function () {
     $author = userWithPermissions([
         PermissionName::TaskView->value,
+        PermissionName::TaskViewAll->value,
         PermissionName::TaskComment->value,
     ]);
     $task = Task::factory()->create();
@@ -43,6 +44,7 @@ test('task comment requires both view and comment permissions', function (array 
 test('task comment content is required and limited to five thousand characters', function () {
     $author = userWithPermissions([
         PermissionName::TaskView->value,
+        PermissionName::TaskViewAll->value,
         PermissionName::TaskComment->value,
     ]);
     $task = Task::factory()->create();
@@ -59,7 +61,7 @@ test('task comment content is required and limited to five thousand characters',
 });
 
 test('task details show paginated comments and retain soft deleted authors', function () {
-    $viewer = userWithPermissions([PermissionName::TaskView->value]);
+    $viewer = userWithPermissions([PermissionName::TaskView->value, PermissionName::TaskViewAll->value]);
     $task = Task::factory()->create();
     $author = User::factory()->create();
 

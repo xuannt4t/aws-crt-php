@@ -3,13 +3,14 @@
 use App\Enums\AuditAction;
 use App\Enums\PermissionName;
 use App\Enums\ProjectMemberRole;
+use App\Enums\ProjectTaskVisibility;
 use App\Models\AuditLog;
 use App\Models\Project;
 use App\Models\ProjectMember;
 use App\Models\User;
 
 test('a user with manage members permission can add a member and creates audit log', function () {
-    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value]);
+    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value, PermissionName::ProjectViewAll->value]);
     $project = Project::factory()->create();
     $newMember = User::factory()->create(['is_active' => true]);
 
@@ -24,6 +25,7 @@ test('a user with manage members permission can add a member and creates audit l
         'project_id' => $project->id,
         'user_id' => $newMember->id,
         'role' => ProjectMemberRole::Member->value,
+        'task_visibility' => ProjectTaskVisibility::Own->value,
     ]);
 
     $auditLog = AuditLog::where('action', AuditAction::ProjectMemberAdded->value)->firstOrFail();
@@ -31,7 +33,74 @@ test('a user with manage members permission can add a member and creates audit l
     expect($auditLog->actor_id)->toBe($actor->id)
         ->and($auditLog->subject_id)->toBe($project->id)
         ->and($auditLog->metadata['member_user_id'])->toBe($newMember->id)
-        ->and($auditLog->metadata['role'])->toBe(ProjectMemberRole::Member->value);
+        ->and($auditLog->metadata['role'])->toBe(ProjectMemberRole::Member->value)
+        ->and($auditLog->metadata['task_visibility'])->toBe(ProjectTaskVisibility::Own->value);
+});
+
+test('adding a member without task_visibility defaults to own', function () {
+    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value, PermissionName::ProjectViewAll->value]);
+    $project = Project::factory()->create();
+    $newMember = User::factory()->create(['is_active' => true]);
+
+    $this->actingAs($actor)->post(route('projects.members.store', $project), [
+        'user_id' => $newMember->id,
+        'role' => ProjectMemberRole::Viewer->value,
+    ])->assertRedirect()->assertSessionHas('success');
+
+    $this->assertDatabaseHas('project_members', [
+        'project_id' => $project->id,
+        'user_id' => $newMember->id,
+        'task_visibility' => ProjectTaskVisibility::Own->value,
+    ]);
+});
+
+test('adding a member with task_visibility all is stored as given', function () {
+    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value, PermissionName::ProjectViewAll->value]);
+    $project = Project::factory()->create();
+    $newMember = User::factory()->create(['is_active' => true]);
+
+    $this->actingAs($actor)->post(route('projects.members.store', $project), [
+        'user_id' => $newMember->id,
+        'role' => ProjectMemberRole::Viewer->value,
+        'task_visibility' => ProjectTaskVisibility::All->value,
+    ])->assertRedirect()->assertSessionHas('success');
+
+    $this->assertDatabaseHas('project_members', [
+        'project_id' => $project->id,
+        'user_id' => $newMember->id,
+        'task_visibility' => ProjectTaskVisibility::All->value,
+    ]);
+});
+
+test('adding a member as manager always stores task_visibility all regardless of input', function () {
+    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value, PermissionName::ProjectViewAll->value]);
+    $project = Project::factory()->create();
+    $newMember = User::factory()->create(['is_active' => true]);
+
+    $this->actingAs($actor)->post(route('projects.members.store', $project), [
+        'user_id' => $newMember->id,
+        'role' => ProjectMemberRole::Manager->value,
+        'task_visibility' => ProjectTaskVisibility::Own->value,
+    ])->assertRedirect()->assertSessionHas('success');
+
+    $this->assertDatabaseHas('project_members', [
+        'project_id' => $project->id,
+        'user_id' => $newMember->id,
+        'role' => ProjectMemberRole::Manager->value,
+        'task_visibility' => ProjectTaskVisibility::All->value,
+    ]);
+});
+
+test('adding a member with an invalid task_visibility is rejected', function () {
+    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value, PermissionName::ProjectViewAll->value]);
+    $project = Project::factory()->create();
+    $newMember = User::factory()->create(['is_active' => true]);
+
+    $this->actingAs($actor)->post(route('projects.members.store', $project), [
+        'user_id' => $newMember->id,
+        'role' => ProjectMemberRole::Viewer->value,
+        'task_visibility' => 'not-a-visibility',
+    ])->assertSessionHasErrors('task_visibility');
 });
 
 test('a project manager without the manage members permission can still add a member', function () {
@@ -77,7 +146,7 @@ test('an outsider without permission cannot add a member', function () {
 });
 
 test('adding the same user twice fails validation', function () {
-    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value]);
+    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value, PermissionName::ProjectViewAll->value]);
     $project = Project::factory()->create();
     $existingMember = ProjectMember::factory()->create(['project_id' => $project->id]);
 
@@ -90,7 +159,7 @@ test('adding the same user twice fails validation', function () {
 });
 
 test('adding a member requires an active user and a valid role', function () {
-    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value]);
+    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value, PermissionName::ProjectViewAll->value]);
     $project = Project::factory()->create();
     $inactiveUser = User::factory()->create(['is_active' => false]);
 
@@ -112,15 +181,17 @@ test('adding a member requires an active user and a valid role', function () {
 });
 
 test('a user with manage members permission can update a member role and creates audit log', function () {
-    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value]);
+    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value, PermissionName::ProjectViewAll->value]);
     $project = Project::factory()->create();
     $member = ProjectMember::factory()->create([
         'project_id' => $project->id,
         'role' => ProjectMemberRole::Member,
+        'task_visibility' => ProjectTaskVisibility::Own,
     ]);
 
     $response = $this->actingAs($actor)->patch(route('projects.members.update', [$project, $member]), [
         'role' => ProjectMemberRole::Viewer->value,
+        'task_visibility' => ProjectTaskVisibility::Own->value,
     ]);
 
     $response->assertRedirect()->assertSessionHas('success');
@@ -134,7 +205,93 @@ test('a user with manage members permission can update a member role and creates
 
     expect($auditLog->before_values['role'])->toBe(ProjectMemberRole::Member->value)
         ->and($auditLog->after_values['role'])->toBe(ProjectMemberRole::Viewer->value)
-        ->and($auditLog->metadata['member_user_id'])->toBe($member->user_id);
+        ->and($auditLog->metadata['member_user_id'])->toBe($member->user_id)
+        ->and($auditLog->metadata['task_visibility'])->toBe(ProjectTaskVisibility::Own->value);
+});
+
+test('a user with manage members permission can change a member task_visibility', function () {
+    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value, PermissionName::ProjectViewAll->value]);
+    $project = Project::factory()->create();
+    $member = ProjectMember::factory()->create([
+        'project_id' => $project->id,
+        'role' => ProjectMemberRole::Member,
+        'task_visibility' => ProjectTaskVisibility::Own,
+    ]);
+
+    $this->actingAs($actor)->patch(route('projects.members.update', [$project, $member]), [
+        'role' => ProjectMemberRole::Member->value,
+        'task_visibility' => ProjectTaskVisibility::All->value,
+    ])->assertRedirect()->assertSessionHas('success');
+
+    $this->assertDatabaseHas('project_members', [
+        'id' => $member->id,
+        'task_visibility' => ProjectTaskVisibility::All->value,
+    ]);
+});
+
+test('promoting a member to manager forces task_visibility to all', function () {
+    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value, PermissionName::ProjectViewAll->value]);
+    $project = Project::factory()->create();
+    $member = ProjectMember::factory()->create([
+        'project_id' => $project->id,
+        'role' => ProjectMemberRole::Member,
+        'task_visibility' => ProjectTaskVisibility::Own,
+    ]);
+
+    $this->actingAs($actor)->patch(route('projects.members.update', [$project, $member]), [
+        'role' => ProjectMemberRole::Manager->value,
+        'task_visibility' => ProjectTaskVisibility::Own->value,
+    ])->assertRedirect()->assertSessionHas('success');
+
+    $this->assertDatabaseHas('project_members', [
+        'id' => $member->id,
+        'role' => ProjectMemberRole::Manager->value,
+        'task_visibility' => ProjectTaskVisibility::All->value,
+    ]);
+});
+
+test('demoting a member from manager keeps the stored task_visibility unchanged', function () {
+    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value, PermissionName::ProjectViewAll->value]);
+    $project = Project::factory()->create();
+    $member = ProjectMember::factory()->create([
+        'project_id' => $project->id,
+        'role' => ProjectMemberRole::Manager,
+        'task_visibility' => ProjectTaskVisibility::All,
+    ]);
+
+    // Yêu cầu gửi lên task_visibility khác (own) khi hạ khỏi manager, nhưng quy
+    // tắc buộc giữ nguyên giá trị đang lưu — bỏ qua giá trị vừa gửi.
+    $this->actingAs($actor)->patch(route('projects.members.update', [$project, $member]), [
+        'role' => ProjectMemberRole::Member->value,
+        'task_visibility' => ProjectTaskVisibility::Own->value,
+    ])->assertRedirect()->assertSessionHas('success');
+
+    $this->assertDatabaseHas('project_members', [
+        'id' => $member->id,
+        'role' => ProjectMemberRole::Member->value,
+        'task_visibility' => ProjectTaskVisibility::All->value,
+    ]);
+});
+
+test('updating a member without task_visibility is rejected', function () {
+    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value, PermissionName::ProjectViewAll->value]);
+    $project = Project::factory()->create();
+    $member = ProjectMember::factory()->create(['project_id' => $project->id]);
+
+    $this->actingAs($actor)->patch(route('projects.members.update', [$project, $member]), [
+        'role' => ProjectMemberRole::Viewer->value,
+    ])->assertSessionHasErrors('task_visibility');
+});
+
+test('updating a member with an invalid task_visibility is rejected', function () {
+    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value, PermissionName::ProjectViewAll->value]);
+    $project = Project::factory()->create();
+    $member = ProjectMember::factory()->create(['project_id' => $project->id]);
+
+    $this->actingAs($actor)->patch(route('projects.members.update', [$project, $member]), [
+        'role' => ProjectMemberRole::Viewer->value,
+        'task_visibility' => 'not-a-visibility',
+    ])->assertSessionHasErrors('task_visibility');
 });
 
 test('an outsider without permission cannot update a member role', function () {
@@ -150,7 +307,7 @@ test('an outsider without permission cannot update a member role', function () {
 });
 
 test('the project owner cannot be demoted below manager', function () {
-    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value]);
+    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value, PermissionName::ProjectViewAll->value]);
     $project = Project::factory()->create();
     $ownerMember = ProjectMember::factory()->create([
         'project_id' => $project->id,
@@ -161,6 +318,7 @@ test('the project owner cannot be demoted below manager', function () {
     $this->actingAs($actor)
         ->patch(route('projects.members.update', [$project, $ownerMember]), [
             'role' => ProjectMemberRole::Member->value,
+            'task_visibility' => ProjectTaskVisibility::All->value,
         ])
         ->assertSessionHasErrors('role');
 
@@ -171,7 +329,7 @@ test('the project owner cannot be demoted below manager', function () {
 });
 
 test('a user with manage members permission can remove a member and creates audit log', function () {
-    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value]);
+    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value, PermissionName::ProjectViewAll->value]);
     $project = Project::factory()->create();
     $member = ProjectMember::factory()->create(['project_id' => $project->id]);
 
@@ -200,7 +358,7 @@ test('an outsider without permission cannot remove a member', function () {
 });
 
 test('the project owner cannot be removed from members', function () {
-    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value]);
+    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value, PermissionName::ProjectViewAll->value]);
     $project = Project::factory()->create();
     $ownerMember = ProjectMember::factory()->create([
         'project_id' => $project->id,
@@ -234,7 +392,7 @@ test('a project manager without the manage members permission can still remove a
 });
 
 test('a soft deleted user cannot be added as a project member', function () {
-    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value]);
+    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value, PermissionName::ProjectViewAll->value]);
     $project = Project::factory()->create();
     $deletedUser = User::factory()->create(['is_active' => true]);
     $deletedUser->delete();
@@ -253,7 +411,7 @@ test('a soft deleted user cannot be added as a project member', function () {
 });
 
 test('scoped bindings reject a member id belonging to a different project on update', function () {
-    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value]);
+    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value, PermissionName::ProjectViewAll->value]);
     $project = Project::factory()->create();
     $otherProject = Project::factory()->create();
     $foreignMember = ProjectMember::factory()->create([
@@ -264,6 +422,7 @@ test('scoped bindings reject a member id belonging to a different project on upd
     $this->actingAs($actor)
         ->patch(route('projects.members.update', [$project->id, $foreignMember->id]), [
             'role' => ProjectMemberRole::Manager->value,
+            'task_visibility' => ProjectTaskVisibility::All->value,
         ])
         ->assertNotFound();
 
@@ -271,7 +430,7 @@ test('scoped bindings reject a member id belonging to a different project on upd
 });
 
 test('scoped bindings reject a member id belonging to a different project on destroy', function () {
-    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value]);
+    $actor = userWithPermissions([PermissionName::ProjectManageMembers->value, PermissionName::ProjectViewAll->value]);
     $project = Project::factory()->create();
     $otherProject = Project::factory()->create();
     $foreignMember = ProjectMember::factory()->create(['project_id' => $otherProject->id]);

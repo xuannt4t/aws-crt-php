@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\Project\AddProjectMemberAction;
 use App\Actions\Project\RemoveProjectMemberAction;
-use App\Actions\Project\UpdateProjectMemberRoleAction;
+use App\Actions\Project\UpdateProjectMemberAction;
 use App\Http\Requests\StoreProjectMemberRequest;
 use App\Http\Requests\UpdateProjectMemberRequest;
 use App\Models\Project;
@@ -28,9 +28,17 @@ final class ProjectMemberController extends Controller
         UpdateProjectMemberRequest $request,
         Project $project,
         ProjectMember $member,
-        UpdateProjectMemberRoleAction $action,
+        UpdateProjectMemberAction $action,
     ): RedirectResponse {
-        $action->execute($request->user(), $project, $member, $request->validated()['role']);
+        $validated = $request->validated();
+
+        $action->execute(
+            $request->user(),
+            $project,
+            $member,
+            $validated['role'],
+            $validated['task_visibility'],
+        );
 
         return Redirect::back()->with('success', 'Đã cập nhật vai trò thành viên.');
     }

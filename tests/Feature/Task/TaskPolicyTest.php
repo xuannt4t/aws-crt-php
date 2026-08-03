@@ -5,11 +5,13 @@ use App\Models\Task;
 use App\Models\User;
 
 test('task permissions control each policy ability', function () {
-    $viewer = userWithPermissions([PermissionName::TaskView->value]);
+    $viewer = userWithPermissions([PermissionName::TaskView->value, PermissionName::TaskViewAll->value]);
     $creator = userWithPermissions([PermissionName::TaskCreate->value]);
-    $updater = userWithPermissions([PermissionName::TaskUpdate->value]);
-    $deleter = userWithPermissions([PermissionName::TaskDelete->value]);
-    $assigner = userWithPermissions([PermissionName::TaskAssign->value]);
+    // Mọi ability chạm tới một bản ghi cụ thể đều đòi thêm phạm vi dữ liệu, nên
+    // các actor bên dưới giữ task.view_all để nằm trong phạm vi của $task.
+    $updater = userWithPermissions([PermissionName::TaskUpdate->value, PermissionName::TaskViewAll->value]);
+    $deleter = userWithPermissions([PermissionName::TaskDelete->value, PermissionName::TaskViewAll->value]);
+    $assigner = userWithPermissions([PermissionName::TaskAssign->value, PermissionName::TaskViewAll->value]);
     $userWithoutPermission = User::factory()->create();
     $task = Task::factory()->create();
 
@@ -25,6 +27,7 @@ test('task permissions control each policy ability', function () {
 test('commenting on a task requires both view and comment permissions', function () {
     $commenter = userWithPermissions([
         PermissionName::TaskView->value,
+        PermissionName::TaskViewAll->value,
         PermissionName::TaskComment->value,
     ]);
     $commentOnly = userWithPermissions([PermissionName::TaskComment->value]);

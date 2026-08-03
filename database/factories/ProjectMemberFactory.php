@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Enums\ProjectMemberRole;
+use App\Enums\ProjectTaskVisibility;
 use App\Models\Project;
 use App\Models\ProjectMember;
 use App\Models\User;
@@ -21,7 +22,15 @@ final class ProjectMemberFactory extends Factory
             'project_id' => Project::factory(),
             'user_id' => User::factory(),
             'role' => ProjectMemberRole::Member,
+            'task_visibility' => ProjectTaskVisibility::Own,
             'joined_at' => now(),
         ];
+    }
+
+    public function allTaskVisibility(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'task_visibility' => ProjectTaskVisibility::All,
+        ]);
     }
 }

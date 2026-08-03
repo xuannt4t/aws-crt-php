@@ -14,7 +14,7 @@ interface NavigationItem {
     label: string;
     routeName: string;
     activePattern: string;
-    icon: 'dashboard' | 'building' | 'users' | 'shield' | 'tasks' | 'folder' | 'calendar';
+    icon: 'dashboard' | 'building' | 'users' | 'shield' | 'tasks' | 'folder' | 'calendar' | 'lock';
     permission?: string;
 }
 
@@ -25,16 +25,10 @@ const isLogoutDialogOpen = ref(false);
 
 const navigation: NavigationItem[] = [
     {
-        label: 'Tổng quan',
-        routeName: 'dashboard',
-        activePattern: 'dashboard',
-        icon: 'dashboard',
-    },
-    {
-        label: 'Công việc',
+        label: 'Tổng quan việc',
         routeName: 'tasks.index',
-        activePattern: 'tasks.*',
-        icon: 'tasks',
+        activePattern: 'tasks.index',
+        icon: 'dashboard',
         permission: 'task.view',
     },
     {
@@ -42,6 +36,20 @@ const navigation: NavigationItem[] = [
         routeName: 'task-recurrences.index',
         activePattern: 'task-recurrences.*',
         icon: 'calendar',
+        permission: 'task.view',
+    },
+    {
+        label: 'Việc dự án',
+        routeName: 'tasks.projects',
+        activePattern: 'tasks.projects',
+        icon: 'tasks',
+        permission: 'task.view',
+    },
+    {
+        label: 'Việc phòng ban',
+        routeName: 'tasks.departments',
+        activePattern: 'tasks.departments',
+        icon: 'tasks',
         permission: 'task.view',
     },
     {
@@ -72,6 +80,13 @@ const navigation: NavigationItem[] = [
         activePattern: 'audit-logs.*',
         icon: 'shield',
         permission: 'system.view_audit_logs',
+    },
+    {
+        label: 'Phân quyền',
+        routeName: 'permission-matrix.index',
+        activePattern: 'permission-matrix.*',
+        icon: 'lock',
+        permission: 'system.manage_settings',
     },
 ];
 

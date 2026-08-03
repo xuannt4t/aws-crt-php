@@ -2,8 +2,12 @@
 
 namespace App\Models;
 
+use App\Enums\DataScope;
+use App\Enums\ProjectMemberRole;
+use App\Enums\ProjectTaskVisibility;
 use App\Enums\TaskPriority;
 use App\Enums\TaskStatus;
+use App\Support\DataScopeResolver;
 use Database\Factories\TaskFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -126,8 +130,90 @@ final class Task extends Model
     public function scopeOverdue(Builder $query): Builder
     {
         return $query
-            ->whereNotIn('status', [TaskStatus::Completed->value, TaskStatus::Cancelled->value])
+            ->whereNotIn('status', self::overdueExcludedStatuses())
             ->where('due_at', '<', now());
+    }
+
+    /**
+     * Các trạng thái không được tính là "trễ hạn" (spec §6.1), dùng chung bởi
+     * `scopeOverdue` và `App\Support\TaskSummary` — nguồn DUY NHẤT của danh
+     * sách này, để ô đếm "trễ hạn" luôn khớp với những dòng danh sách đánh
+     * dấu trễ hạn, kể cả khi định nghĩa này đổi trong tương lai.
+     *
+     * @return list<string>
+     */
+    public static function overdueExcludedStatuses(): array
+    {
+        return [TaskStatus::Completed->value, TaskStatus::Cancelled->value];
+    }
+
+    /**
+     * Giới hạn danh sách công việc theo phạm vi dữ liệu hiệu lực của người dùng
+     * (spec §4.1). Đây là định nghĩa DUY NHẤT của "công việc nào người dùng thấy
+     * được" — TaskPolicy::view() hỏi lại chính scope này thay vì viết lại điều
+     * kiện, để danh sách và xem trực tiếp qua URL luôn đồng nhất.
+     *
+     * Toàn bộ điều kiện "own" (và phần bổ sung của "department") nằm trong MỘT
+     * closure where(...) duy nhất — nếu tách các orWhere ra ngoài, chúng sẽ phá
+     * vỡ những điều kiện lọc khác đã có sẵn trên query (tìm kiếm, trạng thái,
+     * độ ưu tiên, người phụ trách, quá hạn...).
+     */
+    public function scopeVisibleTo(Builder $query, User $user): Builder
+    {
+        $scope = app(DataScopeResolver::class)->forTasks($user);
+
+        if ($scope === DataScope::All) {
+            return $query;
+        }
+
+        if ($scope === DataScope::Own || $user->organization_unit_id === null) {
+            return $query->where(fn (Builder $q) => $this->addOwnConditions($q, $user));
+        }
+
+        $unitIds = OrganizationUnit::descendantIdsOf($user->organization_unit_id);
+
+        return $query->where(function (Builder $q) use ($user, $unitIds): void {
+            $this->addOwnConditions($q, $user);
+            $q->orWhereIn('organization_unit_id', $unitIds);
+        });
+    }
+
+    /**
+     * Thêm các điều kiện "own" (spec §4.1, mục 1-4) vào một closure where() đã
+     * có sẵn. Điều kiện việc con chỉ đi đúng một cấp — ứng dụng dùng mô hình
+     * việc cha/việc con một cấp, không truy ngược đệ quy.
+     */
+    private function addOwnConditions(Builder $query, User $user): void
+    {
+        $query
+            ->where('assignee_id', $user->id)
+            ->orWhere('creator_id', $user->id)
+            ->orWhereHas('project', fn (Builder $projectQuery) => $this->addProjectMembershipCondition($projectQuery, $user))
+            ->orWhereHas('parent', function (Builder $parentQuery) use ($user): void {
+                $parentQuery
+                    ->where('assignee_id', $user->id)
+                    ->orWhere('creator_id', $user->id)
+                    ->orWhereHas('project', fn (Builder $projectQuery) => $this->addProjectMembershipCondition($projectQuery, $user));
+            });
+    }
+
+    /**
+     * Điều kiện "thành viên dự án với hiệu lực xem toàn bộ việc" (spec §4.1,
+     * mục 3) — nơi DUY NHẤT của rule này trong scopeVisibleTo, dùng lại y hệt
+     * cho việc trực tiếp và cho việc cha (một cấp). Thành viên vai trò
+     * `manager` luôn đạt điều kiện này bất kể cột task_visibility lưu gì,
+     * khớp với ProjectMember::effectiveTaskVisibility().
+     */
+    private function addProjectMembershipCondition(Builder $projectQuery, User $user): Builder
+    {
+        return $projectQuery->whereHas(
+            'members',
+            fn (Builder $memberQuery) => $memberQuery
+                ->where('user_id', $user->id)
+                ->where(fn (Builder $visibilityQuery) => $visibilityQuery
+                    ->where('task_visibility', ProjectTaskVisibility::All->value)
+                    ->orWhere('role', ProjectMemberRole::Manager->value)),
+        );
     }
 
     public function isOverdue(): bool

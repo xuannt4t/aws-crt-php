@@ -11,10 +11,67 @@ export interface Role {
     name: string;
 }
 
+export interface PermissionMatrixRole {
+    id: number;
+    name: string;
+    label: string;
+}
+
+export interface PermissionMatrixPermission {
+    name: string;
+    label: string;
+}
+
+export interface PermissionGroup {
+    key: string;
+    label: string;
+    permissions: PermissionMatrixPermission[];
+}
+
+/** Map tên vai trò → danh sách tên permission đang được gán. */
+export type PermissionMatrix = Record<string, string[]>;
+
 export type TaskStatus =
     'draft' | 'todo' | 'in_progress' | 'waiting_review' | 'waiting_approval' | 'completed' | 'cancelled';
 
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
+
+/** Ba bối cảnh của màn công việc (spec §5.1) — do route quyết định, không đổi được bằng query string. */
+export type TaskContext = 'overview' | 'project' | 'department';
+
+/** Tên các bộ lọc khúc 2 mà server cho phép vẽ (spec §6.2) — luôn là tập con của danh sách này. */
+export type TaskFilterKey =
+    | 'search'
+    | 'organization_unit_id'
+    | 'project_id'
+    | 'assignee_ids'
+    | 'status'
+    | 'priority';
+
+export interface TaskIndexFilters {
+    search?: string;
+    status?: TaskStatus;
+    priority?: TaskPriority;
+    organization_unit_id?: number;
+    project_id?: number;
+    assignee_ids?: number[];
+    overdue?: boolean | string;
+}
+
+/**
+ * Tóm tắt thống kê của khúc 1 (spec §6.1). `earliest_created` là MIN(created_at)
+ * — tasks không có cột ngày bắt đầu riêng — KHÔNG phải "ngày bắt đầu".
+ */
+export interface TaskSummary {
+    total: number;
+    not_started: number;
+    in_progress: number;
+    waiting_approval: number;
+    completed: number;
+    overdue: number;
+    earliest_created: string | null;
+    latest_due: string | null;
+}
 
 export interface TaskStatusHistory {
     id: number;
@@ -130,6 +187,8 @@ export type ProjectStatus = 'planning' | 'active' | 'on_hold' | 'completed' | 'c
 
 export type ProjectMemberRole = 'manager' | 'member' | 'viewer';
 
+export type ProjectTaskVisibility = 'own' | 'all';
+
 export interface Project {
     id: number;
     organization_unit_id: number;
@@ -155,6 +214,9 @@ export interface ProjectMember {
     project_id: number;
     user_id: number;
     role: ProjectMemberRole;
+    task_visibility: ProjectTaskVisibility;
+    /** Hiệu lực thực tế: luôn "all" khi role là "manager", bất kể task_visibility. */
+    effective_task_visibility: ProjectTaskVisibility;
     joined_at: string | null;
     user?: Pick<User, 'id' | 'name' | 'avatar_url'>;
 }

@@ -1,4 +1,4 @@
-import type { ProjectMemberRole, ProjectStatus } from '@/types';
+import type { ProjectMemberRole, ProjectStatus, ProjectTaskVisibility } from '@/types';
 
 export const projectStatusLabels: Record<ProjectStatus, string> = {
     planning: 'Lên kế hoạch',
@@ -20,4 +20,9 @@ export const projectMemberRoleLabels: Record<ProjectMemberRole, string> = {
     manager: 'Quản lý dự án',
     member: 'Thành viên',
     viewer: 'Người theo dõi',
+};
+
+export const projectTaskVisibilityLabels: Record<ProjectTaskVisibility, string> = {
+    own: 'Chỉ việc của mình',
+    all: 'Toàn bộ việc dự án',
 };

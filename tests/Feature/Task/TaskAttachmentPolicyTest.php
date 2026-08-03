@@ -10,7 +10,9 @@ test('attaching requires both view and comment permissions', function (array $pe
 
     expect($user->can('attach', $task))->toBe($expected);
 })->with([
-    'view and comment' => [[PermissionName::TaskView->value, PermissionName::TaskComment->value], true],
+    // Các bộ "true" giữ thêm task.view_all vì attach/downloadAttachment nay
+    // đòi công việc nằm trong phạm vi dữ liệu của người dùng.
+    'view and comment' => [[PermissionName::TaskView->value, PermissionName::TaskViewAll->value, PermissionName::TaskComment->value], true],
     'view only' => [[PermissionName::TaskView->value], false],
     'comment only' => [[PermissionName::TaskComment->value], false],
     'none' => [[], false],
@@ -22,7 +24,8 @@ test('downloading an attachment requires the task view permission', function (ar
 
     expect($user->can('downloadAttachment', $task))->toBe($expected);
 })->with([
-    'view' => [[PermissionName::TaskView->value], true],
+    'view' => [[PermissionName::TaskView->value, PermissionName::TaskViewAll->value], true],
+    'view without scope' => [[PermissionName::TaskView->value], false],
     'none' => [[], false],
 ]);
 

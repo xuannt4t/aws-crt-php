@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Enums\ProjectMemberRole;
+use App\Enums\ProjectTaskVisibility;
 use App\Models\Project;
 use App\Models\ProjectMember;
 use Illuminate\Foundation\Http\FormRequest;
@@ -23,6 +24,7 @@ final class UpdateProjectMemberRequest extends FormRequest
     {
         return [
             'role' => ['required', Rule::enum(ProjectMemberRole::class)],
+            'task_visibility' => ['required', Rule::enum(ProjectTaskVisibility::class)],
         ];
     }
 
@@ -31,6 +33,8 @@ final class UpdateProjectMemberRequest extends FormRequest
         return [
             'role.required' => 'Vui lòng chọn vai trò.',
             'role.enum' => 'Vai trò không hợp lệ.',
+            'task_visibility.required' => 'Vui lòng chọn quyền xem việc.',
+            'task_visibility.enum' => 'Quyền xem việc không hợp lệ.',
         ];
     }
 

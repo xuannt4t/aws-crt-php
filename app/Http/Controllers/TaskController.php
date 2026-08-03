@@ -9,6 +9,7 @@ use App\Actions\Task\UpdateTaskAction;
 use App\Actions\Task\UpdateTaskActualQuantityAction;
 use App\Actions\Task\UpdateTaskProgressAction;
 use App\Enums\PermissionName;
+use App\Enums\TaskContext;
 use App\Enums\TaskPriority;
 use App\Enums\TaskStatus;
 use App\Http\Requests\DispatchTaskRequest;
@@ -26,6 +27,7 @@ use App\Models\Task;
 use App\Models\TaskAttachment;
 use App\Models\User;
 use App\Support\TaskDescriptionSanitizer;
+use App\Support\TaskSummary;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Redirect;
@@ -34,7 +36,42 @@ use Inertia\Response;
 
 final class TaskController extends Controller
 {
+    /**
+     * Bộ lọc hiển thị của ba màn công việc (spec §5.2) — giống nhau ở cả ba
+     * bối cảnh, là một prop tường minh thay vì rải v-if trong template.
+     *
+     * @var list<string>
+     */
+    private const AVAILABLE_FILTERS = [
+        'search',
+        'organization_unit_id',
+        'project_id',
+        'assignee_ids',
+        'status',
+        'priority',
+    ];
+
     public function index(IndexTaskRequest $request): Response
+    {
+        return $this->renderTasks($request, TaskContext::Overview);
+    }
+
+    public function projects(IndexTaskRequest $request): Response
+    {
+        return $this->renderTasks($request, TaskContext::Project);
+    }
+
+    public function departments(IndexTaskRequest $request): Response
+    {
+        return $this->renderTasks($request, TaskContext::Department);
+    }
+
+    /**
+     * Bối cảnh do route quyết định (spec §5.1) — KHÔNG bao giờ đọc từ query
+     * string, và chỉ thu hẹp thêm tập việc của phạm vi dữ liệu hiệu lực
+     * (`Task::scopeVisibleTo`), không bao giờ mở rộng nó.
+     */
+    private function renderTasks(IndexTaskRequest $request, TaskContext $context): Response
     {
         $filters = $request->validated();
 
@@ -42,7 +79,7 @@ final class TaskController extends Controller
             $filters['assignee_ids'] = array_map('intval', $filters['assignee_ids']);
         }
 
-        $tasks = Task::query()
+        $baseQuery = Task::query()
             ->with([
                 'organizationUnit:id,name',
                 'creator:id,name,avatar_path',
@@ -50,6 +87,11 @@ final class TaskController extends Controller
                 'project:id,name,code',
                 'recurrence:id,title,deleted_at',
             ])
+            ->visibleTo($request->user())
+            ->when($context === TaskContext::Project, fn (Builder $query) => $query
+                ->whereNotNull('project_id'))
+            ->when($context === TaskContext::Department, fn (Builder $query) => $query
+                ->whereNotNull('organization_unit_id'))
             ->when($filters['search'] ?? null, fn (Builder $query, string $search) => $query
                 ->where('title', 'like', "%{$search}%"))
             ->when($filters['status'] ?? null, fn (Builder $query, string $status) => $query
@@ -62,7 +104,11 @@ final class TaskController extends Controller
                 ->whereIn('assignee_id', $assigneeIds))
             ->when($filters['project_id'] ?? null, fn (Builder $query, int $projectId) => $query
                 ->where('project_id', $projectId))
-            ->when($request->boolean('overdue'), fn (Builder $query) => $query->overdue())
+            ->when($request->boolean('overdue'), fn (Builder $query) => $query->overdue());
+
+        $summary = app(TaskSummary::class)->for(clone $baseQuery);
+
+        $tasks = (clone $baseQuery)
             ->latest('id')
             ->paginate(20)
             ->through(fn (Task $task): array => [
@@ -79,6 +125,9 @@ final class TaskController extends Controller
             'organizationUnits' => $this->organizationUnits(),
             'users' => $this->activeUsers(),
             'projects' => $this->openProjects(),
+            'summary' => $summary,
+            'context' => $context->value,
+            'availableFilters' => self::AVAILABLE_FILTERS,
         ]);
     }
 

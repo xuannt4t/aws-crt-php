@@ -13,7 +13,7 @@ import SecondaryButton from '@/Components/SecondaryButton.vue';
 import { taskStatusClasses, taskStatusLabels } from '@/Constants/task';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import type { OrganizationUnit, Project, ProjectMember, Task, User } from '@/types';
+import type { OrganizationUnit, Project, ProjectMember, ProjectTaskVisibility, Task, User } from '@/types';
 
 interface PaginationLink {
     url: string | null;
@@ -53,6 +53,7 @@ const props = defineProps<{
     };
     members: ProjectMember[];
     users: Pick<User, 'id' | 'name'>[];
+    taskVisibilityOptions: { value: ProjectTaskVisibility; label: string }[];
     tasks: PaginatedTasks | null;
     actions: {
         update: boolean;
@@ -206,6 +207,7 @@ const paginationLabel = (label: string) => {
                             :project-id="project.id"
                             :members="members"
                             :users="users"
+                            :task-visibility-options="taskVisibilityOptions"
                             :can-manage="actions.manageMembers"
                         />
                     </div>

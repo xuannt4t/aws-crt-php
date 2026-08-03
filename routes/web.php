@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrganizationUnitController;
+use App\Http\Controllers\PermissionMatrixController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectMemberController;
@@ -25,7 +26,7 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
+    return redirect()->route('tasks.index');
 })->middleware(['auth', 'verified', 'active'])->name('dashboard');
 
 Route::middleware(['auth', 'active'])->group(function () {
@@ -47,6 +48,15 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
     Route::patch('users/{user}/disable', [UserController::class, 'disable'])->name('users.disable');
     Route::patch('users/{user}/enable', [UserController::class, 'enable'])->name('users.enable');
     Route::get('audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+    Route::get('permission-matrix', [PermissionMatrixController::class, 'index'])->name('permission-matrix.index');
+    Route::put('permission-matrix', [PermissionMatrixController::class, 'update'])->name('permission-matrix.update');
+
+    // Ba màn công việc (spec §5.1) — đăng ký trước Route::resource('tasks', ...)
+    // để không bị `tasks/{task}` nuốt mất.
+    Route::get('tasks', [TaskController::class, 'index'])->name('tasks.index');
+    Route::get('tasks/projects', [TaskController::class, 'projects'])->name('tasks.projects');
+    Route::get('tasks/departments', [TaskController::class, 'departments'])->name('tasks.departments');
+
     Route::patch('tasks/{task}/dispatch', [TaskController::class, 'dispatch'])->name('tasks.dispatch');
     Route::patch('tasks/{task}/start', [TaskController::class, 'start'])->name('tasks.start');
     Route::patch('tasks/{task}/submit', [TaskController::class, 'submit'])->name('tasks.submit');
@@ -62,7 +72,7 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
     Route::delete('tasks/{task}/attachments/{attachment}', [TaskAttachmentController::class, 'destroy'])
         ->scopeBindings()
         ->name('tasks.attachments.destroy');
-    Route::resource('tasks', TaskController::class);
+    Route::resource('tasks', TaskController::class)->except('index');
 
     Route::patch('task-recurrences/{taskRecurrence}/toggle', [TaskRecurrenceController::class, 'toggle'])
         ->name('task-recurrences.toggle');

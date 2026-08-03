@@ -14,6 +14,7 @@ function uploaderUser(): User
 {
     return userWithPermissions([
         PermissionName::TaskView->value,
+        PermissionName::TaskViewAll->value,
         PermissionName::TaskComment->value,
     ]);
 }
@@ -76,7 +77,7 @@ test('uploading records a single audit entry for the request', function () {
 test('uploading requires both view and comment permissions', function () {
     Storage::fake('local');
 
-    $user = userWithPermissions([PermissionName::TaskView->value]);
+    $user = userWithPermissions([PermissionName::TaskView->value, PermissionName::TaskViewAll->value]);
     $task = Task::factory()->create();
 
     $this->actingAs($user)
@@ -241,7 +242,7 @@ test('a user who can view the task downloads an attachment under its original na
         'original_name' => 'Báo cáo quý.pdf',
     ]);
 
-    $viewer = userWithPermissions([PermissionName::TaskView->value]);
+    $viewer = userWithPermissions([PermissionName::TaskView->value, PermissionName::TaskViewAll->value]);
 
     $response = $this->actingAs($viewer)
         ->get(route('tasks.attachments.download', [$task, $attachment]));
@@ -276,7 +277,7 @@ test('downloading an attachment whose file is missing from disk returns not foun
     // Storage::download() không tự báo lỗi).
     $attachment = TaskAttachment::factory()->for($task)->create(['path' => $path]);
 
-    $viewer = userWithPermissions([PermissionName::TaskView->value]);
+    $viewer = userWithPermissions([PermissionName::TaskView->value, PermissionName::TaskViewAll->value]);
 
     $this->actingAs($viewer)
         ->get(route('tasks.attachments.download', [$task, $attachment]))
@@ -293,7 +294,7 @@ test('downloading a soft deleted attachment returns not found', function () {
     $attachment = TaskAttachment::factory()->for($task)->create(['path' => $path]);
     $attachment->delete();
 
-    $viewer = userWithPermissions([PermissionName::TaskView->value]);
+    $viewer = userWithPermissions([PermissionName::TaskView->value, PermissionName::TaskViewAll->value]);
 
     $this->actingAs($viewer)
         ->get(route('tasks.attachments.download', [$task, $attachment]))
@@ -307,7 +308,7 @@ test('an attachment cannot be reached through a different task', function () {
     $otherTask = Task::factory()->create();
     $attachment = TaskAttachment::factory()->for($otherTask)->create();
 
-    $this->actingAs(userWithPermissions([PermissionName::TaskView->value]))
+    $this->actingAs(userWithPermissions([PermissionName::TaskView->value, PermissionName::TaskViewAll->value]))
         ->get(route('tasks.attachments.download', [$task, $attachment]))
         ->assertNotFound();
 });
@@ -365,7 +366,7 @@ test('another user cannot delete an attachment they did not upload', function ()
     $task = Task::factory()->create();
     $attachment = TaskAttachment::factory()->for($task)->create();
 
-    $this->actingAs(userWithPermissions([PermissionName::TaskView->value]))
+    $this->actingAs(userWithPermissions([PermissionName::TaskView->value, PermissionName::TaskViewAll->value]))
         ->delete(route('tasks.attachments.destroy', [$task, $attachment]))
         ->assertForbidden();
 
@@ -375,7 +376,11 @@ test('another user cannot delete an attachment they did not upload', function ()
 test('task details expose attachments with per user delete permission', function () {
     Storage::fake('local');
 
-    $uploader = uploaderUser();
+    $uploader = userWithPermissions([
+        PermissionName::TaskView->value,
+        PermissionName::TaskComment->value,
+        PermissionName::TaskViewAll->value,
+    ]);
     $task = Task::factory()->create();
 
     $own = TaskAttachment::factory()->for($task)->for($uploader, 'uploader')->create([
@@ -402,7 +407,7 @@ test('task details expose attachments with per user delete permission', function
 test('a viewer without the comment permission cannot attach from the task page', function () {
     $task = Task::factory()->create();
 
-    $this->actingAs(userWithPermissions([PermissionName::TaskView->value]))
+    $this->actingAs(userWithPermissions([PermissionName::TaskView->value, PermissionName::TaskViewAll->value]))
         ->get(route('tasks.show', $task))
         ->assertOk()
         ->assertInertia(fn ($page) => $page->where('actions.attach', false));
@@ -413,7 +418,7 @@ test('deleted attachments disappear from the task page', function () {
     $attachment = TaskAttachment::factory()->for($task)->create();
     $attachment->delete();
 
-    $this->actingAs(userWithPermissions([PermissionName::TaskView->value]))
+    $this->actingAs(userWithPermissions([PermissionName::TaskView->value, PermissionName::TaskViewAll->value]))
         ->get(route('tasks.show', $task))
         ->assertOk()
         ->assertInertia(fn ($page) => $page->has('attachments', 0));
