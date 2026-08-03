@@ -15,7 +15,8 @@ final class TaskRecurrencePolicy
 
     public function view(User $user, TaskRecurrence $taskRecurrence): bool
     {
-        return $user->can(PermissionName::TaskView->value);
+        return $user->can(PermissionName::TaskView->value)
+            && $this->isVisible($user, $taskRecurrence);
     }
 
     public function create(User $user): bool
@@ -26,16 +27,27 @@ final class TaskRecurrencePolicy
     public function update(User $user, TaskRecurrence $taskRecurrence): bool
     {
         return $user->can(PermissionName::TaskUpdate->value)
-            && ($taskRecurrence->creator_id === $user->id || $user->can(PermissionName::TaskAssign->value));
+            && ($taskRecurrence->creator_id === $user->id || $user->can(PermissionName::TaskAssign->value))
+            && $this->isVisible($user, $taskRecurrence);
     }
 
     public function delete(User $user, TaskRecurrence $taskRecurrence): bool
     {
-        return $user->can(PermissionName::TaskDelete->value);
+        return $user->can(PermissionName::TaskDelete->value)
+            && $this->isVisible($user, $taskRecurrence);
     }
 
     public function toggle(User $user, TaskRecurrence $taskRecurrence): bool
     {
         return $this->update($user, $taskRecurrence);
+    }
+
+    /**
+     * Hỏi lại TaskRecurrence::scopeVisibleTo() — định nghĩa DUY NHẤT của phạm
+     * vi dữ liệu cho mẫu việc định kỳ.
+     */
+    private function isVisible(User $user, TaskRecurrence $taskRecurrence): bool
+    {
+        return TaskRecurrence::query()->whereKey($taskRecurrence->getKey())->visibleTo($user)->exists();
     }
 }

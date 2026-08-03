@@ -14,7 +14,7 @@ interface NavigationItem {
     label: string;
     routeName: string;
     activePattern: string;
-    icon: 'dashboard' | 'building' | 'users' | 'shield' | 'tasks' | 'folder' | 'calendar';
+    icon: 'dashboard' | 'building' | 'users' | 'shield' | 'tasks' | 'folder' | 'calendar' | 'lock';
     permission?: string;
 }
 
@@ -72,6 +72,13 @@ const navigation: NavigationItem[] = [
         activePattern: 'audit-logs.*',
         icon: 'shield',
         permission: 'system.view_audit_logs',
+    },
+    {
+        label: 'Phân quyền',
+        routeName: 'permission-matrix.index',
+        activePattern: 'permission-matrix.*',
+        icon: 'lock',
+        permission: 'system.manage_settings',
     },
 ];
 

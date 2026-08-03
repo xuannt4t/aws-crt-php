@@ -31,6 +31,7 @@ final class TaskRecurrenceController extends Controller
         $filters = $request->validated();
 
         $recurrences = TaskRecurrence::query()
+            ->visibleTo($request->user())
             ->with([
                 'organizationUnit:id,name',
                 'project:id,name,code',
@@ -94,6 +95,7 @@ final class TaskRecurrenceController extends Controller
         ]);
 
         $tasks = $taskRecurrence->tasks()
+            ->visibleTo($request->user())
             ->with(['assignee:id,name,avatar_path'])
             ->paginate(
                 perPage: 20,

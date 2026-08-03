@@ -12,7 +12,7 @@ use App\Models\Task;
 use App\Models\User;
 
 test('closing a project with no open tasks marks it completed and records a plain closed audit log', function () {
-    $actor = userWithPermissions([PermissionName::ProjectClose->value]);
+    $actor = userWithPermissions([PermissionName::ProjectClose->value, PermissionName::ProjectViewAll->value]);
     $project = Project::factory()->create(['status' => ProjectStatus::Active]);
     Task::factory()->create(['project_id' => $project->id, 'status' => TaskStatus::Completed]);
 
@@ -33,7 +33,7 @@ test('closing a project with no open tasks marks it completed and records a plai
 });
 
 test('closing a project with open tasks and no reason fails validation and leaves the project unchanged', function () {
-    $actor = userWithPermissions([PermissionName::ProjectClose->value]);
+    $actor = userWithPermissions([PermissionName::ProjectClose->value, PermissionName::ProjectViewAll->value]);
     $project = Project::factory()->create(['status' => ProjectStatus::Active]);
     Task::factory()->create(['project_id' => $project->id, 'status' => TaskStatus::InProgress]);
 
@@ -49,7 +49,7 @@ test('closing a project with open tasks and no reason fails validation and leave
 });
 
 test('closing a project with open tasks and a valid reason closes it with an exception audit log', function () {
-    $actor = userWithPermissions([PermissionName::ProjectClose->value]);
+    $actor = userWithPermissions([PermissionName::ProjectClose->value, PermissionName::ProjectViewAll->value]);
     $project = Project::factory()->create(['status' => ProjectStatus::Active]);
     $openTask = Task::factory()->create(['project_id' => $project->id, 'status' => TaskStatus::InProgress]);
     Task::factory()->create(['project_id' => $project->id, 'status' => TaskStatus::Completed]);
@@ -74,7 +74,7 @@ test('closing a project with open tasks and a valid reason closes it with an exc
 });
 
 test('closing an already closed project fails validation with a close reason error', function () {
-    $actor = userWithPermissions([PermissionName::ProjectClose->value]);
+    $actor = userWithPermissions([PermissionName::ProjectClose->value, PermissionName::ProjectViewAll->value]);
     $project = Project::factory()->create([
         'status' => ProjectStatus::Completed,
         'closed_at' => now(),

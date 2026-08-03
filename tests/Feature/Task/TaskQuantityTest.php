@@ -344,7 +344,9 @@ test('actual quantity cannot be set through the task crud form', function () {
 });
 
 test('actual quantity cannot be set through the task crud update form', function () {
-    $actor = userWithPermissions([PermissionName::TaskUpdate->value]);
+    // task.view_all: sửa một công việc nay đòi công việc đó nằm trong phạm vi
+    // dữ liệu của người sửa.
+    $actor = userWithPermissions([PermissionName::TaskUpdate->value, PermissionName::TaskViewAll->value]);
     $task = Task::factory()
         ->withQuantity(planned: 500, actual: 100, unit: 'hồ sơ')
         ->create();
@@ -363,7 +365,7 @@ test('actual quantity cannot be set through the task crud update form', function
 });
 
 test('a unit cannot be submitted without a planned quantity through the task crud update form', function () {
-    $actor = userWithPermissions([PermissionName::TaskUpdate->value]);
+    $actor = userWithPermissions([PermissionName::TaskUpdate->value, PermissionName::TaskViewAll->value]);
     $task = Task::factory()->create();
 
     $this->actingAs($actor)

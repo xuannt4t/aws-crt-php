@@ -9,9 +9,10 @@ use Illuminate\Contracts\Validation\ValidationRule;
 
 /**
  * Từ chối gắn công việc vào một dự án mà người dùng không xem được. Dùng chung
- * cho StoreTaskRequest và UpdateTaskRequest để tránh lặp định nghĩa "dự án
- * người dùng thấy được" — nguồn sự thật duy nhất nằm ở Project::isVisibleTo()/
- * Project::scopeVisibleTo(), cũng chính là điều kiện của ProjectPolicy::view().
+ * cho StoreTaskRequest, UpdateTaskRequest, StoreTaskRecurrenceRequest và
+ * UpdateTaskRecurrenceRequest để tránh lặp định nghĩa "dự án người dùng thấy
+ * được" — nguồn sự thật duy nhất nằm ở Project::scopeVisibleTo(), cũng chính
+ * là điều kiện phạm vi mà ProjectPolicy::view() hỏi lại.
  */
 final class ProjectIsVisible implements ValidationRule
 {
