@@ -85,7 +85,7 @@ test('generates one task per due quarterly period', function () {
     expect($dates)->toBe(['2026-02-03', '2026-05-03', '2026-08-03']);
 });
 
-test('running the command twice on the same day does not create duplicates', function () {
+test('running the command twice on the same day short-circuits with no new occurrences', function () {
     $recurrence = TaskRecurrence::factory()->daily()->create([
         'start_date' => '2026-08-01',
     ]);
@@ -94,6 +94,39 @@ test('running the command twice on the same day does not create duplicates', fun
     $this->artisan('tasks:generate-recurring')->assertSuccessful();
 
     expect(Task::where('task_recurrence_id', $recurrence->id)->count())->toBe(3);
+});
+
+test('a colliding task for an already-due period is skipped, the rest are generated, and last_generated_for still advances', function () {
+    $recurrence = TaskRecurrence::factory()->daily()->create([
+        'start_date' => '2026-08-01',
+    ]);
+
+    // Pre-insert a task that collides with the (task_recurrence_id, recurrence_date)
+    // pair the run is about to generate for 2026-08-02, simulating a period that
+    // was already generated out of band (e.g. a previous run partially committed
+    // before crashing). last_generated_for is left untouched, so the run still
+    // tries to (re)generate 2026-08-01, 2026-08-02 and 2026-08-03.
+    Task::factory()->create([
+        'organization_unit_id' => $recurrence->organization_unit_id,
+        'creator_id' => $recurrence->creator_id,
+        'task_recurrence_id' => $recurrence->id,
+        'recurrence_date' => '2026-08-02',
+    ]);
+
+    $this->artisan('tasks:generate-recurring')->assertSuccessful();
+
+    $dates = Task::where('task_recurrence_id', $recurrence->id)
+        ->orderBy('recurrence_date')
+        ->pluck('recurrence_date')
+        ->map(fn ($date) => $date->toDateString())
+        ->all();
+
+    // Exactly one row per period: the pre-existing 2026-08-02 row was kept as-is
+    // (the run's attempt to insert a duplicate for that date was caught and
+    // skipped), while 2026-08-01 and 2026-08-03 were newly generated.
+    expect($dates)->toBe(['2026-08-01', '2026-08-02', '2026-08-03']);
+    expect(Task::where('task_recurrence_id', $recurrence->id)->count())->toBe(3);
+    expect($recurrence->fresh()->last_generated_for->toDateString())->toBe('2026-08-03');
 });
 
 test('backfills at most 30 periods per run and stops last_generated_for at the 30th period', function () {

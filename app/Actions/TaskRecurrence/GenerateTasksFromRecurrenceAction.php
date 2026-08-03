@@ -94,7 +94,7 @@ final class GenerateTasksFromRecurrenceAction
 
             return true;
         } catch (QueryException $e) {
-            if ($this->isUniqueConstraintViolation($e)) {
+            if ($this->isRecurrenceDuplicateViolation($e)) {
                 return false;
             }
 
@@ -133,8 +133,27 @@ final class GenerateTasksFromRecurrenceAction
         return CarbonImmutable::parse("{$date} 23:59:59", config('app.timezone'));
     }
 
-    private function isUniqueConstraintViolation(QueryException $e): bool
+    /**
+     * SQLSTATE 23000 là mã chung cho MỌI vi phạm ràng buộc toàn vẹn (unique,
+     * not null, khoá ngoại...), nên không đủ để xác định đây đúng là trùng
+     * cặp (task_recurrence_id, recurrence_date). Phải kiểm thêm mã lỗi riêng
+     * của driver và nội dung thông báo trỏ đúng ràng buộc unique đó — lỗi
+     * nào khác phải được ném lại để không âm thầm mất kỳ sinh.
+     */
+    private function isRecurrenceDuplicateViolation(QueryException $e): bool
     {
-        return $e->getCode() === '23000';
+        $driverCode = $e->errorInfo[1] ?? null;
+        $message = $e->getMessage();
+
+        return match (true) {
+            // MySQL: 1062 = ER_DUP_ENTRY, kèm đúng tên khoá unique của mình.
+            $driverCode === 1062 => str_contains($message, 'task_recurrence_id_recurrence_date_unique'),
+            // SQLite: 19 = SQLITE_CONSTRAINT, dùng chung cho UNIQUE/NOT NULL/FK
+            // nên phải xác nhận thêm đúng cặp cột bị vi phạm.
+            $driverCode === 19 => str_contains($message, 'UNIQUE constraint failed')
+                && str_contains($message, 'tasks.task_recurrence_id')
+                && str_contains($message, 'tasks.recurrence_date'),
+            default => false,
+        };
     }
 }
