@@ -41,14 +41,14 @@ const navigation: NavigationItem[] = [
     {
         label: 'Việc dự án',
         routeName: 'tasks.projects',
-        activePattern: 'tasks.projects',
+        activePattern: 'tasks.projects*',
         icon: 'tasks',
         permission: 'task.view',
     },
     {
         label: 'Việc phòng ban',
         routeName: 'tasks.departments',
-        activePattern: 'tasks.departments',
+        activePattern: 'tasks.departments*',
         icon: 'tasks',
         permission: 'task.view',
     },

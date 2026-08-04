@@ -43,6 +43,11 @@ class OrganizationUnit extends Model
         return $this->hasMany(User::class, 'organization_unit_id');
     }
 
+    public function tasks(): HasMany
+    {
+        return $this->hasMany(Task::class);
+    }
+
     /**
      * Return the given unit's id together with every descendant id at any
      * depth. Fetches all (id, parent_id) pairs in a single query and walks

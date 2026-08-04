@@ -72,11 +72,22 @@ Bối cảnh là hằng số do route truyền vào, không phải tham số ng�
 
 ### 5.2 Bối cảnh làm gì
 
-| Bối cảnh | Tập dữ liệu | Bộ lọc hiển thị |
+**Sửa lại sau phản hồi ngày 2026-08-04.** Bản đầu hiểu "Việc dự án" và "Việc phòng ban" là danh sách việc làm phẳng. Không phải. Hai mục này là **hai cấp**:
+
+1. Bấm vào mục menu → hiện **danh sách dự án** (hoặc **danh sách phòng ban**) mà người dùng xem được.
+2. Bấm vào một dự án (hoặc một phòng) → mới ra trang ba khúc của riêng nó.
+
+| Đường dẫn | Màn hình | Bộ lọc hiển thị |
 | --- | --- | --- |
-| `overview` | Mọi việc trong phạm vi người xem | từ khoá, phòng ban, dự án, người phụ trách, tình trạng, ưu tiên |
-| `project` | Chỉ việc có `project_id` | như trên |
-| `department` | Chỉ việc có `organization_unit_id` | như trên |
+| `overview` | Ba khúc trên mọi việc trong phạm vi người xem | từ khoá, phòng ban, dự án, người phụ trách, tình trạng, ưu tiên |
+| `project` (cấp 1) | Danh sách dự án kèm số việc và số việc trễ hạn | từ khoá |
+| `project` (cấp 2) | Ba khúc, cố định một dự án | như `overview` nhưng **bỏ bộ lọc dự án** |
+| `department` (cấp 1) | Danh sách phòng ban kèm số việc và số việc trễ hạn | từ khoá |
+| `department` (cấp 2) | Ba khúc, cố định một phòng | như `overview` nhưng **bỏ bộ lọc phòng ban** |
+
+Cấp 1 chỉ liệt kê những dự án/phòng ban mà người dùng thực sự xem được: dự án đi qua `Project::scopeVisibleTo`, phòng ban là những đơn vị còn ít nhất một việc trong `Task::scopeVisibleTo`. Số đếm trên mỗi dòng cũng chỉ tính việc người đó xem được.
+
+Cấp 2 cố định phạm vi bằng khoá chính lấy từ đường dẫn, không phải từ query string — không ai đổi được bằng cách sửa URL tham số.
 
 Phạm vi dữ liệu vẫn do `Task::scopeVisibleTo` quyết định, không đổi theo bối cảnh. Bối cảnh chỉ thu hẹp thêm, không bao giờ mở rộng.
 

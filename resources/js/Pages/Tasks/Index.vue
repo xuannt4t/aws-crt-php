@@ -16,7 +16,9 @@ import type {
     PageProps,
     Project,
     Task,
+    TaskApplyRoute,
     TaskContext,
+    TaskDashboardScope,
     TaskFilterKey,
     TaskIndexFilters,
     TaskPriority,
@@ -52,23 +54,25 @@ const props = defineProps<{
     summary: TaskSummary;
     context: TaskContext;
     availableFilters: TaskFilterKey[];
+    scope: TaskDashboardScope | null;
+    applyRoute: TaskApplyRoute;
 }>();
 
 const page = usePage<PageProps>();
 const { can } = usePermissions();
 const canCreate = computed(() => can('task.create'));
 
-// Bối cảnh do route/controller quyết định (spec §5.1) — chỉ dùng để đổi tiêu
-// đề trang và chọn route áp bộ lọc, KHÔNG bao giờ tự suy ra hay đổi qua query.
-const pageTitle = computed(() => taskContextLabels[props.context]);
-const pageDescription = computed(() => taskContextDescriptions[props.context]);
-
-const contextRouteNames: Record<TaskContext, string> = {
-    overview: 'tasks.index',
-    project: 'tasks.projects',
-    department: 'tasks.departments',
-};
-const currentRouteName = computed(() => contextRouteNames[props.context]);
+// Bối cảnh do route/controller quyết định (spec §5.1, §5.2) — chỉ dùng để
+// đổi tiêu đề trang, KHÔNG bao giờ tự suy ra hay đổi qua query. Ở cấp 2
+// (props.scope khác null) tiêu đề là tên dự án/phòng thay vì nhãn bối cảnh.
+const pageTitle = computed(() => props.scope?.name ?? taskContextLabels[props.context]);
+const pageDescription = computed(() =>
+    props.scope
+        ? `Ba khúc công việc cố định trong phạm vi bạn được xem, chỉ tính việc thuộc ${
+              props.scope.type === 'project' ? 'dự án' : 'phòng ban'
+          } này.`
+        : taskContextDescriptions[props.context],
+);
 
 const isLoading = ref(false);
 
@@ -80,7 +84,7 @@ function submitFilters(payload: {
     project_id?: number;
     assignee_ids?: number[];
 }) {
-    router.get(route(currentRouteName.value), payload, {
+    router.get(route(props.applyRoute.name, props.applyRoute.params), payload, {
         preserveState: true,
         replace: true,
         onStart: () => {
@@ -122,8 +126,12 @@ const paginationLabel = (label: string) => {
     <AuthenticatedLayout>
         <template #header>
             <AppPageHeader :title="pageTitle" :description="pageDescription" eyebrow="Task Core">
-                <template v-if="canCreate" #actions>
-                    <Link :href="route('tasks.create')" class="app-button-primary">
+                <template v-if="scope || canCreate" #actions>
+                    <Link v-if="scope" :href="route(scope.backRouteName)" class="app-button-secondary">
+                        <AppIcon name="arrow-left" class="size-4" />
+                        Quay lại danh sách
+                    </Link>
+                    <Link v-if="canCreate" :href="route('tasks.create')" class="app-button-primary">
                         <AppIcon name="plus" class="size-4" />
                         Tạo công việc
                     </Link>

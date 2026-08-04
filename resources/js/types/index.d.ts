@@ -48,6 +48,23 @@ export type TaskFilterKey =
     | 'status'
     | 'priority';
 
+/**
+ * Cấp 2 (spec §5.2) — phạm vi cố định bằng route binding, dùng để đổi tiêu
+ * đề trang và hiện nút quay lại danh sách cấp 1. `null` ở bối cảnh overview.
+ */
+export interface TaskDashboardScope {
+    type: 'project' | 'department';
+    id: number;
+    name: string;
+    backRouteName: string;
+}
+
+/** Route Inertia dùng để áp bộ lọc/phân trang — do controller quyết định, không suy ra ở client. */
+export interface TaskApplyRoute {
+    name: string;
+    params: Record<string, number>;
+}
+
 export interface TaskIndexFilters {
     search?: string;
     status?: TaskStatus;
