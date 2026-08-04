@@ -111,7 +111,10 @@ test('level 2 project dashboard only returns tasks of that project and hides the
         ->assertJsonPath('props.context', 'project')
         ->assertJsonCount(1, 'props.tasks.data')
         ->assertJsonPath('props.tasks.data.0.id', $withProject->id)
-        ->assertJsonMissing(['props.availableFilters' => ['project_id']]);
+        ->assertJsonPath(
+            'props.availableFilters',
+            fn (array $filters): bool => ! in_array('project_id', $filters, true),
+        );
 });
 
 test('level 2 project dashboard cannot be widened back to another project by query string', function () {
@@ -151,7 +154,11 @@ test('level 2 department dashboard includes tasks of descendant units', function
         ->assertJsonPath('props.context', 'department')
         ->assertJsonCount(2, 'props.tasks.data')
         ->assertJsonPath('props.tasks.data.0.id', $childTask->id)
-        ->assertJsonPath('props.tasks.data.1.id', $parentTask->id);
+        ->assertJsonPath('props.tasks.data.1.id', $parentTask->id)
+        ->assertJsonPath(
+            'props.availableFilters',
+            fn (array $filters): bool => ! in_array('organization_unit_id', $filters, true),
+        );
 });
 
 test('opening a project dashboard outside the viewer scope returns 403', function () {
