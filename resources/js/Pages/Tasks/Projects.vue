@@ -1,15 +1,13 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { ref } from 'vue';
 import AppEmptyState from '@/Components/AppEmptyState.vue';
 import AppIcon from '@/Components/AppIcon.vue';
 import AppPageHeader from '@/Components/AppPageHeader.vue';
 import AppProjectStatusBadge from '@/Components/AppProjectStatusBadge.vue';
-import ProjectProgressBar from '@/Components/ProjectProgressBar.vue';
-import { usePermissions } from '@/Composables/usePermissions';
-import { projectStatusLabels } from '@/Constants/project';
+import { taskContextDescriptions, taskContextLabels } from '@/Constants/task';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
-import type { OrganizationUnit, Project, ProjectStatus, User } from '@/types';
+import type { Project } from '@/types';
 
 interface PaginationLink {
     url: string | null;
@@ -18,7 +16,7 @@ interface PaginationLink {
 }
 
 interface PaginatedProjects {
-    data: Project[];
+    data: (Project & { task_count: number; overdue_task_count: number })[];
     current_page: number;
     last_page: number;
     from: number | null;
@@ -31,36 +29,16 @@ const props = defineProps<{
     projects: PaginatedProjects;
     filters: {
         search?: string;
-        status?: ProjectStatus;
-        organization_unit_id?: number;
-        owner_id?: number;
-        only_mine?: boolean | string;
     };
-    statuses: ProjectStatus[];
-    organizationUnits: Pick<OrganizationUnit, 'id' | 'name'>[];
-    users: Pick<User, 'id' | 'name'>[];
 }>();
 
-const { can } = usePermissions();
-const canCreate = computed(() => can('project.create'));
-
 const search = ref(props.filters.search ?? '');
-const status = ref(props.filters.status ?? '');
-const organizationUnitId = ref<number | ''>(props.filters.organization_unit_id ?? '');
-const ownerId = ref<number | ''>(props.filters.owner_id ?? '');
-const onlyMine = ref(props.filters.only_mine === true || props.filters.only_mine === '1');
 const isLoading = ref(false);
 
 const handleFilter = () => {
     router.get(
-        route('projects.index'),
-        {
-            search: search.value || undefined,
-            status: status.value || undefined,
-            organization_unit_id: organizationUnitId.value || undefined,
-            owner_id: ownerId.value || undefined,
-            only_mine: onlyMine.value ? 1 : undefined,
-        },
+        route('tasks.projects'),
+        { search: search.value || undefined },
         {
             preserveState: true,
             replace: true,
@@ -76,10 +54,6 @@ const handleFilter = () => {
 
 const handleReset = () => {
     search.value = '';
-    status.value = '';
-    organizationUnitId.value = '';
-    ownerId.value = '';
-    onlyMine.value = false;
     handleFilter();
 };
 
@@ -97,69 +71,24 @@ const paginationLabel = (label: string) => {
 </script>
 
 <template>
-    <Head title="Dự án" />
+    <Head :title="taskContextLabels.project" />
 
     <AuthenticatedLayout>
         <template #header>
             <AppPageHeader
-                title="Dự án"
-                description="Theo dõi tiến độ, thành viên và công việc thuộc từng dự án."
-                eyebrow="Project Core"
-            >
-                <template v-if="canCreate" #actions>
-                    <Link :href="route('projects.create')" class="app-button-primary">
-                        <AppIcon name="plus" class="size-4" />
-                        Tạo dự án
-                    </Link>
-                </template>
-            </AppPageHeader>
+                :title="taskContextLabels.project"
+                :description="taskContextDescriptions.project"
+                eyebrow="Task Core"
+            />
         </template>
 
         <form class="app-panel mb-5 p-5 sm:p-6" @submit.prevent="handleFilter">
-            <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-                <label class="xl:col-span-2">
+            <div class="flex flex-wrap items-end gap-4">
+                <label class="min-w-[220px] flex-1 basis-72">
                     <span class="mb-1.5 block text-xs font-bold text-slate-600">Tìm kiếm</span>
                     <input v-model="search" type="search" class="app-field" placeholder="Mã hoặc tên dự án" />
                 </label>
-                <label>
-                    <span class="mb-1.5 block text-xs font-bold text-slate-600">Trạng thái</span>
-                    <select v-model="status" class="app-field">
-                        <option value="">Tất cả</option>
-                        <option v-for="item in statuses" :key="item" :value="item">
-                            {{ projectStatusLabels[item] }}
-                        </option>
-                    </select>
-                </label>
-                <label>
-                    <span class="mb-1.5 block text-xs font-bold text-slate-600">Đơn vị</span>
-                    <select v-model="organizationUnitId" class="app-field">
-                        <option value="">Tất cả</option>
-                        <option v-for="unit in organizationUnits" :key="unit.id" :value="unit.id">
-                            {{ unit.name }}
-                        </option>
-                    </select>
-                </label>
-                <label>
-                    <span class="mb-1.5 block text-xs font-bold text-slate-600">Chủ dự án</span>
-                    <select v-model="ownerId" class="app-field">
-                        <option value="">Tất cả</option>
-                        <option v-for="user in users" :key="user.id" :value="user.id">
-                            {{ user.name }}
-                        </option>
-                    </select>
-                </label>
-            </div>
-
-            <div class="mt-4 flex flex-wrap items-center justify-between gap-4">
-                <label class="flex cursor-pointer items-center gap-2 text-xs font-semibold text-slate-600">
-                    <input
-                        v-model="onlyMine"
-                        type="checkbox"
-                        class="size-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
-                    />
-                    Chỉ dự án của tôi
-                </label>
-                <div class="flex justify-end gap-2">
+                <div class="flex gap-2">
                     <button type="button" class="app-button-secondary" :disabled="isLoading" @click="handleReset">
                         Xóa bộ lọc
                     </button>
@@ -183,18 +112,11 @@ const paginationLabel = (label: string) => {
                 v-if="projects.data.length === 0"
                 icon="folder"
                 title="Chưa có dự án phù hợp"
-                description="Thay đổi bộ lọc hoặc tạo dự án đầu tiên để bắt đầu vận hành."
-            >
-                <template v-if="canCreate" #action>
-                    <Link :href="route('projects.create')" class="app-button-primary">
-                        <AppIcon name="plus" class="size-4" />
-                        Tạo dự án
-                    </Link>
-                </template>
-            </AppEmptyState>
+                description="Không có dự án nào trong phạm vi bạn được xem, hoặc thử đổi từ khoá tìm kiếm."
+            />
 
             <div v-else class="overflow-x-auto">
-                <table class="w-full min-w-[980px] border-collapse text-left">
+                <table class="w-full min-w-[900px] border-collapse text-left">
                     <thead>
                         <tr class="border-b border-slate-100 bg-slate-50/70 text-xs font-bold text-slate-500">
                             <th class="px-5 py-3 sm:px-6">Mã</th>
@@ -202,20 +124,25 @@ const paginationLabel = (label: string) => {
                             <th class="px-5 py-3">Đơn vị</th>
                             <th class="px-5 py-3">Chủ dự án</th>
                             <th class="px-5 py-3">Trạng thái</th>
-                            <th class="px-5 py-3">Tiến độ</th>
-                            <th class="px-5 py-3">Công việc</th>
-                            <th class="px-5 py-3">Thành viên</th>
+                            <th class="px-5 py-3">Số việc</th>
+                            <th class="px-5 py-3">Trễ hạn</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
-                        <tr v-for="project in projects.data" :key="project.id" class="hover:bg-slate-50/60">
+                        <tr
+                            v-for="project in projects.data"
+                            :key="project.id"
+                            class="cursor-pointer hover:bg-slate-50/60"
+                            @click="router.visit(route('tasks.projects.show', project.id))"
+                        >
                             <td class="px-2 py-4 text-sm font-bold text-slate-700 sm:px-6">
                                 {{ project.code }}
                             </td>
                             <td class="max-w-xs px-5 py-4">
                                 <Link
-                                    :href="route('projects.show', project.id)"
+                                    :href="route('tasks.projects.show', project.id)"
                                     class="block truncate text-sm font-bold text-slate-800 hover:text-brand-700"
+                                    @click.stop
                                 >
                                     {{ project.name }}
                                 </Link>
@@ -229,17 +156,11 @@ const paginationLabel = (label: string) => {
                             <td class="px-2 py-4">
                                 <AppProjectStatusBadge :status="project.status" />
                             </td>
-                            <td class="w-40 px-5 py-4">
-                                <ProjectProgressBar :progress="project.progress ?? 0" />
-                            </td>
                             <td class="px-2 py-4 text-sm font-semibold text-slate-600">
-                                {{ project.task_count ?? 0 }}
-                                <span v-if="project.open_task_count" class="text-xs font-normal text-slate-400">
-                                    ({{ project.open_task_count }} mở)
-                                </span>
+                                {{ project.task_count }}
                             </td>
-                            <td class="px-2 py-4 text-sm font-semibold text-slate-600">
-                                {{ project.member_count ?? 0 }}
+                            <td class="px-2 py-4 text-sm font-semibold" :class="project.overdue_task_count > 0 ? 'text-red-700' : 'text-slate-400'">
+                                {{ project.overdue_task_count }}
                             </td>
                         </tr>
                     </tbody>

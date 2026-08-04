@@ -221,7 +221,7 @@ const paginationLabel = (label: string) => {
                             <td class="whitespace-nowrap px-5 py-4 text-xs text-slate-500 sm:px-6">
                                 {{ formatDateTime(log.created_at) }}
                             </td>
-                            <td class="px-5 py-4">
+                            <td class="px-2 py-4">
                                 <div v-if="log.actor" class="flex items-center gap-2.5">
                                     <AppUserAvatar
                                         :name="log.actor.name"
@@ -235,15 +235,15 @@ const paginationLabel = (label: string) => {
                                 </div>
                                 <span v-else class="text-xs text-slate-400">Tài khoản đã xóa</span>
                             </td>
-                            <td class="px-5 py-4">
+                            <td class="px-2 py-4">
                                 <span class="rounded-full bg-violet-50 px-2.5 py-1 text-xs font-bold text-violet-700">
                                     {{ actionLabels[log.action] ?? log.action }}
                                 </span>
                             </td>
-                            <td class="px-5 py-4 text-sm font-medium text-slate-700">
+                            <td class="px-2 py-4 text-sm font-medium text-slate-700">
                                 {{ subjectLabel(log) }}
                             </td>
-                            <td class="px-5 py-4">
+                            <td class="px-2 py-4">
                                 <button
                                     type="button"
                                     class="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold text-brand-700 transition hover:bg-brand-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"

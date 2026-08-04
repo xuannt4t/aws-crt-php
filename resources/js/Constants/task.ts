@@ -1,4 +1,4 @@
-import type { TaskPriority, TaskStatus } from '@/types';
+import type { TaskContext, TaskPriority, TaskStatus } from '@/types';
 
 export const taskStatusLabels: Record<TaskStatus, string> = {
     draft: 'Nháp',
@@ -25,4 +25,18 @@ export const taskPriorityLabels: Record<TaskPriority, string> = {
     medium: 'Trung bình',
     high: 'Cao',
     urgent: 'Khẩn cấp',
+};
+
+/** Nhãn tiêu đề của ba màn công việc (spec §5.1, §7), khớp App\Enums\TaskContext::label(). */
+export const taskContextLabels: Record<TaskContext, string> = {
+    overview: 'Tổng quan việc',
+    project: 'Việc dự án',
+    department: 'Việc phòng ban',
+};
+
+/** Mô tả phụ theo bối cảnh, dùng cho phần header của trang. */
+export const taskContextDescriptions: Record<TaskContext, string> = {
+    overview: 'Theo dõi mọi đầu việc trong phạm vi bạn được xem, người phụ trách, thời hạn và trạng thái thực hiện.',
+    project: 'Chỉ hiển thị công việc thuộc dự án, trong phạm vi bạn được xem.',
+    department: 'Chỉ hiển thị công việc thuộc phòng ban, trong phạm vi bạn được xem.',
 };

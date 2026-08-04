@@ -255,13 +255,13 @@ const paginationLabel = (label: string) => {
                                     <AppTaskPriorityBadge :priority="recurrence.priority" />
                                 </div>
                             </td>
-                            <td class="px-5 py-4 text-sm font-medium text-slate-600">
+                            <td class="px-2 py-4 text-sm font-medium text-slate-600">
                                 {{ recurrence.cadence }}
                             </td>
-                            <td class="px-5 py-4 text-sm font-medium text-slate-600">
+                            <td class="px-2 py-4 text-sm font-medium text-slate-600">
                                 {{ recurrence.organization_unit?.name }}
                             </td>
-                            <td class="px-5 py-4 text-sm font-medium text-slate-600">
+                            <td class="px-2 py-4 text-sm font-medium text-slate-600">
                                 <Link
                                     v-if="recurrence.project"
                                     :href="route('projects.show', recurrence.project.id)"
@@ -271,13 +271,13 @@ const paginationLabel = (label: string) => {
                                 </Link>
                                 <span v-else class="text-xs text-slate-400">Không có</span>
                             </td>
-                            <td class="px-5 py-4 text-sm font-medium text-slate-600">
+                            <td class="px-2 py-4 text-sm font-medium text-slate-600">
                                 {{ recurrence.assignee?.name ?? 'Chưa phân công' }}
                             </td>
-                            <td class="px-5 py-4 text-sm font-semibold text-slate-600">
+                            <td class="px-2 py-4 text-sm font-semibold text-slate-600">
                                 {{ formatDate(recurrence.next_occurrence) }}
                             </td>
-                            <td class="px-5 py-4">
+                            <td class="px-2 py-4">
                                 <div class="flex items-center justify-end gap-2">
                                     <AppStatusBadge :active="recurrence.is_active" />
                                     <button

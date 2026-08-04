@@ -7,6 +7,7 @@ type IconName =
     | 'camera'
     | 'calendar'
     | 'check'
+    | 'chevron-down'
     | 'chevron-right'
     | 'dashboard'
     | 'edit'
@@ -92,5 +93,6 @@ defineProps<{
         <path v-else-if="name === 'arrow-left'" d="m15 18-6-6 6-6" />
         <path v-else-if="name === 'arrow-right'" d="m9 18 6-6-6-6" />
         <path v-else-if="name === 'chevron-right'" d="m9 18 6-6-6-6" />
+        <path v-else-if="name === 'chevron-down'" d="m6 9 6 6 6-6" />
     </svg>
 </template>
