@@ -1,4 +1,4 @@
-import type { TaskContext, TaskPriority, TaskStatus } from '@/types';
+import type { TaskContext, TaskPriority, TaskStatus, TaskStatusBucket } from '@/types';
 
 export const taskStatusLabels: Record<TaskStatus, string> = {
     draft: 'Nháp',
@@ -37,4 +37,16 @@ export const taskContextDescriptions: Record<TaskContext, string> = {
     overview: 'Theo dõi mọi đầu việc trong phạm vi bạn được xem, người phụ trách, thời hạn và trạng thái thực hiện.',
     project: 'Chỉ hiển thị công việc thuộc dự án, trong phạm vi bạn được xem.',
     department: 'Chỉ hiển thị công việc thuộc phòng ban, trong phạm vi bạn được xem.',
+};
+
+/**
+ * Nhãn các nhóm trạng thái đứng sau ô tóm tắt — khớp App\Enums\TaskStatusBucket.
+ * Ghi kèm những trạng thái mà nhóm đó gộp lại, vì "Chưa làm" gồm cả nháp lẫn cần
+ * làm và người dùng không đoán được điều đó từ cái tên.
+ */
+export const taskStatusBucketLabels: Record<TaskStatusBucket, string> = {
+    not_started: 'Chưa làm (nháp, cần làm)',
+    in_progress: 'Đang làm',
+    waiting_approval: 'Chờ duyệt',
+    completed: 'Hoàn thành',
 };

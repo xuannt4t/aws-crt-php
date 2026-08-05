@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import AppIcon from '@/Components/AppIcon.vue';
-import { taskPriorityLabels, taskStatusLabels } from '@/Constants/task';
+import { taskPriorityLabels, taskStatusBucketLabels, taskStatusLabels } from '@/Constants/task';
 import { usePage } from '@inertiajs/vue3';
 import MultiSelect from 'primevue/multiselect';
 import type {
@@ -12,6 +12,7 @@ import type {
     TaskIndexFilters,
     TaskPriority,
     TaskStatus,
+    TaskStatusBucket,
     UserOption,
 } from '@/types';
 
@@ -49,7 +50,12 @@ function activeCount(filters: TaskIndexFilters): number {
     if (props.availableFilters.includes('search') && filters.search) {
         count += 1;
     }
-    if (props.availableFilters.includes('status') && filters.status) {
+    // `status` và `bucket` là hai cách diễn đạt cùng một trục, gộp chung trong ô
+    // "Trạng thái" nên chỉ đếm là một.
+    if (props.availableFilters.includes('status') && (filters.status || filters.bucket)) {
+        count += 1;
+    }
+    if (filters.overdue) {
         count += 1;
     }
     if (props.availableFilters.includes('priority') && filters.priority) {
@@ -71,7 +77,38 @@ function activeCount(filters: TaskIndexFilters): number {
 const activeFilterCount = computed(() => activeCount(props.filters));
 
 const search = ref(props.filters.search ?? '');
-const status = ref<TaskStatus | ''>(props.filters.status ?? '');
+/**
+ * Ô "Trạng thái" nhận cả nhóm (từ ô tóm tắt) lẫn trạng thái đơn lẻ, phân biệt
+ * bằng tiền tố. Gộp vào một ô để hai thứ KHÔNG THỂ mâu thuẫn nhau: trước đây
+ * bấm ô "Đang làm" xong áp bộ lọc trạng thái "Hoàn thành" sẽ ra danh sách rỗng
+ * mà không hiểu vì sao, còn bấm "Áp dụng" thì mất luôn ô đang chọn vì thanh lọc
+ * gửi lại query không kèm `bucket`.
+ */
+const statusSelection = ref<string>(
+    props.filters.bucket
+        ? `bucket:${props.filters.bucket}`
+        : props.filters.status
+          ? `status:${props.filters.status}`
+          : '',
+);
+
+const onlyOverdue = ref<boolean>(Boolean(props.filters.overdue));
+
+const buckets: TaskStatusBucket[] = ['not_started', 'in_progress', 'waiting_approval', 'completed'];
+
+const splitStatusSelection = (): Pick<TaskIndexFilters, 'status' | 'bucket'> => {
+    const [kind, value] = statusSelection.value.split(':');
+
+    if (kind === 'bucket') {
+        return { bucket: value as TaskStatusBucket };
+    }
+
+    if (kind === 'status') {
+        return { status: value as TaskStatus };
+    }
+
+    return {};
+};
 const priority = ref<TaskPriority | ''>(props.filters.priority ?? '');
 const organizationUnitId = ref<number | ''>(props.filters.organization_unit_id ?? '');
 const projectId = ref<number | ''>(props.filters.project_id ?? '');
@@ -87,7 +124,8 @@ const assigneeOptions = computed(() =>
 const handleApply = () => {
     emit('apply', {
         search: search.value || undefined,
-        status: status.value || undefined,
+        ...splitStatusSelection(),
+        overdue: onlyOverdue.value || undefined,
         priority: priority.value || undefined,
         organization_unit_id: organizationUnitId.value || undefined,
         project_id: projectId.value || undefined,
@@ -97,7 +135,8 @@ const handleApply = () => {
 
 const handleReset = () => {
     search.value = '';
-    status.value = '';
+    statusSelection.value = '';
+    onlyOverdue.value = false;
     priority.value = '';
     organizationUnitId.value = '';
     projectId.value = '';
@@ -138,11 +177,18 @@ const handleReset = () => {
 
                     <label v-else-if="key === 'status'" class="w-44">
                         <span class="mb-1.5 block text-xs font-bold text-slate-600">Trạng thái</span>
-                        <select v-model="status" class="app-field">
+                        <select v-model="statusSelection" class="app-field">
                             <option value="">Tất cả</option>
-                            <option v-for="item in props.statuses" :key="item" :value="item">
-                                {{ taskStatusLabels[item] }}
-                            </option>
+                            <optgroup label="Theo ô thống kê">
+                                <option v-for="item in buckets" :key="item" :value="`bucket:${item}`">
+                                    {{ taskStatusBucketLabels[item] }}
+                                </option>
+                            </optgroup>
+                            <optgroup label="Từng trạng thái">
+                                <option v-for="item in props.statuses" :key="item" :value="`status:${item}`">
+                                    {{ taskStatusLabels[item] }}
+                                </option>
+                            </optgroup>
                         </select>
                     </label>
 
@@ -193,6 +239,19 @@ const handleReset = () => {
                         />
                     </label>
                 </template>
+
+                <!--
+                    Trễ hạn cắt ngang mọi trạng thái nên không thể nằm trong ô
+                    "Trạng thái" — nó là điều kiện độc lập, chọn kèm được.
+                -->
+                <label class="flex items-center gap-2 pb-2.5">
+                    <input
+                        v-model="onlyOverdue"
+                        type="checkbox"
+                        class="size-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                    />
+                    <span class="text-xs font-bold text-slate-600">Chỉ việc trễ hạn</span>
+                </label>
 
                 <div class="ml-auto flex gap-2">
                     <button type="button" class="app-button-secondary" @click="handleReset">Xoá lọc</button>

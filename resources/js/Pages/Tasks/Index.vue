@@ -81,16 +81,20 @@ const isLoading = ref(false);
 // Dùng thẳng kiểu của bộ lọc thay vì liệt kê lại từng khoá: đây chính là tập
 // tham số mà server nhận, liệt kê lại là thêm một chỗ nữa phải nhớ đồng bộ.
 function submitFilters(payload: TaskIndexFilters) {
-    router.get(route(props.applyRoute.name, props.applyRoute.params), { ...payload }, {
-        preserveState: true,
-        replace: true,
-        onStart: () => {
-            isLoading.value = true;
+    router.get(
+        route(props.applyRoute.name, props.applyRoute.params),
+        { ...payload },
+        {
+            preserveState: true,
+            replace: true,
+            onStart: () => {
+                isLoading.value = true;
+            },
+            onFinish: () => {
+                isLoading.value = false;
+            },
         },
-        onFinish: () => {
-            isLoading.value = false;
-        },
-    });
+    );
 }
 
 // Ô nào đang được chọn. `total` là trạng thái mặc định: không lọc theo nhóm nào.
@@ -110,10 +114,13 @@ const activeSummaryKey = computed<TaskSummaryCardKey>(() => {
  * muốn quay về toàn bộ phải đi tìm nút xoá lọc ở chỗ khác.
  */
 const selectSummaryCard = (key: TaskSummaryCardKey) => {
-    // Bỏ hai khoá lọc theo ô ra khỏi bộ lọc hiện tại; phần còn lại giữ nguyên.
+    // Bỏ các khoá cùng trục trạng thái ra khỏi bộ lọc hiện tại; phần còn lại giữ
+    // nguyên. `status` cũng phải bỏ: nó và `bucket` là hai cách diễn đạt cùng
+    // một trục, để lẫn cả hai thì kết quả có thể rỗng mà người dùng không hiểu.
     const rest = { ...props.filters };
     delete rest.bucket;
     delete rest.overdue;
+    delete rest.status;
 
     const isSameCard = activeSummaryKey.value === key;
 

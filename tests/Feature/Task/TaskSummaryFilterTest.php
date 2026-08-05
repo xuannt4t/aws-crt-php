@@ -3,6 +3,7 @@
 use App\Enums\PermissionName;
 use App\Enums\TaskStatus;
 use App\Enums\TaskStatusBucket;
+use App\Models\OrganizationUnit;
 use App\Models\Task;
 use App\Models\User;
 
@@ -126,4 +127,53 @@ test('a card filter never widens the data scope of the viewer', function () {
         ->get(route('tasks.index', ['bucket' => TaskStatusBucket::NotStarted->value]), inertiaHeaders())
         ->assertOk()
         ->assertJsonPath('props.tasks.total', 1);
+});
+
+test('the bucket survives alongside every other filter in one request', function () {
+    $mine = viewerOfEverything();
+    $unit = OrganizationUnit::factory()->create();
+
+    $wanted = Task::factory()->create([
+        'status' => TaskStatus::Todo,
+        'assignee_id' => $mine->id,
+        'organization_unit_id' => $unit->id,
+        'title' => 'Báo cáo vận hành',
+    ]);
+    Task::factory()->create([
+        'status' => TaskStatus::Completed,
+        'assignee_id' => $mine->id,
+        'organization_unit_id' => $unit->id,
+        'title' => 'Báo cáo vận hành',
+    ]);
+
+    // Thanh lọc gửi lại toàn bộ query mỗi lần bấm "Áp dụng". Nếu nó không mang
+    // theo `bucket` thì ô đang chọn trên phần tóm tắt lặng lẽ biến mất.
+    $this->actingAs($mine)
+        ->get(route('tasks.index', [
+            'bucket' => TaskStatusBucket::NotStarted->value,
+            'search' => 'Báo cáo',
+            'organization_unit_id' => $unit->id,
+            'assignee_ids' => [$mine->id],
+        ]), inertiaHeaders())
+        ->assertOk()
+        ->assertJsonPath('props.tasks.total', 1)
+        ->assertJsonPath('props.tasks.data.0.id', $wanted->id)
+        ->assertJsonPath('props.filters.bucket', TaskStatusBucket::NotStarted->value);
+});
+
+test('overdue can be combined with a bucket rather than replacing it', function () {
+    $user = viewerOfEverything();
+
+    $overdueTodo = Task::factory()->create(['status' => TaskStatus::Todo, 'due_at' => now()->subDay()]);
+    Task::factory()->create(['status' => TaskStatus::Todo, 'due_at' => now()->addWeek()]);
+    Task::factory()->create(['status' => TaskStatus::InProgress, 'due_at' => now()->subDay()]);
+
+    $this->actingAs($user)
+        ->get(route('tasks.index', [
+            'bucket' => TaskStatusBucket::NotStarted->value,
+            'overdue' => 1,
+        ]), inertiaHeaders())
+        ->assertOk()
+        ->assertJsonPath('props.tasks.total', 1)
+        ->assertJsonPath('props.tasks.data.0.id', $overdueTodo->id);
 });
