@@ -136,8 +136,6 @@ final class TaskController extends Controller
                 ->where('title', 'like', "%{$search}%"))
             ->when($filters['status'] ?? null, fn (Builder $query, string $status) => $query
                 ->where('status', $status))
-            ->when($filters['bucket'] ?? null, fn (Builder $query, string $bucket) => $query
-                ->whereIn('status', TaskStatusBucket::from($bucket)->statuses()))
             ->when($filters['priority'] ?? null, fn (Builder $query, string $priority) => $query
                 ->where('priority', $priority))
             // organization_unit_id/project_id của query string chỉ áp dụng khi
@@ -150,12 +148,19 @@ final class TaskController extends Controller
             ->when($filters['assignee_ids'] ?? null, fn (Builder $query, array $assigneeIds) => $query
                 ->whereIn('assignee_id', $assigneeIds))
             ->when($filters['project_id'] ?? null, fn (Builder $query, int $projectId) => $query
-                ->where('project_id', $projectId))
-            ->when($request->boolean('overdue'), fn (Builder $query) => $query->overdue());
+                ->where('project_id', $projectId));
 
+        // Các ô tóm tắt đếm TRƯỚC khi áp bộ lọc theo ô. Nếu đếm sau, bấm vào một
+        // ô sẽ làm mọi ô còn lại về 0 — kể cả ô "Tổng đầu việc" — nên người dùng
+        // vừa mất bức tranh phân bố vừa không còn chuyển sang ô khác được nữa.
+        // Các bộ lọc khác (tìm kiếm, phòng ban, người phụ trách...) vẫn tính vào
+        // đây, vì chúng thu hẹp tập việc đang xét chứ không phải chọn một ô.
         $summary = app(TaskSummary::class)->for(clone $baseQuery);
 
         $tasks = (clone $baseQuery)
+            ->when($filters['bucket'] ?? null, fn (Builder $query, string $bucket) => $query
+                ->whereIn('status', TaskStatusBucket::from($bucket)->statuses()))
+            ->when($request->boolean('overdue'), fn (Builder $query) => $query->overdue())
             ->latest('id')
             ->paginate(20)
             ->through(fn (Task $task): array => [

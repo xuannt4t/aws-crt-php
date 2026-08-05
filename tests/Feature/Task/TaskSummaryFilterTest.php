@@ -177,3 +177,50 @@ test('overdue can be combined with a bucket rather than replacing it', function 
         ->assertJsonPath('props.tasks.total', 1)
         ->assertJsonPath('props.tasks.data.0.id', $overdueTodo->id);
 });
+
+test('the overdue flag is accepted in whatever shape the browser serialises it', function () {
+    $user = viewerOfEverything();
+    $overdue = Task::factory()->create(['status' => TaskStatus::InProgress, 'due_at' => now()->subDay()]);
+    Task::factory()->create(['status' => TaskStatus::InProgress, 'due_at' => now()->addWeek()]);
+
+    // Inertia đưa boolean `true` vào query string thành chuỗi "true". Luật
+    // `boolean` của Laravel từ chối giá trị đó, nên trước khi chuẩn hoá thì bấm
+    // ô "Trễ hạn" hoàn toàn không có tác dụng.
+    foreach (['true', '1', 1] as $value) {
+        $this->actingAs($user)
+            ->get(route('tasks.index', ['overdue' => $value]), inertiaHeaders())
+            ->assertOk()
+            ->assertSessionHasNoErrors()
+            ->assertJsonPath('props.tasks.total', 1)
+            ->assertJsonPath('props.tasks.data.0.id', $overdue->id);
+    }
+});
+
+test('the summary keeps counting the whole set while a card filter narrows the list', function () {
+    seedOneOfEachStatus();
+
+    // Nếu phần tóm tắt đếm SAU bộ lọc theo ô thì mọi ô còn lại về 0 và ô "Tổng
+    // đầu việc" cũng về đúng số dòng đang lọc — người dùng mất bức tranh phân bố
+    // và không chuyển sang ô khác được nữa.
+    $this->actingAs(viewerOfEverything())
+        ->get(route('tasks.index', ['bucket' => TaskStatusBucket::NotStarted->value]), inertiaHeaders())
+        ->assertOk()
+        ->assertJsonPath('props.tasks.total', 3)
+        ->assertJsonPath('props.summary.total', 10)
+        ->assertJsonPath('props.summary.not_started', 3)
+        ->assertJsonPath('props.summary.in_progress', 3)
+        ->assertJsonPath('props.summary.completed', 2);
+});
+
+test('other filters still narrow the summary because they are not card choices', function () {
+    $mine = viewerOfEverything();
+
+    Task::factory()->create(['status' => TaskStatus::Todo, 'assignee_id' => $mine->id]);
+    Task::factory()->count(3)->create(['status' => TaskStatus::Todo]);
+
+    $this->actingAs($mine)
+        ->get(route('tasks.index', ['assignee_ids' => [$mine->id]]), inertiaHeaders())
+        ->assertOk()
+        ->assertJsonPath('props.summary.total', 1)
+        ->assertJsonPath('props.summary.not_started', 1);
+});

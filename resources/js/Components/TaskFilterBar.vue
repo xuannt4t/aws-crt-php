@@ -125,7 +125,7 @@ const handleApply = () => {
     emit('apply', {
         search: search.value || undefined,
         ...splitStatusSelection(),
-        overdue: onlyOverdue.value || undefined,
+        overdue: onlyOverdue.value ? 1 : undefined,
         priority: priority.value || undefined,
         organization_unit_id: organizationUnitId.value || undefined,
         project_id: projectId.value || undefined,

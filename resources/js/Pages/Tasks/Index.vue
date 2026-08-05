@@ -130,7 +130,7 @@ const selectSummaryCard = (key: TaskSummaryCardKey) => {
         return;
     }
 
-    submitFilters(key === 'overdue' ? { ...rest, overdue: true } : { ...rest, bucket: key });
+    submitFilters(key === 'overdue' ? { ...rest, overdue: 1 } : { ...rest, bucket: key });
 };
 
 const formatDueDate = (value: string | null) => {

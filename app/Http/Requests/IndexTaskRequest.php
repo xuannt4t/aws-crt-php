@@ -16,6 +16,24 @@ final class IndexTaskRequest extends FormRequest
         return $this->user()->can('viewAny', Task::class);
     }
 
+    /**
+     * Query string không có kiểu boolean: tuỳ thư viện phía client mà `true`
+     * thành "true", "1" hay "on". Luật `boolean` của Laravel chỉ chấp nhận
+     * 1/0/"1"/"0", nên "true" sẽ trượt validation và cả request bị chặn — người
+     * dùng bấm ô "Trễ hạn" thấy trang không phản ứng gì, không có báo lỗi nào.
+     * Chuẩn hoá ở đây một lần để endpoint không phụ thuộc vào cách client gửi.
+     */
+    protected function prepareForValidation(): void
+    {
+        if (! $this->has('overdue')) {
+            return;
+        }
+
+        $this->merge([
+            'overdue' => filter_var($this->input('overdue'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0,
+        ]);
+    }
+
     public function rules(): array
     {
         return [

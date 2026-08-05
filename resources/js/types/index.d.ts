@@ -72,7 +72,11 @@ export interface TaskIndexFilters {
     organization_unit_id?: number;
     project_id?: number;
     assignee_ids?: number[];
-    overdue?: boolean | string;
+    /**
+     * Query string không có kiểu boolean; gửi `1` là dạng luật `boolean` của
+     * Laravel chấp nhận trực tiếp và cho URL dễ đọc (`?overdue=1`).
+     */
+    overdue?: boolean | string | number;
 }
 
 /**
