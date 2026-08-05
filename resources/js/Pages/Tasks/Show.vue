@@ -44,6 +44,7 @@ const props = defineProps<{
     activities: PaginatedActivities;
     actions: {
         update: boolean;
+        delete: boolean;
         dispatch: boolean;
         start: boolean;
         submit: boolean;
@@ -66,6 +67,8 @@ const props = defineProps<{
 const page = usePage<PageProps>();
 const isTransitioning = ref(false);
 const isConfirmingRecall = ref(false);
+const isConfirmingDelete = ref(false);
+const isDeleting = ref(false);
 const isRejecting = ref(false);
 const rejectForm = useForm({
     reason: '',
@@ -128,6 +131,18 @@ const rejectTask = () => {
         onSuccess: () => {
             rejectForm.reset();
             isRejecting.value = false;
+        },
+    });
+};
+
+const deleteTask = () => {
+    router.delete(route('tasks.destroy', props.task.id), {
+        onStart: () => {
+            isDeleting.value = true;
+        },
+        onFinish: () => {
+            isDeleting.value = false;
+            isConfirmingDelete.value = false;
         },
     });
 };
@@ -199,6 +214,15 @@ const paginationLabel = (label: string) => {
                         <AppIcon name="edit" class="size-4" />
                         Chỉnh sửa
                     </Link>
+                    <button
+                        v-if="actions.delete"
+                        type="button"
+                        class="app-button-danger"
+                        @click="isConfirmingDelete = true"
+                    >
+                        <AppIcon name="trash" class="size-4" />
+                        Xoá
+                    </button>
                 </template>
             </AppPageHeader>
         </template>
@@ -622,6 +646,18 @@ const paginationLabel = (label: string) => {
             :processing="isTransitioning"
             @cancel="isConfirmingRecall = false"
             @confirm="recallSubmission"
+        />
+
+        <AppConfirmDialog
+            :show="isConfirmingDelete"
+            title="Xoá công việc này?"
+            description="Công việc sẽ biến mất khỏi mọi danh sách, kéo theo trao đổi và tệp đính kèm vì chúng chỉ mở được qua công việc này. Dữ liệu vẫn được giữ trong hệ thống và thao tác được ghi vào nhật ký."
+            confirm-label="Xoá công việc"
+            icon="trash"
+            tone="danger"
+            :processing="isDeleting"
+            @cancel="isConfirmingDelete = false"
+            @confirm="deleteTask"
         />
     </AuthenticatedLayout>
 </template>

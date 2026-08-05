@@ -202,3 +202,48 @@ test('the banner disappears once the work is submitted again', function () {
         ->assertOk()
         ->assertJsonPath('props.lastRejection', null);
 });
+
+/**
+ * Xoá công việc: backend đã có đủ route/action/policy từ trước nhưng giao diện
+ * chưa có chỗ nào gọi tới, nên tính năng coi như không tồn tại với người dùng.
+ */
+test('the detail page offers delete only to someone holding the delete permission', function () {
+    $task = taskWaitingReview();
+
+    $this->actingAs(reviewer())
+        ->get(route('tasks.show', $task), inertiaHeaders())
+        ->assertOk()
+        ->assertJsonPath('props.actions.delete', false);
+
+    $remover = userWithPermissions([
+        PermissionName::TaskView->value,
+        PermissionName::TaskViewAll->value,
+        PermissionName::TaskDelete->value,
+    ]);
+
+    $this->actingAs($remover)
+        ->get(route('tasks.show', $task), inertiaHeaders())
+        ->assertOk()
+        ->assertJsonPath('props.actions.delete', true);
+});
+
+test('deleting a task hides it from the list and keeps the row for audit', function () {
+    $task = taskWaitingReview();
+    $remover = userWithPermissions([
+        PermissionName::TaskView->value,
+        PermissionName::TaskViewAll->value,
+        PermissionName::TaskDelete->value,
+    ]);
+
+    $this->actingAs($remover)
+        ->delete(route('tasks.destroy', $task))
+        ->assertRedirect(route('tasks.index'));
+
+    expect(Task::query()->find($task->id))->toBeNull()
+        ->and(Task::withTrashed()->find($task->id))->not->toBeNull();
+
+    $this->actingAs($remover)
+        ->get(route('tasks.index'), inertiaHeaders())
+        ->assertOk()
+        ->assertJsonCount(0, 'props.tasks.data');
+});

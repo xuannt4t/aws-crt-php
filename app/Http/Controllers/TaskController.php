@@ -271,6 +271,7 @@ final class TaskController extends Controller
             'activities' => $activities,
             'actions' => [
                 'update' => request()->user()->can('update', $task),
+                'delete' => request()->user()->can('delete', $task),
                 'dispatch' => $task->status === TaskStatus::Draft
                     && request()->user()->can('dispatch', $task),
                 'start' => $task->status === TaskStatus::Todo
