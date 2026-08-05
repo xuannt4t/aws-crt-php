@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import AppActionButton from '@/Components/AppActionButton.vue';
+import { navigateRow } from '@/Support/rowNavigation';
+import { roleLabels } from '@/Support/roleLabels';
 import AppIcon from '@/Components/AppIcon.vue';
 import AppEmptyState from '@/Components/AppEmptyState.vue';
 import AppPageHeader from '@/Components/AppPageHeader.vue';
@@ -29,15 +31,6 @@ const searchTerm = ref('');
 
 const unitFilterOptions = computed(() => [{ id: null, name: 'Tất cả đơn vị' }, ...props.organizationUnits]);
 const activeUserCount = computed(() => props.users.filter((user) => user.is_active).length);
-const roleLabels: Record<string, string> = {
-    system_admin: 'Quản trị hệ thống',
-    director: 'Giám đốc',
-    department_manager: 'Quản lý phòng ban',
-    project_manager: 'Quản lý dự án',
-    employee: 'Nhân viên',
-    auditor: 'Kiểm toán viên',
-};
-
 const filteredUsers = computed(() => {
     const normalizedSearch = searchTerm.value.trim().toLocaleLowerCase('vi');
 
@@ -166,7 +159,19 @@ const toggleActive = (user: User) => {
             </div>
 
             <div v-else class="overflow-x-auto">
-                <DataTable :value="filteredUsers" data-key="id" paginator :rows="20" table-style="min-width: 760px">
+                <!--
+                    Chỉ mở được trang sửa nên hàng chỉ bấm được khi có quyền sửa;
+                    nếu không, bấm vào hàng sẽ dẫn tới một trang bị chặn.
+                -->
+                <DataTable
+                    :value="filteredUsers"
+                    data-key="id"
+                    paginator
+                    :rows="20"
+                    table-style="min-width: 760px"
+                    :row-class="() => (canUpdate ? 'app-row-link' : '')"
+                    @row-click="canUpdate && navigateRow($event.originalEvent, route('users.edit', $event.data.id))"
+                >
                     <Column field="name" header="Thành viên">
                         <template #body="{ data }">
                             <div class="flex items-center gap-3">

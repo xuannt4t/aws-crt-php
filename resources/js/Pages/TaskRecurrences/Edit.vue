@@ -4,7 +4,7 @@ import AppPageHeader from '@/Components/AppPageHeader.vue';
 import TaskRecurrenceForm from '@/Components/TaskRecurrenceForm.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
-import type { OrganizationUnit, Project, RecurrenceFrequency, TaskPriority, TaskRecurrence, User } from '@/types';
+import type { OrganizationUnit, Project, RecurrenceFrequency, TaskPriority, TaskRecurrence, UserOption } from '@/types';
 
 defineProps<{
     recurrence: Pick<
@@ -27,7 +27,7 @@ defineProps<{
         | 'is_active'
     >;
     organizationUnits: Pick<OrganizationUnit, 'id' | 'name'>[];
-    assignableUsers: Pick<User, 'id' | 'name'>[];
+    assignableUsers: UserOption[];
     priorities: TaskPriority[];
     frequencies: { value: RecurrenceFrequency; label: string }[];
     projects: Pick<Project, 'id' | 'name' | 'code'>[];

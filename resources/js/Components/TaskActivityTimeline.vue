@@ -59,6 +59,14 @@ const isKnown = (activity: TaskActivity) => KNOWN_TYPES.includes(activity.type);
 
 const actorName = (activity: TaskActivity) => activity.actor?.name ?? 'Tài khoản đã xóa';
 
+// Lý do chỉ có mặt khi người duyệt trả lại việc; các lần chuyển trạng thái khác
+// không đính khoá này.
+const reasonOf = (activity: TaskActivity): string | null => {
+    const reason = (activity.payload ?? {}).reason;
+
+    return typeof reason === 'string' && reason !== '' ? reason : null;
+};
+
 const statusLabel = (value: unknown) =>
     typeof value === 'string' ? (taskStatusLabels[value as TaskStatus] ?? value) : '';
 
@@ -122,10 +130,16 @@ const formatDateTime = (value: string) =>
                     <AppIcon :name="iconFor[activity.type]" class="size-4" />
                 </span>
 
-                <div class="min-w-0 flex-1">
+                <div class="min-w-0 flex-1 space-y-2">
                     <p class="text-sm text-slate-700">
                         <span class="font-semibold text-slate-900">{{ actorName(activity) }}</span>
                         {{ ' ' }}{{ describe(activity) }}
+                    </p>
+                    <p
+                        v-if="reasonOf(activity)"
+                        class="mt-1.5 rounded-lg border-l-2 border-amber-300 bg-amber-50/70 px-3 py-2 text-sm text-amber-900"
+                    >
+                        {{ reasonOf(activity) }}
                     </p>
                     <div class="mt-1 flex items-center gap-2">
                         <AppUserAvatar

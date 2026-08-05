@@ -1,12 +1,7 @@
 import { router } from '@inertiajs/vue3';
 import type { PageProps } from '@/types';
 
-type ToastAdd = (options: {
-    severity: 'success' | 'error';
-    summary: string;
-    detail: string;
-    life: number;
-}) => void;
+type ToastAdd = (options: { severity: 'success' | 'error'; summary: string; detail: string; life: number }) => void;
 
 /**
  * `AppToast` nằm trong layout, mà các trang dùng layout theo kiểu không bền

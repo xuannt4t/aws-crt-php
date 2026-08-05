@@ -7,6 +7,7 @@ import AppRichTextContent from '@/Components/AppRichTextContent.vue';
 import AppTaskPriorityBadge from '@/Components/AppTaskPriorityBadge.vue';
 import AppUserAvatar from '@/Components/AppUserAvatar.vue';
 import InputError from '@/Components/InputError.vue';
+import InputLabel from '@/Components/InputLabel.vue';
 import TaskActivityTimeline from '@/Components/TaskActivityTimeline.vue';
 import TaskAttachmentList from '@/Components/TaskAttachmentList.vue';
 import { taskStatusClasses, taskStatusLabels } from '@/Constants/task';
@@ -48,15 +49,27 @@ const props = defineProps<{
         submit: boolean;
         updateProgress: boolean;
         recall: boolean;
+        approve: boolean;
+        reject: boolean;
         comment: boolean;
         attach: boolean;
         projectLocked: boolean;
     };
+    /** Lý do trả lại gần nhất — chỉ có khi việc đang nằm ở trạng thái bị trả về. */
+    lastRejection: {
+        reason: string;
+        actor_name: string | null;
+        created_at: string | null;
+    } | null;
 }>();
 
 const page = usePage<PageProps>();
 const isTransitioning = ref(false);
 const isConfirmingRecall = ref(false);
+const isRejecting = ref(false);
+const rejectForm = useForm({
+    reason: '',
+});
 const progressForm = useForm({
     value: props.task.progress,
 });
@@ -91,6 +104,32 @@ const updateProgress = () => {
                 }
             },
         });
+};
+
+const approveTask = () => {
+    router.patch(
+        route('tasks.approve', props.task.id),
+        {},
+        {
+            preserveScroll: true,
+            onStart: () => {
+                isTransitioning.value = true;
+            },
+            onFinish: () => {
+                isTransitioning.value = false;
+            },
+        },
+    );
+};
+
+const rejectTask = () => {
+    rejectForm.patch(route('tasks.reject', props.task.id), {
+        preserveScroll: true,
+        onSuccess: () => {
+            rejectForm.reset();
+            isRejecting.value = false;
+        },
+    });
 };
 
 const recallSubmission = () => {
@@ -164,6 +203,16 @@ const paginationLabel = (label: string) => {
             </AppPageHeader>
         </template>
 
+        <section v-if="lastRejection" class="mb-5 flex gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-5">
+            <AppIcon name="arrow-left" class="mt-0.5 size-5 shrink-0 text-amber-700" />
+            <div class="min-w-0">
+                <p class="text-sm font-bold text-amber-900">
+                    Công việc đã được trả lại{{ lastRejection.actor_name ? ` bởi ${lastRejection.actor_name}` : '' }}
+                </p>
+                <p class="mt-1 whitespace-pre-line text-sm text-amber-900/90">{{ lastRejection.reason }}</p>
+            </div>
+        </section>
+
         <section
             v-if="actions.projectLocked"
             class="mb-5 flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"
@@ -173,7 +222,14 @@ const paginationLabel = (label: string) => {
         </section>
 
         <section
-            v-if="actions.dispatch || actions.start || actions.submit || actions.recall"
+            v-if="
+                actions.dispatch ||
+                actions.start ||
+                actions.submit ||
+                actions.recall ||
+                actions.approve ||
+                actions.reject
+            "
             class="mb-5 flex flex-col gap-4 rounded-2xl border border-brand-100 bg-brand-50/70 p-5 sm:flex-row sm:items-center sm:justify-between"
         >
             <div>
@@ -212,6 +268,26 @@ const paginationLabel = (label: string) => {
                     Gửi kiểm tra
                 </button>
                 <button
+                    v-if="actions.approve"
+                    type="button"
+                    class="app-button-primary"
+                    :disabled="isTransitioning"
+                    @click="approveTask"
+                >
+                    <AppIcon name="check" class="size-4" />
+                    Duyệt hoàn thành
+                </button>
+                <button
+                    v-if="actions.reject"
+                    type="button"
+                    class="app-button-secondary"
+                    :disabled="isTransitioning"
+                    @click="isRejecting = !isRejecting"
+                >
+                    <AppIcon name="arrow-left" class="size-4" />
+                    Trả lại
+                </button>
+                <button
                     v-if="actions.recall"
                     type="button"
                     class="app-button-secondary"
@@ -222,6 +298,31 @@ const paginationLabel = (label: string) => {
                     Thu hồi yêu cầu kiểm tra
                 </button>
             </div>
+        </section>
+
+        <!--
+            Lý do trả lại là bắt buộc: người thực hiện nhận việc bị đẩy ngược về
+            "đang làm" mà không kèm giải thích thì không biết phải sửa gì.
+        -->
+        <section v-if="isRejecting && actions.reject" class="app-panel mb-5 p-5">
+            <form @submit.prevent="rejectTask">
+                <InputLabel for="reject-reason" value="Lý do trả lại" required />
+                <textarea
+                    id="reject-reason"
+                    v-model="rejectForm.reason"
+                    class="app-field"
+                    rows="3"
+                    maxlength="500"
+                    placeholder="Nêu rõ phần chưa đạt và điều cần bổ sung..."
+                ></textarea>
+                <InputError class="mt-2" :message="rejectForm.errors.reason" />
+                <div class="mt-3 flex justify-end gap-2">
+                    <button type="button" class="app-button-secondary" @click="isRejecting = false">Huỷ</button>
+                    <button type="submit" class="app-button-danger" :disabled="rejectForm.processing">
+                        {{ rejectForm.processing ? 'Đang gửi...' : 'Trả lại công việc' }}
+                    </button>
+                </div>
+            </form>
         </section>
 
         <div class="grid gap-5 xl:grid-cols-[1fr_360px]">
@@ -486,7 +587,7 @@ const paginationLabel = (label: string) => {
                                 type="number"
                                 min="0"
                                 max="100"
-                                class="app-field h-10 py-2 pr-7 text-center text-sm font-bold"
+                                class="app-field h-10 py-2 pr-3 text-center text-sm font-bold"
                                 aria-label="Phần trăm tiến độ"
                             />
                             <span

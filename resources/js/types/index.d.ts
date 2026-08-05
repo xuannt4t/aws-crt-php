@@ -31,8 +31,7 @@ export interface PermissionGroup {
 /** Map tên vai trò → danh sách tên permission đang được gán. */
 export type PermissionMatrix = Record<string, string[]>;
 
-export type TaskStatus =
-    'draft' | 'todo' | 'in_progress' | 'waiting_review' | 'waiting_approval' | 'completed' | 'cancelled';
+export type TaskStatus = 'draft' | 'todo' | 'in_progress' | 'waiting_review' | 'completed' | 'cancelled';
 
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
 
@@ -40,13 +39,7 @@ export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
 export type TaskContext = 'overview' | 'project' | 'department';
 
 /** Tên các bộ lọc khúc 2 mà server cho phép vẽ (spec §6.2) — luôn là tập con của danh sách này. */
-export type TaskFilterKey =
-    | 'search'
-    | 'organization_unit_id'
-    | 'project_id'
-    | 'assignee_ids'
-    | 'status'
-    | 'priority';
+export type TaskFilterKey = 'search' | 'organization_unit_id' | 'project_id' | 'assignee_ids' | 'status' | 'priority';
 
 /**
  * Cấp 2 (spec §5.2) — phạm vi cố định bằng route binding, dùng để đổi tiêu
@@ -252,6 +245,20 @@ export interface User {
     job_title?: string | null;
     avatar_url: string | null;
     roles?: Role[];
+}
+
+/**
+ * Một dòng trong ô chọn người (người phụ trách, chủ dự án, thành viên).
+ * Do `App\Support\UserOptions` sinh ra — sửa đây thì sửa cả bên đó.
+ */
+export interface UserOption {
+    id: number;
+    name: string;
+    email: string;
+    job_title: string | null;
+    role: string | null;
+    organization_unit_id: number | null;
+    organization_unit_name: string | null;
 }
 
 export type PageProps<T extends Record<string, unknown> = Record<string, unknown>> = T & {

@@ -43,6 +43,18 @@
         @apply block text-sm font-semibold text-slate-700;
     }
 
+    /*
+     * Hàng bảng bấm được. Nền hover phải đủ đậm để thấy rõ hàng nào đang trỏ tới
+     * — mức slate-50/60 trước đây gần như không phân biệt được với nền trắng.
+     */
+    .app-row-link {
+        @apply cursor-pointer transition-colors hover:bg-brand-50;
+    }
+
+    .app-required {
+        @apply ml-1 font-semibold text-red-600;
+    }
+
     .app-help {
         @apply mt-1.5 text-xs leading-5 text-slate-500;
     }

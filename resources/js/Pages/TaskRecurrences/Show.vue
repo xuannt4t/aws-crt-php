@@ -298,9 +298,7 @@ const paginationLabel = (label: string) => {
                         </dd>
                     </div>
                     <div v-if="recurrence.planned_quantity">
-                        <dt class="text-[10px] font-bold uppercase tracking-wide text-slate-400">
-                            Số lượng dự kiến
-                        </dt>
+                        <dt class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Số lượng dự kiến</dt>
                         <dd class="mt-2 text-sm font-semibold text-slate-700">
                             {{ recurrence.planned_quantity }} {{ recurrence.quantity_unit }}
                         </dd>

@@ -3,16 +3,17 @@ import { computed, ref } from 'vue';
 import AppActionButton from '@/Components/AppActionButton.vue';
 import AppConfirmDialog from '@/Components/AppConfirmDialog.vue';
 import AppUserAvatar from '@/Components/AppUserAvatar.vue';
+import AppUserSelect from '@/Components/AppUserSelect.vue';
 import InputError from '@/Components/InputError.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import { projectMemberRoleLabels, projectTaskVisibilityLabels } from '@/Constants/project';
 import { router, useForm } from '@inertiajs/vue3';
-import type { ProjectMember, ProjectMemberRole, ProjectTaskVisibility, User } from '@/types';
+import type { ProjectMember, ProjectMemberRole, ProjectTaskVisibility, UserOption } from '@/types';
 
 const props = defineProps<{
     projectId: number;
     members: ProjectMember[];
-    users: Pick<User, 'id' | 'name'>[];
+    users: UserOption[];
     taskVisibilityOptions: { value: ProjectTaskVisibility; label: string }[];
     canManage: boolean;
 }>();
@@ -89,12 +90,13 @@ const confirmRemove = () => {
         >
             <div class="min-w-0 flex-1">
                 <label class="mb-1.5 block text-xs font-bold text-slate-600" for="member-user">Thêm thành viên</label>
-                <select id="member-user" v-model="addForm.user_id" class="app-field">
-                    <option :value="null" disabled>Chọn người dùng</option>
-                    <option v-for="user in availableUsers" :key="user.id" :value="user.id">
-                        {{ user.name }}
-                    </option>
-                </select>
+                <AppUserSelect
+                    v-model="addForm.user_id"
+                    input-id="member-user"
+                    :options="availableUsers"
+                    :invalid="Boolean(addForm.errors.user_id)"
+                    placeholder="Chọn người dùng"
+                />
                 <InputError class="mt-2" :message="addForm.errors.user_id" />
             </div>
             <div class="w-full sm:w-44">
@@ -107,7 +109,9 @@ const confirmRemove = () => {
                 <InputError class="mt-2" :message="addForm.errors.role" />
             </div>
             <div class="w-full sm:w-48">
-                <label class="mb-1.5 block text-xs font-bold text-slate-600" for="member-task-visibility">Quyền xem việc</label>
+                <label class="mb-1.5 block text-xs font-bold text-slate-600" for="member-task-visibility"
+                    >Quyền xem việc</label
+                >
                 <select id="member-task-visibility" v-model="addForm.task_visibility" class="app-field">
                     <option v-for="option in taskVisibilityOptions" :key="option.value" :value="option.value">
                         {{ option.label }}
@@ -142,7 +146,11 @@ const confirmRemove = () => {
                         :value="member.role"
                         :disabled="updatingMemberId === member.id"
                         aria-label="Đổi vai trò thành viên"
-                        @change="updateMember(member, { role: ($event.target as HTMLSelectElement).value as ProjectMemberRole })"
+                        @change="
+                            updateMember(member, {
+                                role: ($event.target as HTMLSelectElement).value as ProjectMemberRole,
+                            })
+                        "
                     >
                         <option v-for="role in roles" :key="role" :value="role">
                             {{ projectMemberRoleLabels[role] }}
@@ -161,7 +169,8 @@ const confirmRemove = () => {
                             aria-label="Đổi quyền xem việc của thành viên"
                             @change="
                                 updateMember(member, {
-                                    task_visibility: ($event.target as HTMLSelectElement).value as ProjectTaskVisibility,
+                                    task_visibility: ($event.target as HTMLSelectElement)
+                                        .value as ProjectTaskVisibility,
                                 })
                             "
                         >

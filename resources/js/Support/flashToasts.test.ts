@@ -22,7 +22,9 @@ describe('installFlashToasts', () => {
         installFlashToasts(add, { success: 'Tạo dự án thành công.', error: null });
 
         expect(add).toHaveBeenCalledTimes(1);
-        expect(add).toHaveBeenCalledWith(expect.objectContaining({ severity: 'success', detail: 'Tạo dự án thành công.' }));
+        expect(add).toHaveBeenCalledWith(
+            expect.objectContaining({ severity: 'success', detail: 'Tạo dự án thành công.' }),
+        );
     });
 
     it('registers exactly one success listener no matter how many times AppToast remounts', () => {

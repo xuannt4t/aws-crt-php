@@ -4,7 +4,7 @@ import AppPageHeader from '@/Components/AppPageHeader.vue';
 import TaskForm from '@/Components/TaskForm.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
-import type { OrganizationUnit, Project, Task, TaskPriority, User } from '@/types';
+import type { OrganizationUnit, Project, Task, TaskPriority, UserOption } from '@/types';
 
 defineProps<{
     task: Pick<
@@ -21,7 +21,7 @@ defineProps<{
         | 'quantity_unit'
     >;
     organizationUnits: Pick<OrganizationUnit, 'id' | 'name'>[];
-    assignableUsers: Pick<User, 'id' | 'name'>[];
+    assignableUsers: UserOption[];
     priorities: TaskPriority[];
     projects: Pick<Project, 'id' | 'name' | 'code'>[];
 }>();

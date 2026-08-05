@@ -13,7 +13,7 @@ import SecondaryButton from '@/Components/SecondaryButton.vue';
 import { taskStatusClasses, taskStatusLabels } from '@/Constants/task';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import type { OrganizationUnit, Project, ProjectMember, ProjectTaskVisibility, Task, User } from '@/types';
+import type { OrganizationUnit, Project, ProjectMember, ProjectTaskVisibility, Task, User, UserOption } from '@/types';
 
 interface PaginationLink {
     url: string | null;
@@ -52,7 +52,7 @@ const props = defineProps<{
         owner?: Pick<User, 'id' | 'name'>;
     };
     members: ProjectMember[];
-    users: Pick<User, 'id' | 'name'>[];
+    users: UserOption[];
     taskVisibilityOptions: { value: ProjectTaskVisibility; label: string }[];
     tasks: PaginatedTasks | null;
     actions: {
@@ -141,12 +141,7 @@ const paginationLabel = (label: string) => {
                         <AppIcon name="edit" class="size-4" />
                         Chỉnh sửa
                     </Link>
-                    <button
-                        v-if="actions.close"
-                        type="button"
-                        class="app-button-secondary"
-                        @click="openCloseDialog"
-                    >
+                    <button v-if="actions.close" type="button" class="app-button-secondary" @click="openCloseDialog">
                         <AppIcon name="lock" class="size-4" />
                         Đóng dự án
                     </button>
@@ -229,7 +224,11 @@ const paginationLabel = (label: string) => {
                     />
 
                     <ul v-else class="divide-y divide-slate-100">
-                        <li v-for="task in tasks.data" :key="task.id" class="flex items-center justify-between gap-3 px-5 py-4 sm:px-6">
+                        <li
+                            v-for="task in tasks.data"
+                            :key="task.id"
+                            class="flex items-center justify-between gap-3 px-5 py-4 sm:px-6"
+                        >
                             <div class="min-w-0">
                                 <Link
                                     :href="route('tasks.show', task.id)"
@@ -283,7 +282,9 @@ const paginationLabel = (label: string) => {
                 <dl class="mt-5 space-y-5">
                     <div>
                         <dt class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Chủ dự án</dt>
-                        <dd class="mt-2 text-sm font-semibold text-slate-700">{{ project.owner?.name ?? 'Chưa có' }}</dd>
+                        <dd class="mt-2 text-sm font-semibold text-slate-700">
+                            {{ project.owner?.name ?? 'Chưa có' }}
+                        </dd>
                     </div>
                     <div>
                         <dt class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Đơn vị sở hữu</dt>

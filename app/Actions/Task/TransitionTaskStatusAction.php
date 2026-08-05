@@ -21,25 +21,43 @@ final class TransitionTaskStatusAction
         Task $task,
         TaskStatus $targetStatus,
         ?TaskStatus $expectedStatus = null,
+        ?string $reason = null,
     ): Task {
-        return DB::transaction(function () use ($actor, $task, $targetStatus, $expectedStatus): Task {
+        return DB::transaction(function () use ($actor, $task, $targetStatus, $expectedStatus, $reason): Task {
             $lockedTask = Task::query()->lockForUpdate()->findOrFail($task->id);
             $this->validateTransition($lockedTask, $targetStatus, $expectedStatus);
             $fromStatus = $lockedTask->status;
 
-            $lockedTask->update(['status' => $targetStatus]);
+            $changes = ['status' => $targetStatus];
+
+            // Hoàn thành là điểm cuối, nên mốc thời gian và tiến độ phải khớp với
+            // trạng thái. Nếu để nguyên tiến độ cũ thì danh sách sẽ hiện việc đã
+            // xong mà tiến độ 40%, và tiến độ trung bình của dự án cũng sai theo.
+            if ($targetStatus === TaskStatus::Completed) {
+                $changes['completed_at'] = now();
+                $changes['progress'] = 100;
+            }
+
+            $lockedTask->update($changes);
 
             TaskStatusHistory::create([
                 'task_id' => $lockedTask->id,
                 'actor_id' => $actor->id,
                 'from_status' => $fromStatus,
                 'to_status' => $targetStatus,
+                'reason' => $reason,
             ]);
 
-            $this->recordActivity->execute($actor, $lockedTask, TaskActivityType::StatusChanged, [
-                'from' => $fromStatus->value,
-                'to' => $targetStatus->value,
-            ]);
+            // Chỉ đính lý do khi thực sự có. Nhét `reason => null` vào mọi lần
+            // chuyển trạng thái sẽ làm mọi bản ghi hoạt động cũ mang thêm một
+            // khoá rỗng, và giao diện dòng thời gian phải đi kiểm tra null.
+            $payload = ['from' => $fromStatus->value, 'to' => $targetStatus->value];
+
+            if ($reason !== null) {
+                $payload['reason'] = $reason;
+            }
+
+            $this->recordActivity->execute($actor, $lockedTask, TaskActivityType::StatusChanged, $payload);
 
             return $lockedTask->refresh();
         });
@@ -54,7 +72,9 @@ final class TransitionTaskStatusAction
             TaskStatus::Draft->value => [TaskStatus::Todo],
             TaskStatus::Todo->value => [TaskStatus::InProgress],
             TaskStatus::InProgress->value => [TaskStatus::WaitingReview],
-            TaskStatus::WaitingReview->value => [TaskStatus::InProgress],
+            // Chờ kiểm tra rẽ hai nhánh: người duyệt chốt hoàn thành, hoặc trả
+            // lại cho người làm (cũng là đường người làm tự thu hồi yêu cầu).
+            TaskStatus::WaitingReview->value => [TaskStatus::InProgress, TaskStatus::Completed],
         ];
 
         if (($expectedStatus !== null && $task->status !== $expectedStatus)

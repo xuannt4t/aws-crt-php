@@ -12,10 +12,12 @@ use App\Enums\PermissionName;
 use App\Enums\TaskContext;
 use App\Enums\TaskPriority;
 use App\Enums\TaskStatus;
+use App\Http\Requests\ApproveTaskRequest;
 use App\Http\Requests\DispatchTaskRequest;
 use App\Http\Requests\IndexTaskDepartmentListRequest;
 use App\Http\Requests\IndexTaskRequest;
 use App\Http\Requests\RecallTaskRequest;
+use App\Http\Requests\RejectTaskRequest;
 use App\Http\Requests\StartTaskRequest;
 use App\Http\Requests\StoreTaskRequest;
 use App\Http\Requests\SubmitTaskRequest;
@@ -26,9 +28,9 @@ use App\Models\OrganizationUnit;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\TaskAttachment;
-use App\Models\User;
 use App\Support\TaskDescriptionSanitizer;
 use App\Support\TaskSummary;
+use App\Support\UserOptions;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Redirect;
@@ -279,11 +281,52 @@ final class TaskController extends Controller
                     && request()->user()->can('updateProgress', $task),
                 'recall' => $task->status === TaskStatus::WaitingReview
                     && request()->user()->can('recall', $task),
+                'approve' => $task->status === TaskStatus::WaitingReview
+                    && request()->user()->can('approve', $task),
+                'reject' => $task->status === TaskStatus::WaitingReview
+                    && request()->user()->can('reject', $task),
                 'comment' => request()->user()->can('comment', $task),
                 'attach' => request()->user()->can('attach', $task),
                 'projectLocked' => $task->isProjectLocked(),
             ],
+            'lastRejection' => $this->lastRejection($task),
         ]);
+    }
+
+    /**
+     * Lý do trả lại gần nhất, chỉ khi công việc ĐANG nằm ở trạng thái bị trả về.
+     * Bắt người thực hiện tự lục dòng thời gian để biết vì sao việc quay lại là
+     * vô lý — lý do phải nằm ngay đầu trang chi tiết.
+     *
+     * Người thực hiện tự thu hồi yêu cầu kiểm tra cũng đi cùng đường chuyển
+     * trạng thái này nhưng không kèm lý do, nên điều kiện `reason !== null` loại
+     * đúng trường hợp đó ra.
+     *
+     * @return array{reason: string, actor_name: ?string, created_at: ?string}|null
+     */
+    private function lastRejection(Task $task): ?array
+    {
+        if ($task->status !== TaskStatus::InProgress) {
+            return null;
+        }
+
+        $history = $task->statusHistories()
+            ->with('actor:id,name')
+            ->latest('id')
+            ->first();
+
+        if ($history === null
+            || $history->from_status !== TaskStatus::WaitingReview
+            || $history->to_status !== TaskStatus::InProgress
+            || $history->reason === null) {
+            return null;
+        }
+
+        return [
+            'reason' => $history->reason,
+            'actor_name' => $history->actor?->name,
+            'created_at' => $history->created_at?->toIso8601String(),
+        ];
     }
 
     public function store(StoreTaskRequest $request, CreateTaskAction $action): RedirectResponse
@@ -394,6 +437,38 @@ final class TaskController extends Controller
         return Redirect::back()->with('success', 'Đã thu hồi yêu cầu kiểm tra.');
     }
 
+    public function approve(
+        ApproveTaskRequest $request,
+        Task $task,
+        TransitionTaskStatusAction $action,
+    ): RedirectResponse {
+        $action->execute(
+            $request->user(),
+            $task,
+            TaskStatus::Completed,
+            TaskStatus::WaitingReview,
+            $request->validated('reason'),
+        );
+
+        return Redirect::back()->with('success', 'Đã duyệt và hoàn thành công việc.');
+    }
+
+    public function reject(
+        RejectTaskRequest $request,
+        Task $task,
+        TransitionTaskStatusAction $action,
+    ): RedirectResponse {
+        $action->execute(
+            $request->user(),
+            $task,
+            TaskStatus::InProgress,
+            TaskStatus::WaitingReview,
+            $request->validated('reason'),
+        );
+
+        return Redirect::back()->with('success', 'Đã trả lại công việc cho người thực hiện.');
+    }
+
     /**
      * @param  array<int, TaskStatus|TaskPriority>  $cases
      * @return list<string>
@@ -423,11 +498,7 @@ final class TaskController extends Controller
      */
     private function activeUsers(): array
     {
-        return User::query()
-            ->where('is_active', true)
-            ->orderBy('name')
-            ->get(['id', 'name'])
-            ->toArray();
+        return UserOptions::active();
     }
 
     /**
@@ -456,9 +527,6 @@ final class TaskController extends Controller
             return [];
         }
 
-        return [[
-            'id' => request()->user()->id,
-            'name' => request()->user()->name,
-        ]];
+        return UserOptions::only(request()->user());
     }
 }

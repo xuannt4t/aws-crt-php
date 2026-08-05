@@ -13,8 +13,11 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Inter', 'Segoe UI', ...defaultTheme.fontFamily.sans],
-                display: ['Manrope', 'Inter', 'Segoe UI', ...defaultTheme.fontFamily.sans],
+                // Chỉ khai báo font thật sự được nạp trong app.blade.php. Trước đây
+                // ở đây ghi Inter/Manrope nhưng không nơi nào nạp hai font đó, nên
+                // toàn bộ giao diện rơi về Segoe UI của hệ điều hành.
+                sans: ['Open Sans', 'Segoe UI', ...defaultTheme.fontFamily.sans],
+                display: ['Open Sans', 'Segoe UI', ...defaultTheme.fontFamily.sans],
             },
             colors: {
                 ink: {

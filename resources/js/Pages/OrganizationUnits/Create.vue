@@ -49,7 +49,9 @@ const submit = () => {
             <form class="app-panel overflow-hidden" @submit.prevent="submit">
                 <div class="border-b border-slate-100 px-5 py-5 sm:px-7">
                     <h2 class="font-display text-base font-bold text-ink-950">Thông tin đơn vị</h2>
-                    <p class="mt-1 text-xs leading-5 text-slate-500">Các trường có dấu * là thông tin bắt buộc.</p>
+                    <p class="mt-1 text-xs leading-5 text-slate-500">
+                        Các trường có dấu <span class="app-required ml-0">*</span> là thông tin bắt buộc.
+                    </p>
                 </div>
 
                 <div class="space-y-5 p-5 sm:p-7">
@@ -67,7 +69,7 @@ const submit = () => {
 
                     <div class="app-form-grid">
                         <div>
-                            <InputLabel for="name" value="Tên đơn vị *" />
+                            <InputLabel for="name" value="Tên đơn vị" required />
                             <TextInput
                                 id="name"
                                 v-model="form.name"
@@ -80,7 +82,7 @@ const submit = () => {
                         </div>
 
                         <div>
-                            <InputLabel for="code" value="Mã đơn vị *" />
+                            <InputLabel for="code" value="Mã đơn vị" required />
                             <TextInput
                                 id="code"
                                 v-model="form.code"

@@ -4,11 +4,11 @@ import AppPageHeader from '@/Components/AppPageHeader.vue';
 import ProjectForm from '@/Components/ProjectForm.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
-import type { OrganizationUnit, ProjectStatus, User } from '@/types';
+import type { OrganizationUnit, ProjectStatus, UserOption } from '@/types';
 
 defineProps<{
     organizationUnits: Pick<OrganizationUnit, 'id' | 'name'>[];
-    users: Pick<User, 'id' | 'name'>[];
+    users: UserOption[];
     statuses: ProjectStatus[];
 }>();
 </script>

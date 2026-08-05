@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import AppEmptyState from '@/Components/AppEmptyState.vue';
+import { navigateRow } from '@/Support/rowNavigation';
 import AppIcon from '@/Components/AppIcon.vue';
 import AppPageHeader from '@/Components/AppPageHeader.vue';
 import { taskContextDescriptions, taskContextLabels } from '@/Constants/task';
@@ -134,8 +135,9 @@ const paginationLabel = (label: string) => {
                         <tr
                             v-for="unit in units.data"
                             :key="unit.id"
-                            class="cursor-pointer hover:bg-slate-50/60"
-                            @click="router.visit(route('tasks.departments.show', unit.id))"
+                            class="app-row-link"
+                            @click="navigateRow($event, route('tasks.departments.show', unit.id))"
+                            @auxclick="navigateRow($event, route('tasks.departments.show', unit.id))"
                         >
                             <td class="max-w-xs px-5 py-4 sm:px-6">
                                 <Link
@@ -152,7 +154,10 @@ const paginationLabel = (label: string) => {
                             <td class="px-2 py-4 text-sm font-semibold text-slate-600">
                                 {{ unit.task_count }}
                             </td>
-                            <td class="px-2 py-4 text-sm font-semibold" :class="unit.overdue_task_count > 0 ? 'text-red-700' : 'text-slate-400'">
+                            <td
+                                class="px-2 py-4 text-sm font-semibold"
+                                :class="unit.overdue_task_count > 0 ? 'text-red-700' : 'text-slate-400'"
+                            >
                                 {{ unit.overdue_task_count }}
                             </td>
                         </tr>
