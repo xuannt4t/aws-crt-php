@@ -54,8 +54,6 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
     // Ba màn công việc (spec §5.1) — đăng ký trước Route::resource('tasks', ...)
     // để không bị `tasks/{task}` nuốt mất.
     Route::get('tasks', [TaskController::class, 'index'])->name('tasks.index');
-    Route::get('tasks/projects', [TaskController::class, 'projects'])->name('tasks.projects');
-    Route::get('tasks/projects/{project}', [TaskController::class, 'projectShow'])->name('tasks.projects.show');
     Route::get('tasks/departments', [TaskController::class, 'departments'])->name('tasks.departments');
     Route::get('tasks/departments/{organizationUnit}', [TaskController::class, 'departmentShow'])
         ->name('tasks.departments.show');

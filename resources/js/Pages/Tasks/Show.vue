@@ -9,7 +9,6 @@ import AppUserAvatar from '@/Components/AppUserAvatar.vue';
 import InputError from '@/Components/InputError.vue';
 import TaskActivityTimeline from '@/Components/TaskActivityTimeline.vue';
 import TaskAttachmentList from '@/Components/TaskAttachmentList.vue';
-import { usePermissions } from '@/Composables/usePermissions';
 import { taskStatusClasses, taskStatusLabels } from '@/Constants/task';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
@@ -43,6 +42,7 @@ const props = defineProps<{
     attachments: TaskAttachment[];
     activities: PaginatedActivities;
     actions: {
+        update: boolean;
         dispatch: boolean;
         start: boolean;
         submit: boolean;
@@ -50,10 +50,10 @@ const props = defineProps<{
         recall: boolean;
         comment: boolean;
         attach: boolean;
+        projectLocked: boolean;
     };
 }>();
 
-const { can } = usePermissions();
 const page = usePage<PageProps>();
 const isTransitioning = ref(false);
 const isConfirmingRecall = ref(false);
@@ -156,13 +156,21 @@ const paginationLabel = (label: string) => {
                         <AppIcon name="arrow-left" class="size-4" />
                         Danh sách
                     </Link>
-                    <Link v-if="can('task.update')" :href="route('tasks.edit', task.id)" class="app-button-secondary">
+                    <Link v-if="actions.update" :href="route('tasks.edit', task.id)" class="app-button-secondary">
                         <AppIcon name="edit" class="size-4" />
                         Chỉnh sửa
                     </Link>
                 </template>
             </AppPageHeader>
         </template>
+
+        <section
+            v-if="actions.projectLocked"
+            class="mb-5 flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"
+        >
+            <AppIcon name="lock" class="size-4 shrink-0" />
+            <p>Dự án đã đóng nên công việc này ở trạng thái chỉ đọc.</p>
+        </section>
 
         <section
             v-if="actions.dispatch || actions.start || actions.submit || actions.recall"

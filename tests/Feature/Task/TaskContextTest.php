@@ -4,7 +4,6 @@ use App\Enums\PermissionName;
 use App\Enums\TaskStatus;
 use App\Models\OrganizationUnit;
 use App\Models\Project;
-use App\Models\ProjectMember;
 use App\Models\Task;
 
 test('overview context shows every task within scope regardless of project or department', function () {
@@ -31,39 +30,7 @@ test('dashboard redirects to the tasks overview', function () {
         ->assertRedirect(route('tasks.index'));
 });
 
-// --- Cấp 1: danh sách dự án / phòng ban (spec §5.2) ---------------------
-
-test('level 1 project list only shows projects visible to the viewer and counts only visible tasks', function () {
-    $user = userWithPermissions([PermissionName::TaskView->value]);
-
-    $myProject = Project::factory()->create();
-    ProjectMember::factory()->allTaskVisibility()->create(['project_id' => $myProject->id, 'user_id' => $user->id]);
-
-    $otherProject = Project::factory()->create();
-
-    // Việc của tôi trong dự án tôi tham gia — được đếm.
-    Task::factory()->create(['project_id' => $myProject->id, 'assignee_id' => $user->id]);
-    // Việc khác trong cùng dự án nhưng không phải của tôi — cũng được đếm vì
-    // thành viên có hiệu lực "all" (task_visibility = all).
-    Task::factory()->create(['project_id' => $myProject->id]);
-    // Việc trễ hạn trong dự án tôi tham gia.
-    Task::factory()->create([
-        'project_id' => $myProject->id,
-        'status' => TaskStatus::Todo,
-        'due_at' => now()->subDay(),
-    ]);
-
-    // Dự án tôi không tham gia — không được liệt kê.
-    Task::factory()->create(['project_id' => $otherProject->id]);
-
-    $this->actingAs($user)
-        ->get(route('tasks.projects'), inertiaHeaders())
-        ->assertOk()
-        ->assertJsonCount(1, 'props.projects.data')
-        ->assertJsonPath('props.projects.data.0.id', $myProject->id)
-        ->assertJsonPath('props.projects.data.0.task_count', 3)
-        ->assertJsonPath('props.projects.data.0.overdue_task_count', 1);
-});
+// --- Cấp 1: danh sách phòng ban (spec §5.2) ----------------------------
 
 test('level 1 department list only shows units that have at least one task within scope', function () {
     $user = userWithPermissions([PermissionName::TaskView->value, PermissionName::TaskViewAll->value]);
@@ -89,53 +56,22 @@ test('level 1 department list only shows units that have at least one task withi
     expect(OrganizationUnit::query()->find($unitWithoutTasks->id))->not->toBeNull();
 });
 
-// --- Cấp 2: ba khúc cố định một dự án / một phòng (spec §5.2) -----------
+// --- Cấp 2: ba khúc cố định một phòng (spec §5.2) -----------------------
 
-test('level 2 project dashboard only returns tasks of that project and hides the project filter', function () {
-    $user = userWithPermissions([
-        PermissionName::TaskView->value,
-        PermissionName::TaskViewAll->value,
-        PermissionName::ProjectView->value,
-        PermissionName::ProjectViewAll->value,
-    ]);
-    $project = Project::factory()->create();
-    $otherProject = Project::factory()->create();
+test('level 2 department dashboard cannot be widened back to another unit by query string', function () {
+    $user = userWithPermissions([PermissionName::TaskView->value, PermissionName::TaskViewAll->value]);
+    $unit = OrganizationUnit::factory()->create();
+    $otherUnit = OrganizationUnit::factory()->create();
 
-    $withProject = Task::factory()->create(['project_id' => $project->id]);
-    Task::factory()->create(['project_id' => $otherProject->id]);
-    Task::factory()->create(['project_id' => null]);
+    $withUnit = Task::factory()->create(['organization_unit_id' => $unit->id]);
+    Task::factory()->create(['organization_unit_id' => $otherUnit->id]);
 
     $this->actingAs($user)
-        ->get(route('tasks.projects.show', $project), inertiaHeaders())
+        ->get(route('tasks.departments.show', $unit).'?organization_unit_id='.$otherUnit->id, inertiaHeaders())
         ->assertOk()
-        ->assertJsonPath('props.context', 'project')
+        ->assertJsonPath('props.context', 'department')
         ->assertJsonCount(1, 'props.tasks.data')
-        ->assertJsonPath('props.tasks.data.0.id', $withProject->id)
-        ->assertJsonPath(
-            'props.availableFilters',
-            fn (array $filters): bool => ! in_array('project_id', $filters, true),
-        );
-});
-
-test('level 2 project dashboard cannot be widened back to another project by query string', function () {
-    $user = userWithPermissions([
-        PermissionName::TaskView->value,
-        PermissionName::TaskViewAll->value,
-        PermissionName::ProjectView->value,
-        PermissionName::ProjectViewAll->value,
-    ]);
-    $project = Project::factory()->create();
-    $otherProject = Project::factory()->create();
-
-    $withProject = Task::factory()->create(['project_id' => $project->id]);
-    Task::factory()->create(['project_id' => $otherProject->id]);
-
-    $this->actingAs($user)
-        ->get(route('tasks.projects.show', $project).'?project_id='.$otherProject->id, inertiaHeaders())
-        ->assertOk()
-        ->assertJsonPath('props.context', 'project')
-        ->assertJsonCount(1, 'props.tasks.data')
-        ->assertJsonPath('props.tasks.data.0.id', $withProject->id);
+        ->assertJsonPath('props.tasks.data.0.id', $withUnit->id);
 });
 
 test('level 2 department dashboard includes tasks of descendant units', function () {
@@ -161,16 +97,6 @@ test('level 2 department dashboard includes tasks of descendant units', function
         );
 });
 
-test('opening a project dashboard outside the viewer scope returns 403', function () {
-    $user = userWithPermissions([PermissionName::TaskView->value]);
-    $outOfScopeProject = Project::factory()->create();
-    Task::factory()->create(['project_id' => $outOfScopeProject->id]);
-
-    $this->actingAs($user)
-        ->get(route('tasks.projects.show', $outOfScopeProject), inertiaHeaders())
-        ->assertForbidden();
-});
-
 test('level 2 department dashboard never widens the data scope of an own-scope user', function () {
     $user = userWithPermissions([PermissionName::TaskView->value]);
     $unit = OrganizationUnit::factory()->create();
@@ -186,23 +112,29 @@ test('level 2 department dashboard never widens the data scope of an own-scope u
         ->assertJsonPath('props.tasks.data.0.id', $mine->id);
 });
 
-test('level 2 project dashboard never widens the data scope of an own-scope user', function () {
-    $user = userWithPermissions([PermissionName::TaskView->value, PermissionName::ProjectView->value]);
-    $project = Project::factory()->create();
-    ProjectMember::factory()->create(['project_id' => $project->id, 'user_id' => $user->id]);
+test('level 2 summary matches the fixed task set of that unit', function () {
+    $user = userWithPermissions([PermissionName::TaskView->value, PermissionName::TaskViewAll->value]);
+    $unit = OrganizationUnit::factory()->create();
+    $otherUnit = OrganizationUnit::factory()->create();
 
-    $mine = Task::factory()->create(['project_id' => $project->id, 'assignee_id' => $user->id]);
-    Task::factory()->create(['project_id' => $project->id]);
+    Task::factory()->create(['organization_unit_id' => $unit->id, 'status' => TaskStatus::Todo]);
+    Task::factory()->create(['organization_unit_id' => $unit->id, 'status' => TaskStatus::Completed]);
+    Task::factory()->create([
+        'organization_unit_id' => $unit->id,
+        'status' => TaskStatus::Todo,
+        'due_at' => now()->subDay(),
+    ]);
+    Task::factory()->create(['organization_unit_id' => $otherUnit->id]);
 
     $this->actingAs($user)
-        ->get(route('tasks.projects.show', $project), inertiaHeaders())
+        ->get(route('tasks.departments.show', $unit), inertiaHeaders())
         ->assertOk()
-        ->assertJsonPath('props.context', 'project')
-        ->assertJsonCount(1, 'props.tasks.data')
-        ->assertJsonPath('props.tasks.data.0.id', $mine->id);
+        ->assertJsonPath('props.summary.total', 3)
+        ->assertJsonPath('props.summary.completed', 1)
+        ->assertJsonPath('props.summary.overdue', 1);
 });
 
-test('level 2 summary matches the fixed task set of that project', function () {
+test('the removed project work screen is no longer routable', function () {
     $user = userWithPermissions([
         PermissionName::TaskView->value,
         PermissionName::TaskViewAll->value,
@@ -210,21 +142,13 @@ test('level 2 summary matches the fixed task set of that project', function () {
         PermissionName::ProjectViewAll->value,
     ]);
     $project = Project::factory()->create();
-    $otherProject = Project::factory()->create();
 
-    Task::factory()->create(['project_id' => $project->id, 'status' => TaskStatus::Todo]);
-    Task::factory()->create(['project_id' => $project->id, 'status' => TaskStatus::Completed]);
-    Task::factory()->create([
-        'project_id' => $project->id,
-        'status' => TaskStatus::Todo,
-        'due_at' => now()->subDay(),
-    ]);
-    Task::factory()->create(['project_id' => $otherProject->id]);
+    // Mục "Việc dự án" đã bỏ vì trùng với module Dự án. Hai đường dẫn cũ phải
+    // 404 chứ không được rơi vào `tasks/{task}` của resource route.
+    $this->actingAs($user)->get('/tasks/projects')->assertNotFound();
+    $this->actingAs($user)->get('/tasks/projects/'.$project->id)->assertNotFound();
 
-    $this->actingAs($user)
-        ->get(route('tasks.projects.show', $project), inertiaHeaders())
-        ->assertOk()
-        ->assertJsonPath('props.summary.total', 3)
-        ->assertJsonPath('props.summary.completed', 1)
-        ->assertJsonPath('props.summary.overdue', 1);
+    // Module Dự án và màn phòng ban vẫn còn nguyên.
+    $this->actingAs($user)->get(route('projects.index'))->assertOk();
+    $this->actingAs($user)->get(route('tasks.departments'))->assertOk();
 });

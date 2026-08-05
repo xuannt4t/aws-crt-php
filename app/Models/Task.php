@@ -222,4 +222,32 @@ final class Task extends Model
             && $this->due_at->isPast()
             && ! in_array($this->status, [TaskStatus::Completed, TaskStatus::Cancelled], true);
     }
+
+    /**
+     * Hỏi lại Project::isClosed()/CLOSED_STATUSES — định nghĩa DUY NHẤT của
+     * "dự án đã đóng" (App\Models\Project). Đây là nơi DUY NHẤT xác định một
+     * công việc có bị khoá do dự án hay không; TaskPolicy và
+     * TaskAttachmentPolicy đều hỏi lại đây, không viết lại danh sách trạng
+     * thái đóng.
+     *
+     * Dùng relation `project` đã eager-load nếu có (tránh lazy-load từng dòng
+     * trên màn danh sách); nếu chưa có, chạy một truy vấn exists() trên chính
+     * bản ghi task thay vì tải cả model Project.
+     */
+    public function isProjectLocked(): bool
+    {
+        if ($this->project_id === null) {
+            return false;
+        }
+
+        if ($this->relationLoaded('project')) {
+            return $this->project?->isClosed() ?? false;
+        }
+
+        return self::query()
+            ->whereKey($this->getKey())
+            ->whereHas('project', fn (Builder $query) => $query
+                ->whereIn('status', Project::closedStatusValues()))
+            ->exists();
+    }
 }

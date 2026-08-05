@@ -14,6 +14,10 @@ final class TaskAttachmentPolicy
             return false;
         }
 
+        if ($attachment->task->isProjectLocked()) {
+            return false;
+        }
+
         return $attachment->uploader_id === $user->id
             || $user->can(PermissionName::TaskUpdate->value);
     }

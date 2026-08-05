@@ -1,6 +1,8 @@
 <?php
 
 use App\Enums\PermissionName;
+use App\Enums\ProjectStatus;
+use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
 
@@ -56,4 +58,52 @@ test('only the assignee can run task workflow actions with the required permissi
         ->and($otherUser->can('updateProgress', $task))->toBeFalse()
         ->and($otherUser->can('submit', $task))->toBeFalse()
         ->and($otherUser->can('recall', $task))->toBeFalse();
+});
+
+test('every write/interaction ability denies for a task in a closed project', function (ProjectStatus $status) {
+    $user = userWithPermissions([
+        PermissionName::TaskView->value,
+        PermissionName::TaskViewAll->value,
+        PermissionName::TaskUpdate->value,
+        PermissionName::TaskDelete->value,
+        PermissionName::TaskAssign->value,
+        PermissionName::TaskComment->value,
+        PermissionName::TaskSubmit->value,
+    ]);
+    $project = Project::factory()->create(['status' => $status]);
+    $task = Task::factory()->create([
+        'project_id' => $project->id,
+        'assignee_id' => $user->id,
+    ]);
+
+    expect($user->can('update', $task))->toBeFalse()
+        ->and($user->can('delete', $task))->toBeFalse()
+        ->and($user->can('assign', $task))->toBeFalse()
+        ->and($user->can('dispatch', $task))->toBeFalse()
+        ->and($user->can('start', $task))->toBeFalse()
+        ->and($user->can('submit', $task))->toBeFalse()
+        ->and($user->can('recall', $task))->toBeFalse()
+        ->and($user->can('updateProgress', $task))->toBeFalse()
+        ->and($user->can('comment', $task))->toBeFalse()
+        ->and($user->can('attach', $task))->toBeFalse()
+        // Xem và tải tệp đính kèm vẫn được phép — công việc chỉ đọc, không ẩn.
+        ->and($user->can('view', $task))->toBeTrue()
+        ->and($user->can('downloadAttachment', $task))->toBeTrue();
+})->with([
+    'completed project' => [ProjectStatus::Completed],
+    'cancelled project' => [ProjectStatus::Cancelled],
+]);
+
+test('task write abilities are unaffected by a project with no closed status', function () {
+    $user = userWithPermissions([
+        PermissionName::TaskView->value,
+        PermissionName::TaskViewAll->value,
+        PermissionName::TaskUpdate->value,
+    ]);
+    $activeProject = Project::factory()->create(['status' => ProjectStatus::Active]);
+    $taskWithActiveProject = Task::factory()->create(['project_id' => $activeProject->id]);
+    $taskWithoutProject = Task::factory()->create(['project_id' => null]);
+
+    expect($user->can('update', $taskWithActiveProject))->toBeTrue()
+        ->and($user->can('update', $taskWithoutProject))->toBeTrue();
 });

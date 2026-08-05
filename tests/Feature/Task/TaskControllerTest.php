@@ -102,6 +102,32 @@ test('a user with view permission can view task details and transition history',
     ]);
 });
 
+test('the actions prop reflects the project lock and view still works', function () {
+    $viewer = userWithPermissions([
+        PermissionName::TaskView->value,
+        PermissionName::TaskViewAll->value,
+        PermissionName::TaskUpdate->value,
+        PermissionName::TaskComment->value,
+    ]);
+    $project = Project::factory()->create(['status' => ProjectStatus::Completed]);
+    $task = Task::factory()->create([
+        'project_id' => $project->id,
+        'assignee_id' => $viewer->id,
+        'status' => TaskStatus::InProgress,
+    ]);
+
+    $this->actingAs($viewer)
+        ->get(route('tasks.show', $task))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Tasks/Show')
+            ->where('actions.projectLocked', true)
+            ->where('actions.update', false)
+            ->where('actions.updateProgress', false)
+            ->where('actions.comment', false)
+            ->where('actions.attach', false));
+});
+
 test('task details expose only sanitized rich text', function () {
     $viewer = userWithPermissions([PermissionName::TaskView->value, PermissionName::TaskViewAll->value]);
     $task = Task::factory()->create([

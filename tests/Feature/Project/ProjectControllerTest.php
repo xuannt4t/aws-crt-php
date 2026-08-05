@@ -238,6 +238,42 @@ test('a user with delete permission can soft delete a project and creates audit 
         ->and($auditLog->subject_id)->toBe($project->id);
 });
 
+test('deleting a project soft deletes its tasks, hides them from the task list and 404s on direct access, without touching other projects tasks', function () {
+    $deleter = userWithPermissions([PermissionName::ProjectDelete->value, PermissionName::ProjectViewAll->value]);
+    $viewer = userWithPermissions([PermissionName::TaskView->value, PermissionName::TaskViewAll->value]);
+    $project = Project::factory()->create();
+    $otherProject = Project::factory()->create();
+    $tasks = Task::factory()->count(2)->create(['project_id' => $project->id]);
+    $otherTask = Task::factory()->create(['project_id' => $otherProject->id]);
+
+    $this->actingAs($deleter)
+        ->delete(route('projects.destroy', $project))
+        ->assertRedirect(route('projects.index'));
+
+    foreach ($tasks as $task) {
+        $this->assertSoftDeleted($task);
+    }
+    $this->assertNotSoftDeleted($otherTask);
+
+    $this->actingAs($viewer)
+        ->get(route('tasks.show', $tasks->first()))
+        ->assertNotFound();
+
+    $this->actingAs($viewer)
+        ->get(route('tasks.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('tasks.total', 1)
+            ->where('tasks.data.0.id', $otherTask->id));
+
+    $auditLog = AuditLog::where('action', AuditAction::ProjectDeleted->value)
+        ->where('subject_id', $project->id)
+        ->firstOrFail();
+
+    expect($auditLog->metadata['task_count'])->toBe(2)
+        ->and($auditLog->metadata['task_ids'])->toEqualCanonicalizing($tasks->pluck('id')->all());
+});
+
 test('a user without delete permission cannot delete a project', function () {
     $user = User::factory()->create();
     $project = Project::factory()->create();
