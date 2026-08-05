@@ -27,39 +27,45 @@ final class TaskPolicy
     public function update(User $user, Task $task): bool
     {
         return $user->can(PermissionName::TaskUpdate->value)
-            && $this->isVisible($user, $task);
+            && $this->isVisible($user, $task)
+            && ! $this->isProjectLocked($task);
     }
 
     public function updateProgress(User $user, Task $task): bool
     {
         return $user->can(PermissionName::TaskUpdate->value)
-            && $task->assignee_id === $user->id;
+            && $task->assignee_id === $user->id
+            && ! $this->isProjectLocked($task);
     }
 
     public function delete(User $user, Task $task): bool
     {
         return $user->can(PermissionName::TaskDelete->value)
-            && $this->isVisible($user, $task);
+            && $this->isVisible($user, $task)
+            && ! $this->isProjectLocked($task);
     }
 
     public function assign(User $user, Task $task): bool
     {
         return $user->can(PermissionName::TaskAssign->value)
-            && $this->isVisible($user, $task);
+            && $this->isVisible($user, $task)
+            && ! $this->isProjectLocked($task);
     }
 
     public function comment(User $user, Task $task): bool
     {
         return $user->can(PermissionName::TaskView->value)
             && $user->can(PermissionName::TaskComment->value)
-            && $this->isVisible($user, $task);
+            && $this->isVisible($user, $task)
+            && ! $this->isProjectLocked($task);
     }
 
     public function attach(User $user, Task $task): bool
     {
         return $user->can(PermissionName::TaskView->value)
             && $user->can(PermissionName::TaskComment->value)
-            && $this->isVisible($user, $task);
+            && $this->isVisible($user, $task)
+            && ! $this->isProjectLocked($task);
     }
 
     public function downloadAttachment(User $user, Task $task): bool
@@ -71,25 +77,29 @@ final class TaskPolicy
     public function dispatch(User $user, Task $task): bool
     {
         return $user->can(PermissionName::TaskAssign->value)
-            && $this->isVisible($user, $task);
+            && $this->isVisible($user, $task)
+            && ! $this->isProjectLocked($task);
     }
 
     public function start(User $user, Task $task): bool
     {
         return $user->can(PermissionName::TaskUpdate->value)
-            && $task->assignee_id === $user->id;
+            && $task->assignee_id === $user->id
+            && ! $this->isProjectLocked($task);
     }
 
     public function submit(User $user, Task $task): bool
     {
         return $user->can(PermissionName::TaskSubmit->value)
-            && $task->assignee_id === $user->id;
+            && $task->assignee_id === $user->id
+            && ! $this->isProjectLocked($task);
     }
 
     public function recall(User $user, Task $task): bool
     {
         return $user->can(PermissionName::TaskSubmit->value)
-            && $task->assignee_id === $user->id;
+            && $task->assignee_id === $user->id
+            && ! $this->isProjectLocked($task);
     }
 
     /**
@@ -100,5 +110,16 @@ final class TaskPolicy
     private function isVisible(User $user, Task $task): bool
     {
         return Task::query()->whereKey($task->getKey())->visibleTo($user)->exists();
+    }
+
+    /**
+     * Hỏi lại Task::isProjectLocked() — định nghĩa DUY NHẤT của "công việc bị
+     * khoá do dự án đã đóng" (dùng chung với TaskAttachmentPolicy). Mọi
+     * ability ghi/tương tác (không phải xem) phải đi qua đây, không viết lại
+     * điều kiện.
+     */
+    private function isProjectLocked(Task $task): bool
+    {
+        return $task->isProjectLocked();
     }
 }

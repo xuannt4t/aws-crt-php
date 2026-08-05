@@ -216,7 +216,7 @@ final class TaskController extends Controller
             'organizationUnit:id,name',
             'creator:id,name,avatar_path',
             'assignee:id,name,avatar_path',
-            'project:id,name,code',
+            'project:id,name,code,status',
             'recurrence:id,title,deleted_at',
         ]);
 
@@ -268,6 +268,7 @@ final class TaskController extends Controller
             'attachments' => $attachments,
             'activities' => $activities,
             'actions' => [
+                'update' => request()->user()->can('update', $task),
                 'dispatch' => $task->status === TaskStatus::Draft
                     && request()->user()->can('dispatch', $task),
                 'start' => $task->status === TaskStatus::Todo
@@ -280,6 +281,7 @@ final class TaskController extends Controller
                     && request()->user()->can('recall', $task),
                 'comment' => request()->user()->can('comment', $task),
                 'attach' => request()->user()->can('attach', $task),
+                'projectLocked' => $task->isProjectLocked(),
             ],
         ]);
     }

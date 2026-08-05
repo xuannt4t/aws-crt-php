@@ -1,6 +1,8 @@
 <?php
 
 use App\Enums\PermissionName;
+use App\Enums\ProjectStatus;
+use App\Models\Project;
 use App\Models\Task;
 use App\Models\TaskAttachment;
 
@@ -66,3 +68,17 @@ test('a user with only the task update permission cannot delete an attachment wi
 
     expect($manager->can('delete', $attachment))->toBeFalse();
 });
+
+test('an attachment cannot be deleted when its task belongs to a closed project', function (ProjectStatus $status) {
+    $uploader = userWithPermissions([PermissionName::TaskView->value]);
+    $manager = userWithPermissions([PermissionName::TaskView->value, PermissionName::TaskUpdate->value]);
+    $project = Project::factory()->create(['status' => $status]);
+    $task = Task::factory()->create(['project_id' => $project->id]);
+    $attachment = TaskAttachment::factory()->for($uploader, 'uploader')->for($task)->create();
+
+    expect($uploader->can('delete', $attachment))->toBeFalse()
+        ->and($manager->can('delete', $attachment))->toBeFalse();
+})->with([
+    'completed project' => [ProjectStatus::Completed],
+    'cancelled project' => [ProjectStatus::Cancelled],
+]);

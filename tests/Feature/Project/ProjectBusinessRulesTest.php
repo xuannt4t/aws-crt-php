@@ -10,6 +10,7 @@ use App\Models\AuditLog;
 use App\Models\OrganizationUnit;
 use App\Models\Project;
 use App\Models\ProjectMember;
+use App\Models\Task;
 use App\Models\User;
 
 test('creating a project without a status defaults to planning and adds the owner as manager', function () {
@@ -88,13 +89,20 @@ test('updating the owner to a user without a membership creates a manager member
     ]);
 });
 
-test('deleting a project soft deletes it and records an audit log with expected metadata', function () {
+test('deleting a project soft deletes it and its tasks, recording the task count and ids in the audit metadata', function () {
     $actor = User::factory()->create();
     $project = Project::factory()->create();
+    $tasks = Task::factory()->count(3)->create(['project_id' => $project->id]);
+    $unrelatedTask = Task::factory()->create();
 
     app(DeleteProjectAction::class)->execute($actor, $project);
 
     expect($project->fresh()->trashed())->toBeTrue();
+
+    foreach ($tasks as $task) {
+        $this->assertSoftDeleted($task);
+    }
+    $this->assertNotSoftDeleted($unrelatedTask);
 
     $auditLog = AuditLog::where('action', AuditAction::ProjectDeleted->value)
         ->where('subject_id', $project->id)
@@ -106,5 +114,7 @@ test('deleting a project soft deletes it and records an audit log with expected 
         'code' => $project->code,
         'name' => $project->name,
         'status' => $project->status->value,
-    ])->and($auditLog->metadata)->toHaveKey('task_count');
+    ])
+        ->and($auditLog->metadata['task_count'])->toBe(3)
+        ->and($auditLog->metadata['task_ids'])->toEqualCanonicalizing($tasks->pluck('id')->all());
 });

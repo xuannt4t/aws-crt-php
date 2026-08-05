@@ -24,7 +24,9 @@ final class DeleteProjectAction
                 'status',
             ]);
 
-            $taskCount = $project->tasks()->count();
+            $taskIds = $project->tasks()->pluck('id');
+
+            $project->tasks()->delete();
 
             $project->delete();
 
@@ -34,7 +36,10 @@ final class DeleteProjectAction
                 subject: $project,
                 beforeValues: $beforeValues,
                 afterValues: ['deleted_at' => $project->deleted_at?->toISOString()],
-                metadata: ['task_count' => $taskCount],
+                metadata: [
+                    'task_count' => $taskIds->count(),
+                    'task_ids' => $taskIds->all(),
+                ],
             );
         });
     }
