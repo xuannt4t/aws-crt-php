@@ -41,7 +41,7 @@ const sizeClass = computed(() => ({
 
 <template>
     <span
-        class="inline-flex shrink-0 items-center justify-center overflow-hidden rounded-xl bg-brand-100 font-bold text-brand-800 ring-1 ring-inset ring-brand-200"
+        class="inline-flex shrink-0 items-center justify-center overflow-hidden rounded-xl p-2 bg-brand-100 font-bold text-brand-800 ring-1 ring-inset ring-brand-200"
         :class="sizeClass"
         aria-hidden="true"
     >

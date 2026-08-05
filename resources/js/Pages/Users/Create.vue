@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AppIcon from '@/Components/AppIcon.vue';
+import { roleLabels } from '@/Support/roleLabels';
 import AppPageHeader from '@/Components/AppPageHeader.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import InputError from '@/Components/InputError.vue';
@@ -25,15 +26,6 @@ const form = useForm({
     job_title: '',
     roles: props.roles.some((role) => role.name === 'employee') ? ['employee'] : [],
 });
-
-const roleLabels: Record<string, string> = {
-    system_admin: 'Quản trị hệ thống',
-    director: 'Giám đốc',
-    department_manager: 'Quản lý phòng ban',
-    project_manager: 'Quản lý dự án',
-    employee: 'Nhân viên',
-    auditor: 'Kiểm toán viên',
-};
 
 const toggleRole = (role: string) => {
     form.roles = form.roles.includes(role) ? form.roles.filter((item) => item !== role) : [...form.roles, role];
@@ -79,7 +71,7 @@ const submit = () => {
                 </div>
                 <div class="app-form-grid px-5 pb-7 sm:px-7 lg:grid-cols-3">
                     <div>
-                        <InputLabel for="name" value="Họ và tên *" />
+                        <InputLabel for="name" value="Họ và tên" required />
                         <TextInput
                             id="name"
                             v-model="form.name"
@@ -102,7 +94,7 @@ const submit = () => {
                         <InputError class="mt-2" :message="form.errors.employee_code" />
                     </div>
                     <div>
-                        <InputLabel for="organization_unit_id" value="Đơn vị *" />
+                        <InputLabel for="organization_unit_id" value="Đơn vị" required />
                         <select
                             id="organization_unit_id"
                             v-model="form.organization_unit_id"
@@ -148,7 +140,7 @@ const submit = () => {
                 </div>
                 <div class="app-form-grid px-5 pb-7 sm:px-7 lg:grid-cols-3">
                     <div>
-                        <InputLabel for="email" value="Email *" />
+                        <InputLabel for="email" value="Email" required />
                         <TextInput
                             id="email"
                             v-model="form.email"
@@ -160,7 +152,7 @@ const submit = () => {
                         <InputError class="mt-2" :message="form.errors.email" />
                     </div>
                     <div>
-                        <InputLabel for="password" value="Mật khẩu *" />
+                        <InputLabel for="password" value="Mật khẩu" required />
                         <TextInput
                             id="password"
                             v-model="form.password"
@@ -172,7 +164,7 @@ const submit = () => {
                         <InputError class="mt-2" :message="form.errors.password" />
                     </div>
                     <div>
-                        <InputLabel for="password_confirmation" value="Xác nhận mật khẩu *" />
+                        <InputLabel for="password_confirmation" value="Xác nhận mật khẩu" required />
                         <TextInput
                             id="password_confirmation"
                             v-model="form.password_confirmation"

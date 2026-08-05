@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import AppEmptyState from '@/Components/AppEmptyState.vue';
+import { navigateRow } from '@/Support/rowNavigation';
 import AppIcon from '@/Components/AppIcon.vue';
 import AppPageHeader from '@/Components/AppPageHeader.vue';
 import AppTaskPriorityBadge from '@/Components/AppTaskPriorityBadge.vue';
@@ -24,7 +25,7 @@ import type {
     TaskPriority,
     TaskStatus,
     TaskSummary,
-    User,
+    UserOption,
 } from '@/types';
 
 interface PaginationLink {
@@ -49,7 +50,7 @@ const props = defineProps<{
     statuses: TaskStatus[];
     priorities: TaskPriority[];
     organizationUnits: Pick<OrganizationUnit, 'id' | 'name'>[];
-    users: Pick<User, 'id' | 'name'>[];
+    users: UserOption[];
     projects: Pick<Project, 'id' | 'name' | 'code'>[];
     summary: TaskSummary;
     context: TaskContext;
@@ -194,8 +195,10 @@ const paginationLabel = (label: string) => {
                             <tr
                                 v-for="task in tasks.data"
                                 :key="task.id"
-                                class="hover:bg-slate-50/60"
+                                class="app-row-link"
                                 :class="task.is_overdue ? 'bg-red-50/50' : ''"
+                                @click="navigateRow($event, route('tasks.show', task.id))"
+                                @auxclick="navigateRow($event, route('tasks.show', task.id))"
                             >
                                 <td class="max-w-md px-5 py-4 sm:px-6">
                                     <Link

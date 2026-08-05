@@ -138,9 +138,9 @@ const submit = () => {
             <p class="font-bold">Quyền phạm vi dữ liệu (đánh dấu "Phạm vi")</p>
             <p class="mt-1">
                 Các quyền <code>view_own</code> / <code>view_department</code> / <code>view_all</code> quyết định vai
-                trò thấy được công việc và dự án ở mức nào: của riêng người dùng, trong đơn vị (kể cả đơn vị con),
-                hay toàn bộ hệ thống. Một vai trò có thể giữ nhiều mức — hệ thống luôn áp dụng mức rộng nhất. Đây là
-                nhóm quyền sẽ được điều chỉnh nhiều nhất nên được xếp liền nhau trong từng nhóm bên dưới.
+                trò thấy được công việc và dự án ở mức nào: của riêng người dùng, trong đơn vị (kể cả đơn vị con), hay
+                toàn bộ hệ thống. Một vai trò có thể giữ nhiều mức — hệ thống luôn áp dụng mức rộng nhất. Đây là nhóm
+                quyền sẽ được điều chỉnh nhiều nhất nên được xếp liền nhau trong từng nhóm bên dưới.
             </p>
         </div>
 
@@ -242,16 +242,20 @@ const submit = () => {
                 </table>
             </div>
 
-            <div class="flex items-start gap-2 border-t border-slate-100 bg-slate-50/50 px-5 py-3 text-xs leading-5 text-slate-500 sm:px-6">
+            <div
+                class="flex items-start gap-2 border-t border-slate-100 bg-slate-50/50 px-5 py-3 text-xs leading-5 text-slate-500 sm:px-6"
+            >
                 <AppIcon name="lock" class="mt-0.5 size-3.5 shrink-0 text-slate-400" />
                 <p>
-                    Vai trò "Quản trị hệ thống" luôn giữ toàn bộ quyền và không thể chỉnh sửa tại đây — bỏ tích nhầm
-                    ở vai trò này sẽ khoá toàn bộ hệ thống khỏi mọi người quản trị.
+                    Vai trò "Quản trị hệ thống" luôn giữ toàn bộ quyền và không thể chỉnh sửa tại đây — bỏ tích nhầm ở
+                    vai trò này sẽ khoá toàn bộ hệ thống khỏi mọi người quản trị.
                 </p>
             </div>
         </section>
 
-        <div class="mt-5 flex flex-col items-start justify-between gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center">
+        <div
+            class="mt-5 flex flex-col items-start justify-between gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center"
+        >
             <p class="text-xs font-semibold text-slate-500">
                 <span v-if="isDirty">Đã thay đổi {{ changedCells }} ô so với trạng thái hiện tại.</span>
                 <span v-else>Chưa có thay đổi nào.</span>

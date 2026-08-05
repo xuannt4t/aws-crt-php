@@ -9,8 +9,7 @@ test('summary counts each status bucket exactly once and cancelled lands in none
     Task::factory()->create(['status' => TaskStatus::Draft]);
     Task::factory()->create(['status' => TaskStatus::Todo]);
     Task::factory()->count(2)->create(['status' => TaskStatus::InProgress]);
-    Task::factory()->create(['status' => TaskStatus::WaitingReview]);
-    Task::factory()->create(['status' => TaskStatus::WaitingApproval]);
+    Task::factory()->count(2)->create(['status' => TaskStatus::WaitingReview]);
     Task::factory()->count(3)->create(['status' => TaskStatus::Completed]);
     Task::factory()->create(['status' => TaskStatus::Cancelled]);
 

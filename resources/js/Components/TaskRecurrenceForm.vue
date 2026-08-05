@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import AppIcon from '@/Components/AppIcon.vue';
+import AppUserSelect from '@/Components/AppUserSelect.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { taskPriorityLabels } from '@/Constants/task';
 import { Link, useForm } from '@inertiajs/vue3';
-import type { OrganizationUnit, Project, RecurrenceFrequency, TaskPriority, TaskRecurrence, User } from '@/types';
+import type { OrganizationUnit, Project, RecurrenceFrequency, TaskPriority, TaskRecurrence, UserOption } from '@/types';
 
 const props = defineProps<{
     recurrence?: Pick<
@@ -29,7 +30,7 @@ const props = defineProps<{
         | 'due_time'
     >;
     organizationUnits: Pick<OrganizationUnit, 'id' | 'name'>[];
-    assignableUsers: Pick<User, 'id' | 'name'>[];
+    assignableUsers: UserOption[];
     priorities: TaskPriority[];
     frequencies: { value: RecurrenceFrequency; label: string }[];
     projects: Pick<Project, 'id' | 'name' | 'code'>[];
@@ -124,7 +125,7 @@ const handleSubmit = () => {
             </div>
             <div class="space-y-5 px-5 pb-7 sm:px-7">
                 <div>
-                    <InputLabel for="title" value="Tiêu đề *" />
+                    <InputLabel for="title" value="Tiêu đề" required />
                     <TextInput
                         id="title"
                         v-model="form.title"
@@ -158,7 +159,7 @@ const handleSubmit = () => {
             </div>
             <div class="app-form-grid px-5 pb-7 sm:px-7 lg:grid-cols-2">
                 <div>
-                    <InputLabel for="organization_unit_id" value="Đơn vị sở hữu *" />
+                    <InputLabel for="organization_unit_id" value="Đơn vị sở hữu" required />
                     <select id="organization_unit_id" v-model="form.organization_unit_id" class="app-field" required>
                         <option :value="null" disabled>Chọn đơn vị</option>
                         <option v-for="unit in organizationUnits" :key="unit.id" :value="unit.id">
@@ -178,7 +179,7 @@ const handleSubmit = () => {
                     <InputError class="mt-2" :message="form.errors.project_id" />
                 </div>
                 <div>
-                    <InputLabel for="priority" value="Độ ưu tiên *" />
+                    <InputLabel for="priority" value="Độ ưu tiên" required />
                     <select id="priority" v-model="form.priority" class="app-field" required>
                         <option v-for="priority in priorities" :key="priority" :value="priority">
                             {{ taskPriorityLabels[priority] }}
@@ -188,12 +189,14 @@ const handleSubmit = () => {
                 </div>
                 <div v-if="assignableUsers.length > 0">
                     <InputLabel for="assignee_id" value="Người phụ trách chính" />
-                    <select id="assignee_id" v-model="form.assignee_id" class="app-field">
-                        <option :value="null">Chưa phân công</option>
-                        <option v-for="user in assignableUsers" :key="user.id" :value="user.id">
-                            {{ user.name }}
-                        </option>
-                    </select>
+                    <AppUserSelect
+                        v-model="form.assignee_id"
+                        input-id="assignee_id"
+                        :options="assignableUsers"
+                        :invalid="Boolean(form.errors.assignee_id)"
+                        clearable
+                        placeholder="Chưa phân công"
+                    />
                     <InputError class="mt-2" :message="form.errors.assignee_id" />
                 </div>
                 <div class="grid gap-5 sm:col-span-2 sm:grid-cols-2">
@@ -231,13 +234,11 @@ const handleSubmit = () => {
         <section>
             <div class="px-5 py-5 sm:px-7">
                 <h2 class="font-display text-base font-bold text-ink-950">Chu kỳ lặp</h2>
-                <p class="mt-1 text-xs text-slate-500">
-                    Xác định kiểu lặp, tần suất và ngày bắt đầu sinh công việc.
-                </p>
+                <p class="mt-1 text-xs text-slate-500">Xác định kiểu lặp, tần suất và ngày bắt đầu sinh công việc.</p>
             </div>
             <div class="app-form-grid px-5 pb-7 sm:px-7 lg:grid-cols-2">
                 <div>
-                    <InputLabel for="frequency" value="Kiểu lặp *" />
+                    <InputLabel for="frequency" value="Kiểu lặp" required />
                     <select id="frequency" v-model="form.frequency" class="app-field" required>
                         <option v-for="item in frequencies" :key="item.value" :value="item.value">
                             {{ item.label }}
@@ -246,7 +247,7 @@ const handleSubmit = () => {
                     <InputError class="mt-2" :message="form.errors.frequency" />
                 </div>
                 <div>
-                    <InputLabel for="interval" value="Mỗi N kỳ *" />
+                    <InputLabel for="interval" value="Mỗi N kỳ" required />
                     <TextInput
                         id="interval"
                         v-model.number="form.interval"
@@ -261,7 +262,7 @@ const handleSubmit = () => {
                 </div>
 
                 <div v-if="isWeekly" class="lg:col-span-2">
-                    <InputLabel value="Chọn thứ trong tuần *" />
+                    <InputLabel value="Chọn thứ trong tuần" required />
                     <div class="mt-2 flex flex-wrap gap-2">
                         <button
                             v-for="option in weekdayOptions"
@@ -282,7 +283,7 @@ const handleSubmit = () => {
                 </div>
 
                 <div v-if="needsDayOfMonth">
-                    <InputLabel for="day_of_month" value="Ngày trong tháng *" />
+                    <InputLabel for="day_of_month" value="Ngày trong tháng" required />
                     <TextInput
                         id="day_of_month"
                         v-model.number="form.day_of_month"
@@ -300,7 +301,7 @@ const handleSubmit = () => {
                 </div>
 
                 <div>
-                    <InputLabel for="start_date" value="Ngày bắt đầu *" />
+                    <InputLabel for="start_date" value="Ngày bắt đầu" required />
                     <input id="start_date" v-model="form.start_date" type="date" class="app-field" required />
                     <InputError class="mt-2" :message="form.errors.start_date" />
                 </div>

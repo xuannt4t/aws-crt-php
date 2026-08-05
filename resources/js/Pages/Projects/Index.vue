@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import AppEmptyState from '@/Components/AppEmptyState.vue';
+import { navigateRow } from '@/Support/rowNavigation';
 import AppIcon from '@/Components/AppIcon.vue';
 import AppPageHeader from '@/Components/AppPageHeader.vue';
 import AppProjectStatusBadge from '@/Components/AppProjectStatusBadge.vue';
@@ -9,7 +10,7 @@ import { usePermissions } from '@/Composables/usePermissions';
 import { projectStatusLabels } from '@/Constants/project';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
-import type { OrganizationUnit, Project, ProjectStatus, User } from '@/types';
+import type { OrganizationUnit, Project, ProjectStatus, UserOption } from '@/types';
 
 interface PaginationLink {
     url: string | null;
@@ -38,7 +39,7 @@ const props = defineProps<{
     };
     statuses: ProjectStatus[];
     organizationUnits: Pick<OrganizationUnit, 'id' | 'name'>[];
-    users: Pick<User, 'id' | 'name'>[];
+    users: UserOption[];
 }>();
 
 const { can } = usePermissions();
@@ -208,7 +209,13 @@ const paginationLabel = (label: string) => {
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
-                        <tr v-for="project in projects.data" :key="project.id" class="hover:bg-slate-50/60">
+                        <tr
+                            v-for="project in projects.data"
+                            :key="project.id"
+                            class="app-row-link"
+                            @click="navigateRow($event, route('projects.show', project.id))"
+                            @auxclick="navigateRow($event, route('projects.show', project.id))"
+                        >
                             <td class="px-2 py-4 text-sm font-bold text-slate-700 sm:px-6">
                                 {{ project.code }}
                             </td>

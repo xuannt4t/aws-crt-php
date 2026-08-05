@@ -81,13 +81,13 @@ const destroy = () => {
 
                     <div class="app-form-grid">
                         <div>
-                            <InputLabel for="name" value="Tên đơn vị *" />
+                            <InputLabel for="name" value="Tên đơn vị" required />
                             <TextInput id="name" v-model="form.name" type="text" class="w-full" required />
                             <InputError class="mt-2" :message="form.errors.name" />
                         </div>
 
                         <div>
-                            <InputLabel for="code" value="Mã đơn vị *" />
+                            <InputLabel for="code" value="Mã đơn vị" required />
                             <TextInput id="code" v-model="form.code" type="text" class="w-full" required />
                             <InputError class="mt-2" :message="form.errors.code" />
                         </div>

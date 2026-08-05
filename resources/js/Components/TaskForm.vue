@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AppIcon from '@/Components/AppIcon.vue';
+import AppUserSelect from '@/Components/AppUserSelect.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
@@ -7,7 +8,7 @@ import TextInput from '@/Components/TextInput.vue';
 import { taskPriorityLabels } from '@/Constants/task';
 import { Link, useForm, usePage } from '@inertiajs/vue3';
 import Editor from 'primevue/editor';
-import type { OrganizationUnit, PageProps, Project, Task, TaskPriority, User } from '@/types';
+import type { OrganizationUnit, PageProps, Project, Task, TaskPriority, UserOption } from '@/types';
 
 const props = defineProps<{
     task?: Pick<
@@ -24,7 +25,7 @@ const props = defineProps<{
         | 'quantity_unit'
     >;
     organizationUnits: Pick<OrganizationUnit, 'id' | 'name'>[];
-    assignableUsers: Pick<User, 'id' | 'name'>[];
+    assignableUsers: UserOption[];
     priorities: TaskPriority[];
     projects: Pick<Project, 'id' | 'name' | 'code'>[];
 }>();
@@ -93,7 +94,7 @@ const handleSubmit = () => {
             </div>
             <div class="space-y-5 px-5 pb-7 sm:px-7">
                 <div>
-                    <InputLabel for="title" value="Tiêu đề *" />
+                    <InputLabel for="title" value="Tiêu đề" required />
                     <TextInput
                         id="title"
                         v-model="form.title"
@@ -155,7 +156,7 @@ const handleSubmit = () => {
             </div>
             <div class="app-form-grid px-5 pb-7 sm:px-7 lg:grid-cols-2">
                 <div>
-                    <InputLabel for="organization_unit_id" value="Đơn vị sở hữu *" />
+                    <InputLabel for="organization_unit_id" value="Đơn vị sở hữu" required />
                     <select id="organization_unit_id" v-model="form.organization_unit_id" class="app-field" required>
                         <option :value="null" disabled>Chọn đơn vị</option>
                         <option v-for="unit in organizationUnits" :key="unit.id" :value="unit.id">
@@ -175,7 +176,7 @@ const handleSubmit = () => {
                     <InputError class="mt-2" :message="form.errors.project_id" />
                 </div>
                 <div>
-                    <InputLabel for="priority" value="Độ ưu tiên *" />
+                    <InputLabel for="priority" value="Độ ưu tiên" required />
                     <select id="priority" v-model="form.priority" class="app-field" required>
                         <option v-for="priority in priorities" :key="priority" :value="priority">
                             {{ taskPriorityLabels[priority] }}
@@ -185,12 +186,15 @@ const handleSubmit = () => {
                 </div>
                 <div v-if="assignableUsers.length > 0">
                     <InputLabel for="assignee_id" value="Người phụ trách chính" />
-                    <select id="assignee_id" v-model="form.assignee_id" class="app-field">
-                        <option :value="null">Chưa phân công</option>
-                        <option v-for="user in assignableUsers" :key="user.id" :value="user.id">
-                            {{ user.name }}{{ user.id === page.props.auth.user.id ? ' (Bạn)' : '' }}
-                        </option>
-                    </select>
+                    <AppUserSelect
+                        v-model="form.assignee_id"
+                        input-id="assignee_id"
+                        :options="assignableUsers"
+                        :current-user-id="page.props.auth.user.id"
+                        :invalid="Boolean(form.errors.assignee_id)"
+                        clearable
+                        placeholder="Chưa phân công"
+                    />
                     <p
                         v-if="assignableUsers.length === 1 && assignableUsers[0].id === page.props.auth.user.id"
                         class="mt-2 text-xs text-slate-500"

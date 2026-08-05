@@ -103,6 +103,27 @@ final class TaskPolicy
     }
 
     /**
+     * Duyệt và trả lại đi qua phạm vi dữ liệu chứ không gắn với người phụ trách:
+     * người duyệt theo định nghĩa là người khác. Không chặn riêng trường hợp tự
+     * duyệt việc của chính mình — nhân viên vốn không có quyền `task.approve`,
+     * còn chặn cứng thì một việc quản lý tự giao cho mình sẽ kẹt vĩnh viễn ở
+     * trạng thái chờ kiểm tra, không ai chốt được.
+     */
+    public function approve(User $user, Task $task): bool
+    {
+        return $user->can(PermissionName::TaskApprove->value)
+            && $this->isVisible($user, $task)
+            && ! $this->isProjectLocked($task);
+    }
+
+    public function reject(User $user, Task $task): bool
+    {
+        return $user->can(PermissionName::TaskReject->value)
+            && $this->isVisible($user, $task)
+            && ! $this->isProjectLocked($task);
+    }
+
+    /**
      * Hỏi lại Task::scopeVisibleTo() — định nghĩa DUY NHẤT của phạm vi dữ liệu.
      * Mọi ability chạm tới một bản ghi cụ thể (đọc hoặc ghi) phải đi qua đây,
      * không viết lại điều kiện phạm vi.

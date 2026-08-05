@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import AppEmptyState from '@/Components/AppEmptyState.vue';
+import { navigateRow } from '@/Support/rowNavigation';
 import AppIcon from '@/Components/AppIcon.vue';
 import AppPageHeader from '@/Components/AppPageHeader.vue';
 import AppStatusBadge from '@/Components/AppStatusBadge.vue';
 import AppTaskPriorityBadge from '@/Components/AppTaskPriorityBadge.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
-import type { OrganizationUnit, Project, RecurrenceFrequency, TaskRecurrence, User } from '@/types';
+import type { OrganizationUnit, Project, RecurrenceFrequency, TaskRecurrence, User, UserOption } from '@/types';
 
 interface PaginationLink {
     url: string | null;
@@ -44,7 +45,7 @@ const props = defineProps<{
     };
     frequencies: { value: RecurrenceFrequency; label: string }[];
     organizationUnits: Pick<OrganizationUnit, 'id' | 'name'>[];
-    users: Pick<User, 'id' | 'name'>[];
+    users: UserOption[];
     can: {
         create: boolean;
     };
@@ -243,7 +244,13 @@ const paginationLabel = (label: string) => {
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
-                        <tr v-for="recurrence in recurrences.data" :key="recurrence.id" class="hover:bg-slate-50/60">
+                        <tr
+                            v-for="recurrence in recurrences.data"
+                            :key="recurrence.id"
+                            class="app-row-link"
+                            @click="navigateRow($event, route('task-recurrences.show', recurrence.id))"
+                            @auxclick="navigateRow($event, route('task-recurrences.show', recurrence.id))"
+                        >
                             <td class="max-w-md px-5 py-4 sm:px-6">
                                 <Link
                                     :href="route('task-recurrences.show', recurrence.id)"

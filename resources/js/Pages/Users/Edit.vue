@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AppIcon from '@/Components/AppIcon.vue';
+import { roleLabels } from '@/Support/roleLabels';
 import AppUserAvatar from '@/Components/AppUserAvatar.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import InputError from '@/Components/InputError.vue';
@@ -28,15 +29,6 @@ const form = useForm({
     job_title: props.user.job_title ?? '',
     roles: [...props.selectedRoles],
 });
-
-const roleLabels: Record<string, string> = {
-    system_admin: 'Quản trị hệ thống',
-    director: 'Giám đốc',
-    department_manager: 'Quản lý phòng ban',
-    project_manager: 'Quản lý dự án',
-    employee: 'Nhân viên',
-    auditor: 'Kiểm toán viên',
-};
 
 const toggleRole = (role: string) => {
     form.roles = form.roles.includes(role) ? form.roles.filter((item) => item !== role) : [...form.roles, role];
@@ -90,7 +82,7 @@ const submit = () => {
                 </div>
                 <div class="app-form-grid px-5 pb-7 sm:px-7 lg:grid-cols-3">
                     <div>
-                        <InputLabel for="name" value="Họ và tên *" />
+                        <InputLabel for="name" value="Họ và tên" required />
                         <TextInput id="name" v-model="form.name" type="text" class="w-full" required />
                         <InputError class="mt-2" :message="form.errors.name" />
                     </div>
@@ -100,7 +92,7 @@ const submit = () => {
                         <InputError class="mt-2" :message="form.errors.employee_code" />
                     </div>
                     <div>
-                        <InputLabel for="organization_unit_id" value="Đơn vị *" />
+                        <InputLabel for="organization_unit_id" value="Đơn vị" required />
                         <select
                             id="organization_unit_id"
                             v-model="form.organization_unit_id"
@@ -132,7 +124,7 @@ const submit = () => {
                     <p class="mt-1 text-xs text-slate-500">Email đăng nhập phải là duy nhất trong hệ thống.</p>
                 </div>
                 <div class="max-w-xl px-5 pb-7 sm:px-7">
-                    <InputLabel for="email" value="Email *" />
+                    <InputLabel for="email" value="Email" required />
                     <TextInput id="email" v-model="form.email" type="email" class="w-full" required />
                     <InputError class="mt-2" :message="form.errors.email" />
                 </div>

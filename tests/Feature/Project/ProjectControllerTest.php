@@ -80,20 +80,42 @@ test('project list exposes progress task count open task count and member count 
     Task::factory()->create(['project_id' => $project->id, 'status' => TaskStatus::Todo, 'progress' => 0]);
     Task::factory()->create(['project_id' => $project->id, 'status' => TaskStatus::Cancelled, 'progress' => 0]);
 
-    DB::enableQueryLog();
+    $countQueries = function () use ($viewer): int {
+        DB::flushQueryLog();
+        DB::enableQueryLog();
 
-    $response = $this->actingAs($viewer)->get(route('projects.index'), inertiaHeaders());
+        $response = $this->actingAs($viewer)->get(route('projects.index'), inertiaHeaders());
 
-    $queryCount = count(DB::getQueryLog());
-    DB::disableQueryLog();
+        $count = count(DB::getQueryLog());
+        DB::disableQueryLog();
 
-    $response->assertOk()
+        $response->assertOk();
+
+        return $count;
+    };
+
+    $this->actingAs($viewer)
+        ->get(route('projects.index'), inertiaHeaders())
+        ->assertOk()
         ->assertJsonPath('props.projects.data.0.progress', 50)
         ->assertJsonPath('props.projects.data.0.task_count', 3)
         ->assertJsonPath('props.projects.data.0.open_task_count', 1)
         ->assertJsonPath('props.projects.data.0.member_count', 2);
 
-    expect($queryCount)->toBeLessThan(10);
+    $withOneProject = $countQueries();
+
+    // Thêm dự án, thành viên và việc rồi gọi lại. Đây mới là phép đo đúng nghĩa
+    // "không N+1": số truy vấn phải không đổi khi số bản ghi tăng. Một ngưỡng số
+    // cố định thì không đo được điều đó — nó vỡ mỗi khi có thêm một truy vấn
+    // hằng số vô hại, mà lại bỏ lọt N+1 nếu ngưỡng đặt rộng tay.
+    $more = Project::factory()->count(4)->create();
+
+    foreach ($more as $extraProject) {
+        ProjectMember::factory()->count(2)->create(['project_id' => $extraProject->id]);
+        Task::factory()->count(3)->create(['project_id' => $extraProject->id]);
+    }
+
+    expect($countQueries())->toBe($withOneProject);
 });
 
 test('only mine filter returns only projects the user is a member of', function () {

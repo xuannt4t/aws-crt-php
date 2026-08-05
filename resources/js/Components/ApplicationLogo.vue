@@ -2,9 +2,14 @@
 withDefaults(
     defineProps<{
         compact?: boolean;
+        // Dùng để ẩn phần chữ theo breakpoint (ví dụ `lg:hidden` khi sidebar thu
+        // nhỏ). `compact` bỏ hẳn phần chữ khỏi DOM nên không đáp ứng được nhu cầu
+        // "chỉ ẩn ở màn rộng, vẫn hiện trong ngăn kéo trên mobile".
+        textClass?: string;
     }>(),
     {
         compact: false,
+        textClass: '',
     },
 );
 </script>
@@ -25,7 +30,7 @@ withDefaults(
             <path d="M16 10.5V29.5" stroke="#D9F3EB" stroke-width="1.5" />
         </svg>
 
-        <span v-if="!compact" class="flex flex-col text-left">
+        <span v-if="!compact" class="flex flex-col text-left" :class="textClass">
             <span class="font-display text-[15px] font-extrabold leading-4 tracking-[-0.02em] text-current">
                 DORMIDA
             </span>

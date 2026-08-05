@@ -17,7 +17,7 @@ use App\Models\OrganizationUnit;
 use App\Models\Project;
 use App\Models\ProjectMember;
 use App\Models\Task;
-use App\Models\User;
+use App\Support\UserOptions;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -242,11 +242,7 @@ final class ProjectController extends Controller
      */
     private function activeUsers(): array
     {
-        return User::query()
-            ->where('is_active', true)
-            ->orderBy('name')
-            ->get(['id', 'name'])
-            ->toArray();
+        return UserOptions::active();
     }
 
     /**

@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import AppIcon from '@/Components/AppIcon.vue';
+import AppUserSelect from '@/Components/AppUserSelect.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { projectStatusLabels } from '@/Constants/project';
 import { Link, useForm } from '@inertiajs/vue3';
-import type { OrganizationUnit, Project, ProjectStatus, User } from '@/types';
+import type { OrganizationUnit, Project, ProjectStatus, UserOption } from '@/types';
 
 const props = defineProps<{
     project?: Pick<
@@ -22,7 +23,7 @@ const props = defineProps<{
         | 'end_date'
     >;
     organizationUnits: Pick<OrganizationUnit, 'id' | 'name'>[];
-    users: Pick<User, 'id' | 'name'>[];
+    users: UserOption[];
     statuses: ProjectStatus[];
 }>();
 
@@ -64,7 +65,7 @@ const handleSubmit = () => {
             </div>
             <div class="app-form-grid px-5 pb-7 sm:px-7 lg:grid-cols-2">
                 <div>
-                    <InputLabel for="code" value="Mã dự án *" />
+                    <InputLabel for="code" value="Mã dự án" required />
                     <TextInput
                         id="code"
                         v-model="form.code"
@@ -77,7 +78,7 @@ const handleSubmit = () => {
                     <InputError class="mt-2" :message="form.errors.code" />
                 </div>
                 <div>
-                    <InputLabel for="name" value="Tên dự án *" />
+                    <InputLabel for="name" value="Tên dự án" required />
                     <TextInput
                         id="name"
                         v-model="form.name"
@@ -111,7 +112,7 @@ const handleSubmit = () => {
             </div>
             <div class="app-form-grid px-5 pb-7 sm:px-7 lg:grid-cols-2">
                 <div>
-                    <InputLabel for="organization_unit_id" value="Đơn vị sở hữu *" />
+                    <InputLabel for="organization_unit_id" value="Đơn vị sở hữu" required />
                     <select id="organization_unit_id" v-model="form.organization_unit_id" class="app-field" required>
                         <option :value="null" disabled>Chọn đơn vị</option>
                         <option v-for="unit in organizationUnits" :key="unit.id" :value="unit.id">
@@ -121,13 +122,14 @@ const handleSubmit = () => {
                     <InputError class="mt-2" :message="form.errors.organization_unit_id" />
                 </div>
                 <div>
-                    <InputLabel for="owner_id" value="Chủ dự án *" />
-                    <select id="owner_id" v-model="form.owner_id" class="app-field" required>
-                        <option :value="null" disabled>Chọn chủ dự án</option>
-                        <option v-for="user in users" :key="user.id" :value="user.id">
-                            {{ user.name }}
-                        </option>
-                    </select>
+                    <InputLabel for="owner_id" value="Chủ dự án" required />
+                    <AppUserSelect
+                        v-model="form.owner_id"
+                        input-id="owner_id"
+                        :options="users"
+                        :invalid="Boolean(form.errors.owner_id)"
+                        placeholder="Chọn chủ dự án"
+                    />
                     <InputError class="mt-2" :message="form.errors.owner_id" />
                 </div>
                 <div>

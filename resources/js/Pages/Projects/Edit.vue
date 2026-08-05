@@ -4,7 +4,7 @@ import AppPageHeader from '@/Components/AppPageHeader.vue';
 import ProjectForm from '@/Components/ProjectForm.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
-import type { OrganizationUnit, Project, ProjectStatus, User } from '@/types';
+import type { OrganizationUnit, Project, ProjectStatus, UserOption } from '@/types';
 
 defineProps<{
     project: Pick<
@@ -20,7 +20,7 @@ defineProps<{
         | 'end_date'
     >;
     organizationUnits: Pick<OrganizationUnit, 'id' | 'name'>[];
-    users: Pick<User, 'id' | 'name'>[];
+    users: UserOption[];
     statuses: ProjectStatus[];
 }>();
 </script>
@@ -44,11 +44,6 @@ defineProps<{
             </AppPageHeader>
         </template>
 
-        <ProjectForm
-            :project="project"
-            :organization-units="organizationUnits"
-            :users="users"
-            :statuses="statuses"
-        />
+        <ProjectForm :project="project" :organization-units="organizationUnits" :users="users" :statuses="statuses" />
     </AuthenticatedLayout>
 </template>

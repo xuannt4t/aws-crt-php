@@ -62,6 +62,8 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
     Route::patch('tasks/{task}/start', [TaskController::class, 'start'])->name('tasks.start');
     Route::patch('tasks/{task}/submit', [TaskController::class, 'submit'])->name('tasks.submit');
     Route::patch('tasks/{task}/recall', [TaskController::class, 'recall'])->name('tasks.recall');
+    Route::patch('tasks/{task}/approve', [TaskController::class, 'approve'])->name('tasks.approve');
+    Route::patch('tasks/{task}/reject', [TaskController::class, 'reject'])->name('tasks.reject');
     Route::patch('tasks/{task}/progress', [TaskController::class, 'updateProgress'])->name('tasks.progress.update');
     Route::patch('tasks/{task}/quantity', [TaskController::class, 'updateQuantity'])->name('tasks.quantity.update');
     Route::post('tasks/{task}/comments', [TaskCommentController::class, 'store'])->name('tasks.comments.store');

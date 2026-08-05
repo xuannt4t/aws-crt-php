@@ -12,7 +12,7 @@ import type {
     TaskIndexFilters,
     TaskPriority,
     TaskStatus,
-    User,
+    UserOption,
 } from '@/types';
 
 const props = defineProps<{
@@ -21,7 +21,7 @@ const props = defineProps<{
     statuses: TaskStatus[];
     priorities: TaskPriority[];
     organizationUnits: Pick<OrganizationUnit, 'id' | 'name'>[];
-    users: Pick<User, 'id' | 'name'>[];
+    users: UserOption[];
     projects: Pick<Project, 'id' | 'name' | 'code'>[];
 }>();
 
@@ -135,11 +135,7 @@ const handleReset = () => {
             <AppIcon :name="isExpanded ? 'chevron-down' : 'chevron-right'" class="size-4 shrink-0 text-slate-400" />
         </button>
 
-        <form
-            v-show="isExpanded"
-            class="mt-4 max-h-[25vh] overflow-y-auto"
-            @submit.prevent="handleApply"
-        >
+        <form v-show="isExpanded" class="mt-4 max-h-[25vh] overflow-y-auto" @submit.prevent="handleApply">
             <div class="flex flex-wrap items-end gap-3">
                 <template v-for="key in props.availableFilters" :key="key">
                     <label v-if="key === 'search'" class="min-w-[220px] flex-1 basis-56">
