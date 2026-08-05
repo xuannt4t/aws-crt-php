@@ -1,55 +1,19 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue';
-import { router, usePage } from '@inertiajs/vue3';
+import { onMounted } from 'vue';
+import { usePage } from '@inertiajs/vue3';
 import Toast from 'primevue/toast';
 import { useToast } from 'primevue/usetoast';
+import { installFlashToasts } from '@/Support/flashToasts';
 import type { PageProps } from '@/types';
 
 const page = usePage<PageProps>();
 const toast = useToast();
-let removeSuccessListener: (() => void) | undefined;
 
-const showSuccess = (message: string | null | undefined) => {
-    if (!message) {
-        return;
-    }
-
-    toast.add({
-        severity: 'success',
-        summary: 'Thành công',
-        detail: message,
-        life: 4000,
-    });
-};
-
-const showError = (message: string | null | undefined) => {
-    if (!message) {
-        return;
-    }
-
-    toast.add({
-        severity: 'error',
-        summary: 'Không thể thực hiện',
-        detail: message,
-        life: 6000,
-    });
-};
-
-const showFlash = (flash: PageProps['flash']) => {
-    showSuccess(flash.success);
-    showError(flash.error);
-};
-
+// Component này mount lại sau mỗi lần điều hướng (layout đặt trong template chứ
+// không phải layout bền), nên việc đọc flash được giao cho một chỗ cài đặt duy
+// nhất, chỉ chạy một lần cho cả vòng đời ứng dụng — xem `flashToasts.ts`.
 onMounted(() => {
-    showFlash(page.props.flash);
-    removeSuccessListener = router.on('success', (event) => {
-        const nextPage = event.detail.page.props as unknown as PageProps;
-        showFlash(nextPage.flash);
-    });
-});
-
-onUnmounted(() => {
-    removeSuccessListener?.();
+    installFlashToasts((options) => toast.add(options), page.props.flash);
 });
 </script>
 
