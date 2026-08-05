@@ -58,8 +58,15 @@ export interface TaskApplyRoute {
     params: Record<string, number>;
 }
 
+/** Khoá của các ô tóm tắt bấm được — khớp với App\Enums\TaskStatusBucket. */
+export type TaskStatusBucket = 'not_started' | 'in_progress' | 'waiting_approval' | 'completed';
+
+/** Khoá của một ô tóm tắt: bốn nhóm trạng thái, cộng ô tổng và ô trễ hạn. */
+export type TaskSummaryCardKey = TaskStatusBucket | 'total' | 'overdue';
+
 export interface TaskIndexFilters {
     search?: string;
+    bucket?: TaskStatusBucket;
     status?: TaskStatus;
     priority?: TaskPriority;
     organization_unit_id?: number;

@@ -1,13 +1,19 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { TaskSummary } from '@/types';
+import type { TaskSummary, TaskSummaryCardKey } from '@/types';
 
 const props = defineProps<{
     summary: TaskSummary;
+    /** Ô đang được chọn, suy ra từ bộ lọc hiện tại của trang. */
+    activeKey?: TaskSummaryCardKey;
+}>();
+
+const emit = defineEmits<{
+    select: [key: TaskSummaryCardKey];
 }>();
 
 interface SummaryCard {
-    key: string;
+    key: TaskSummaryCardKey;
     label: string;
     value: number;
     tone: 'default' | 'success' | 'warning';
@@ -43,6 +49,16 @@ const toneValueClasses: Record<SummaryCard['tone'], string> = {
     warning: 'text-red-700',
 };
 
+// Viền đậm hơn hẳn khi ô đang được chọn. Chỉ đổi nền thôi thì ở ô "Trễ hạn" và
+// "Hoàn thành" gần như không thấy khác biệt, vì hai ô đó vốn đã có nền màu.
+const toneActiveClasses: Record<SummaryCard['tone'], string> = {
+    default: 'border-brand-500 bg-brand-50 ring-1 ring-brand-500',
+    success: 'border-emerald-500 bg-emerald-50 ring-1 ring-emerald-500',
+    warning: 'border-red-500 bg-red-100 ring-1 ring-red-500',
+};
+
+const isActive = (card: SummaryCard): boolean => (props.activeKey ?? 'total') === card.key;
+
 // `earliest_created` là MIN(created_at) — tasks không có cột ngày bắt đầu
 // riêng — nên nhãn phải trung thực, KHÔNG được ghi là "ngày bắt đầu".
 const formatMarker = (value: string | null) => {
@@ -59,11 +75,14 @@ const formatMarker = (value: string | null) => {
         <h2 class="font-display text-base font-bold text-ink-950">Tóm tắt thống kê</h2>
 
         <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            <div
+            <button
                 v-for="card in cards"
                 :key="card.key"
-                class="rounded-xl border p-4"
-                :class="toneCardClasses[card.tone]"
+                type="button"
+                class="rounded-xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-panel focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+                :class="isActive(card) ? toneActiveClasses[card.tone] : toneCardClasses[card.tone]"
+                :aria-pressed="isActive(card)"
+                @click="emit('select', card.key)"
             >
                 <p class="text-[11px] font-bold uppercase tracking-wide" :class="toneLabelClasses[card.tone]">
                     {{ card.label }}
@@ -71,7 +90,7 @@ const formatMarker = (value: string | null) => {
                 <p class="mt-2 text-2xl font-extrabold" :class="toneValueClasses[card.tone]">
                     {{ card.value }}
                 </p>
-            </div>
+            </button>
         </div>
 
         <div class="mt-5 flex flex-wrap gap-x-8 gap-y-3 border-t border-slate-100 pt-4">

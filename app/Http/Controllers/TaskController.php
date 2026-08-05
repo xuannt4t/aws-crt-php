@@ -12,6 +12,7 @@ use App\Enums\PermissionName;
 use App\Enums\TaskContext;
 use App\Enums\TaskPriority;
 use App\Enums\TaskStatus;
+use App\Enums\TaskStatusBucket;
 use App\Http\Requests\ApproveTaskRequest;
 use App\Http\Requests\DispatchTaskRequest;
 use App\Http\Requests\IndexTaskDepartmentListRequest;
@@ -135,6 +136,8 @@ final class TaskController extends Controller
                 ->where('title', 'like', "%{$search}%"))
             ->when($filters['status'] ?? null, fn (Builder $query, string $status) => $query
                 ->where('status', $status))
+            ->when($filters['bucket'] ?? null, fn (Builder $query, string $bucket) => $query
+                ->whereIn('status', TaskStatusBucket::from($bucket)->statuses()))
             ->when($filters['priority'] ?? null, fn (Builder $query, string $priority) => $query
                 ->where('priority', $priority))
             // organization_unit_id/project_id của query string chỉ áp dụng khi

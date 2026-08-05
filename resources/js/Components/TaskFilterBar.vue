@@ -25,17 +25,10 @@ const props = defineProps<{
     projects: Pick<Project, 'id' | 'name' | 'code'>[];
 }>();
 
+// Cùng kiểu với bộ lọc mà server nhận, thay vì liệt kê lại một tập con — liệt
+// kê lại là thêm một chỗ nữa phải nhớ đồng bộ mỗi khi có bộ lọc mới.
 const emit = defineEmits<{
-    apply: [
-        payload: {
-            search?: string;
-            status?: string;
-            priority?: string;
-            organization_unit_id?: number;
-            project_id?: number;
-            assignee_ids?: number[];
-        },
-    ];
+    apply: [payload: TaskIndexFilters];
     reset: [];
 }>();
 

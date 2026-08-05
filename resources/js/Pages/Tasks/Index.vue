@@ -25,6 +25,7 @@ import type {
     TaskPriority,
     TaskStatus,
     TaskSummary,
+    TaskSummaryCardKey,
     UserOption,
 } from '@/types';
 
@@ -77,15 +78,10 @@ const pageDescription = computed(() =>
 
 const isLoading = ref(false);
 
-function submitFilters(payload: {
-    search?: string;
-    status?: string;
-    priority?: string;
-    organization_unit_id?: number;
-    project_id?: number;
-    assignee_ids?: number[];
-}) {
-    router.get(route(props.applyRoute.name, props.applyRoute.params), payload, {
+// Dùng thẳng kiểu của bộ lọc thay vì liệt kê lại từng khoá: đây chính là tập
+// tham số mà server nhận, liệt kê lại là thêm một chỗ nữa phải nhớ đồng bộ.
+function submitFilters(payload: TaskIndexFilters) {
+    router.get(route(props.applyRoute.name, props.applyRoute.params), { ...payload }, {
         preserveState: true,
         replace: true,
         onStart: () => {
@@ -96,6 +92,39 @@ function submitFilters(payload: {
         },
     });
 }
+
+// Ô nào đang được chọn. `total` là trạng thái mặc định: không lọc theo nhóm nào.
+const activeSummaryKey = computed<TaskSummaryCardKey>(() => {
+    if (props.filters.overdue) {
+        return 'overdue';
+    }
+
+    return props.filters.bucket ?? 'total';
+});
+
+/**
+ * Bấm ô tóm tắt để lọc. Giữ nguyên các bộ lọc khác (tìm kiếm, phòng ban, người
+ * phụ trách...) vì người dùng đang thu hẹp dần chứ không bắt đầu lại từ đầu.
+ *
+ * Bấm lại đúng ô đang chọn thì bỏ lọc — nếu không, ô đã chọn trở thành ngõ cụt,
+ * muốn quay về toàn bộ phải đi tìm nút xoá lọc ở chỗ khác.
+ */
+const selectSummaryCard = (key: TaskSummaryCardKey) => {
+    // Bỏ hai khoá lọc theo ô ra khỏi bộ lọc hiện tại; phần còn lại giữ nguyên.
+    const rest = { ...props.filters };
+    delete rest.bucket;
+    delete rest.overdue;
+
+    const isSameCard = activeSummaryKey.value === key;
+
+    if (key === 'total' || isSameCard) {
+        submitFilters(rest);
+
+        return;
+    }
+
+    submitFilters(key === 'overdue' ? { ...rest, overdue: true } : { ...rest, bucket: key });
+};
 
 const formatDueDate = (value: string | null) => {
     if (!value) {
@@ -141,7 +170,7 @@ const paginationLabel = (label: string) => {
         </template>
 
         <div class="space-y-5">
-            <TaskSummaryCards :summary="summary" />
+            <TaskSummaryCards :summary="summary" :active-key="activeSummaryKey" @select="selectSummaryCard" />
 
             <TaskFilterBar
                 :filters="filters"

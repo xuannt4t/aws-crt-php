@@ -2,7 +2,7 @@
 
 namespace App\Support;
 
-use App\Enums\TaskStatus;
+use App\Enums\TaskStatusBucket;
 use App\Models\Task;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -39,24 +39,32 @@ final class TaskSummary
         $overdueExcludedStatuses = Task::overdueExcludedStatuses();
         $overdueExcludedPlaceholders = implode(', ', array_fill(0, count($overdueExcludedStatuses), '?'));
 
+        // Cột đếm của mỗi ô dựng thẳng từ TaskStatusBucket, nên thêm trạng thái
+        // vào một ô là cả phần đếm lẫn phần lọc cùng đổi theo.
+        $bucketColumns = [];
+        $bindings = [];
+
+        foreach (TaskStatusBucket::cases() as $bucket) {
+            $statuses = $bucket->statuses();
+            $placeholders = implode(', ', array_fill(0, count($statuses), '?'));
+            $bucketColumns[] = "SUM(CASE WHEN status IN ({$placeholders}) THEN 1 ELSE 0 END) as {$bucket->value}";
+            $bindings = [...$bindings, ...$statuses];
+        }
+
+        $bucketSql = implode(',
+                ', $bucketColumns);
+
         /** @var object{total: int|string, not_started: int|string|null, in_progress: int|string|null, waiting_approval: int|string|null, completed: int|string|null, overdue: int|string|null, earliest_created: ?string, latest_due: ?string} $row */
         $row = $aggregateQuery->selectRaw(
             <<<SQL
                 COUNT(*) as total,
-                SUM(CASE WHEN status IN (?, ?) THEN 1 ELSE 0 END) as not_started,
-                SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as in_progress,
-                SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as waiting_approval,
-                SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as completed,
+                {$bucketSql},
                 SUM(CASE WHEN due_at < ? AND status NOT IN ({$overdueExcludedPlaceholders}) THEN 1 ELSE 0 END) as overdue,
                 MIN(created_at) as earliest_created,
                 MAX(due_at) as latest_due
                 SQL,
             [
-                TaskStatus::Draft->value,
-                TaskStatus::Todo->value,
-                TaskStatus::InProgress->value,
-                TaskStatus::WaitingReview->value,
-                TaskStatus::Completed->value,
+                ...$bindings,
                 now(),
                 ...$overdueExcludedStatuses,
             ],
