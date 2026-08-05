@@ -14,7 +14,6 @@ use App\Enums\TaskPriority;
 use App\Enums\TaskStatus;
 use App\Http\Requests\DispatchTaskRequest;
 use App\Http\Requests\IndexTaskDepartmentListRequest;
-use App\Http\Requests\IndexTaskProjectListRequest;
 use App\Http\Requests\IndexTaskRequest;
 use App\Http\Requests\RecallTaskRequest;
 use App\Http\Requests\StartTaskRequest;
@@ -39,7 +38,7 @@ use Inertia\Response;
 final class TaskController extends Controller
 {
     /**
-     * Bộ lọc hiển thị của ba màn công việc (spec §5.2) — giống nhau ở cả ba
+     * Bộ lọc hiển thị của hai màn công việc (spec §5.2) — giống nhau ở cả hai
      * bối cảnh, là một prop tường minh thay vì rải v-if trong template.
      *
      * @var list<string>
@@ -56,49 +55,6 @@ final class TaskController extends Controller
     public function index(IndexTaskRequest $request): Response
     {
         return $this->renderTasks($request, TaskContext::Overview);
-    }
-
-    /**
-     * Cấp 1 của "Việc dự án" (spec §5.2) — danh sách dự án người xem thấy
-     * được, không phải danh sách việc làm phẳng. Bấm vào một dòng mới ra
-     * `tasks.projects.show` (cấp 2, ba khúc cố định dự án đó).
-     */
-    public function projects(IndexTaskProjectListRequest $request): Response
-    {
-        $user = $request->user();
-        $filters = $request->validated();
-
-        $projects = Project::query()
-            ->visibleTo($user)
-            ->with(['organizationUnit:id,name', 'owner:id,name'])
-            ->withCount([
-                'tasks as task_count' => fn (Builder $query) => $query->visibleTo($user),
-                'tasks as overdue_task_count' => fn (Builder $query) => $query->visibleTo($user)->overdue(),
-            ])
-            ->when($filters['search'] ?? null, fn (Builder $query, string $search) => $query
-                ->where(fn (Builder $inner) => $inner
-                    ->where('name', 'like', "%{$search}%")
-                    ->orWhere('code', 'like', "%{$search}%")))
-            ->orderBy('name')
-            ->paginate(20)
-            ->withQueryString();
-
-        return Inertia::render('Tasks/Projects', [
-            'projects' => $projects,
-            'filters' => $filters,
-        ]);
-    }
-
-    /**
-     * Cấp 2 của "Việc dự án" (spec §5.2) — ba khúc, cố định đúng một dự án
-     * lấy từ route binding. 403 nếu dự án ngoài phạm vi người xem
-     * (`Project::scopeVisibleTo` qua `ProjectPolicy::view`).
-     */
-    public function projectShow(IndexTaskRequest $request, Project $project): Response
-    {
-        $this->authorize('view', $project);
-
-        return $this->renderTasks($request, TaskContext::Project, project: $project);
     }
 
     /**
@@ -146,13 +102,12 @@ final class TaskController extends Controller
      * string, và chỉ thu hẹp thêm tập việc của phạm vi dữ liệu hiệu lực
      * (`Task::scopeVisibleTo`), không bao giờ mở rộng nó.
      *
-     * $project / $organizationUnit khoá phạm vi cấp 2 (spec §5.2) bằng khoá
-     * chính lấy từ route binding — không đọc từ query string.
+     * $organizationUnit khoá phạm vi cấp 2 (spec §5.2) bằng khoá chính lấy từ
+     * route binding — không đọc từ query string.
      */
     private function renderTasks(
         IndexTaskRequest $request,
         TaskContext $context,
-        ?Project $project = null,
         ?OrganizationUnit $organizationUnit = null,
     ): Response {
         $filters = $request->validated();
@@ -170,12 +125,8 @@ final class TaskController extends Controller
                 'recurrence:id,title,deleted_at',
             ])
             ->visibleTo($request->user())
-            ->when($context === TaskContext::Project, fn (Builder $query) => $query
-                ->whereNotNull('project_id'))
             ->when($context === TaskContext::Department, fn (Builder $query) => $query
                 ->whereNotNull('organization_unit_id'))
-            ->when($project !== null, fn (Builder $query) => $query
-                ->where('project_id', $project->id))
             ->when($organizationUnit !== null, fn (Builder $query) => $query
                 ->whereIn('organization_unit_id', OrganizationUnit::descendantIdsOf($organizationUnit->id)))
             ->when($filters['search'] ?? null, fn (Builder $query, string $search) => $query
@@ -193,10 +144,8 @@ final class TaskController extends Controller
             )
             ->when($filters['assignee_ids'] ?? null, fn (Builder $query, array $assigneeIds) => $query
                 ->whereIn('assignee_id', $assigneeIds))
-            ->when(
-                $project === null ? ($filters['project_id'] ?? null) : null,
-                fn (Builder $query, int $projectId) => $query->where('project_id', $projectId),
-            )
+            ->when($filters['project_id'] ?? null, fn (Builder $query, int $projectId) => $query
+                ->where('project_id', $projectId))
             ->when($request->boolean('overdue'), fn (Builder $query) => $query->overdue());
 
         $summary = app(TaskSummary::class)->for(clone $baseQuery);
@@ -211,11 +160,10 @@ final class TaskController extends Controller
             ->withQueryString();
 
         // Khúc 2 (spec §5.2, §5.3): cấp 2 bỏ bộ lọc đã cố định bằng route —
-        // dự án khi cố định một dự án, phòng ban khi cố định một đơn vị.
+        // phòng ban khi cố định một đơn vị.
         $availableFilters = array_values(array_filter(
             self::AVAILABLE_FILTERS,
-            fn (string $key): bool => ($key !== 'project_id' || $project === null)
-                && ($key !== 'organization_unit_id' || $organizationUnit === null),
+            fn (string $key): bool => $key !== 'organization_unit_id' || $organizationUnit === null,
         ));
 
         return Inertia::render('Tasks/Index', [
@@ -230,12 +178,6 @@ final class TaskController extends Controller
             'context' => $context->value,
             'availableFilters' => $availableFilters,
             'scope' => match (true) {
-                $project !== null => [
-                    'type' => 'project',
-                    'id' => $project->id,
-                    'name' => $project->name,
-                    'backRouteName' => 'tasks.projects',
-                ],
                 $organizationUnit !== null => [
                     'type' => 'department',
                     'id' => $organizationUnit->id,
@@ -245,7 +187,6 @@ final class TaskController extends Controller
                 default => null,
             },
             'applyRoute' => match (true) {
-                $project !== null => ['name' => 'tasks.projects.show', 'params' => ['project' => $project->id]],
                 $organizationUnit !== null => [
                     'name' => 'tasks.departments.show',
                     'params' => ['organizationUnit' => $organizationUnit->id],

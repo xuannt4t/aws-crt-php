@@ -39,13 +39,6 @@ const navigation: NavigationItem[] = [
         permission: 'task.view',
     },
     {
-        label: 'Việc dự án',
-        routeName: 'tasks.projects',
-        activePattern: 'tasks.projects*',
-        icon: 'tasks',
-        permission: 'task.view',
-    },
-    {
         label: 'Việc phòng ban',
         routeName: 'tasks.departments',
         activePattern: 'tasks.departments*',
@@ -149,11 +142,7 @@ watch(
                 </button>
             </div>
 
-            <div class="mt-9 px-2">
-                <p class="text-[10px] font-bold uppercase tracking-[0.18em] text-white/35">Không gian làm việc</p>
-            </div>
-
-            <nav class="mt-3 space-y-1" aria-label="Điều hướng chính">
+            <nav class="mt-9 space-y-1" aria-label="Điều hướng chính">
                 <Link
                     v-for="item in visibleNavigation"
                     :key="item.routeName"
