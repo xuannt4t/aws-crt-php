@@ -32,7 +32,7 @@ final class TransitionTaskStatusAction
 
             // Hoàn thành là điểm cuối, nên mốc thời gian và tiến độ phải khớp với
             // trạng thái. Nếu để nguyên tiến độ cũ thì danh sách sẽ hiện việc đã
-            // xong mà tiến độ 40%, và tiến độ trung bình của dự án cũng sai theo.
+            // xong mà tiến độ 40%, và tiến độ trung bình của việc dự án cũng sai theo.
             if ($targetStatus === TaskStatus::Completed) {
                 $changes['completed_at'] = now();
                 $changes['progress'] = 100;

@@ -143,12 +143,12 @@ test('the removed project work screen is no longer routable', function () {
     ]);
     $project = Project::factory()->create();
 
-    // Mục "Việc dự án" đã bỏ vì trùng với module Dự án. Hai đường dẫn cũ phải
+    // Mục "Việc dự án" đã bỏ vì trùng với module Việc dự án. Hai đường dẫn cũ phải
     // 404 chứ không được rơi vào `tasks/{task}` của resource route.
     $this->actingAs($user)->get('/tasks/projects')->assertNotFound();
     $this->actingAs($user)->get('/tasks/projects/'.$project->id)->assertNotFound();
 
-    // Module Dự án và màn phòng ban vẫn còn nguyên.
+    // Module Việc dự án và màn phòng ban vẫn còn nguyên.
     $this->actingAs($user)->get(route('projects.index'))->assertOk();
     $this->actingAs($user)->get(route('tasks.departments'))->assertOk();
 });

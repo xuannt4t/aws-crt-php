@@ -56,16 +56,16 @@ final class UpdateProjectRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'code.regex' => 'Mã dự án chỉ được chứa chữ hoa, số, dấu gạch dưới và gạch ngang.',
-            'code.unique' => 'Mã dự án đã tồn tại.',
+            'code.regex' => 'Mã việc dự án chỉ được chứa chữ hoa, số, dấu gạch dưới và gạch ngang.',
+            'code.unique' => 'Mã việc dự án đã tồn tại.',
             'end_date.after_or_equal' => 'Ngày kết thúc phải sau hoặc bằng ngày bắt đầu.',
         ];
     }
 
     /**
-     * Việc đóng dự án chỉ được thực hiện qua projects.close (CloseProjectAction)
+     * Việc đóng việc dự án chỉ được thực hiện qua projects.close (CloseProjectAction)
      * để luôn ghi closed_at, close_reason và nhật ký kiểm toán. Vì vậy màn hình
-     * chỉnh sửa không được đặt trạng thái đã đóng, cũng không được mở lại dự án
+     * chỉnh sửa không được đặt trạng thái đã đóng, cũng không được mở lại việc dự án
      * đã đóng (sẽ để lại closed_at/close_reason cũ). Giữ nguyên trạng thái hiện
      * tại vẫn hợp lệ để form sửa các trường khác.
      */
@@ -77,20 +77,20 @@ final class UpdateProjectRequest extends FormRequest
             }
 
             if (in_array($value, Project::closedStatusValues(), true)) {
-                $fail('Không thể đóng dự án ở màn hình chỉnh sửa. Vui lòng dùng chức năng "Đóng dự án".');
+                $fail('Không thể đóng việc dự án ở màn hình chỉnh sửa. Vui lòng dùng chức năng "Đóng việc dự án".');
 
                 return;
             }
 
             if ($project->isClosed()) {
-                $fail('Không thể mở lại dự án đã đóng.');
+                $fail('Không thể mở lại việc dự án đã đóng.');
             }
         };
     }
 
     /**
      * Chỉ người có quyền hệ thống project.update mới được đổi giá trị của
-     * trường; quản lý dự án (không có quyền này) vẫn phải gửi lại giá trị hiện
+     * trường; quản lý việc dự án (không có quyền này) vẫn phải gửi lại giá trị hiện
      * tại — xem ProjectPolicy::update().
      */
     private function onlyWithProjectUpdatePermission(mixed $currentValue): Closure
@@ -105,8 +105,8 @@ final class UpdateProjectRequest extends FormRequest
             }
 
             $fail($attribute === 'owner_id'
-                ? 'Bạn không có quyền thay đổi chủ dự án.'
-                : 'Bạn không có quyền thay đổi đơn vị sở hữu dự án.');
+                ? 'Bạn không có quyền thay đổi chủ việc dự án.'
+                : 'Bạn không có quyền thay đổi đơn vị sở hữu việc dự án.');
         };
     }
 }

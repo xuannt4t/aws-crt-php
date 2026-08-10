@@ -22,7 +22,7 @@ final class PermissionMatrixController extends Controller
         'organization' => 'Đơn vị',
         'user' => 'Người dùng',
         'task' => 'Công việc',
-        'project' => 'Dự án',
+        'project' => 'Việc dự án',
         'report' => 'Báo cáo',
         'system' => 'Hệ thống',
     ];

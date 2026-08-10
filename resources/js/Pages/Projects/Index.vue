@@ -98,19 +98,19 @@ const paginationLabel = (label: string) => {
 </script>
 
 <template>
-    <Head title="Dự án" />
+    <Head title="Việc dự án" />
 
     <AuthenticatedLayout>
         <template #header>
             <AppPageHeader
-                title="Dự án"
-                description="Theo dõi tiến độ, thành viên và công việc thuộc từng dự án."
+                title="Việc dự án"
+                description="Theo dõi tiến độ, thành viên và công việc thuộc từng việc dự án."
                 eyebrow="Project Core"
             >
                 <template v-if="canCreate" #actions>
                     <Link :href="route('projects.create')" class="app-button-primary">
                         <AppIcon name="plus" class="size-4" />
-                        Tạo dự án
+                        Tạo việc dự án
                     </Link>
                 </template>
             </AppPageHeader>
@@ -120,7 +120,7 @@ const paginationLabel = (label: string) => {
             <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
                 <label class="xl:col-span-2">
                     <span class="mb-1.5 block text-xs font-bold text-slate-600">Tìm kiếm</span>
-                    <input v-model="search" type="search" class="app-field" placeholder="Mã hoặc tên dự án" />
+                    <input v-model="search" type="search" class="app-field" placeholder="Mã hoặc tên việc dự án" />
                 </label>
                 <label>
                     <span class="mb-1.5 block text-xs font-bold text-slate-600">Trạng thái</span>
@@ -141,7 +141,7 @@ const paginationLabel = (label: string) => {
                     </select>
                 </label>
                 <label>
-                    <span class="mb-1.5 block text-xs font-bold text-slate-600">Chủ dự án</span>
+                    <span class="mb-1.5 block text-xs font-bold text-slate-600">Chủ việc dự án</span>
                     <select v-model="ownerId" class="app-field">
                         <option value="">Tất cả</option>
                         <option v-for="user in users" :key="user.id" :value="user.id">
@@ -158,7 +158,7 @@ const paginationLabel = (label: string) => {
                         type="checkbox"
                         class="size-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
                     />
-                    Chỉ dự án của tôi
+                    Chỉ việc dự án của tôi
                 </label>
                 <div class="flex justify-end gap-2">
                     <button type="button" class="app-button-secondary" :disabled="isLoading" @click="handleReset">
@@ -174,22 +174,22 @@ const paginationLabel = (label: string) => {
 
         <section class="app-panel overflow-hidden">
             <div class="border-b border-slate-100 px-5 py-4 sm:px-6">
-                <h2 class="font-display text-base font-bold text-ink-950">Danh sách dự án</h2>
+                <h2 class="font-display text-base font-bold text-ink-950">Danh sách việc dự án</h2>
                 <p class="mt-1 text-xs text-slate-500">
-                    {{ projects.total }} dự án · hiển thị {{ projects.from ?? 0 }}–{{ projects.to ?? 0 }}
+                    {{ projects.total }} việc dự án · hiển thị {{ projects.from ?? 0 }}–{{ projects.to ?? 0 }}
                 </p>
             </div>
 
             <AppEmptyState
                 v-if="projects.data.length === 0"
                 icon="folder"
-                title="Chưa có dự án phù hợp"
-                description="Thay đổi bộ lọc hoặc tạo dự án đầu tiên để bắt đầu vận hành."
+                title="Chưa có việc dự án phù hợp"
+                description="Thay đổi bộ lọc hoặc tạo việc dự án đầu tiên để bắt đầu vận hành."
             >
                 <template v-if="canCreate" #action>
                     <Link :href="route('projects.create')" class="app-button-primary">
                         <AppIcon name="plus" class="size-4" />
-                        Tạo dự án
+                        Tạo việc dự án
                     </Link>
                 </template>
             </AppEmptyState>
@@ -199,9 +199,9 @@ const paginationLabel = (label: string) => {
                     <thead>
                         <tr class="border-b border-slate-100 bg-slate-50/70 text-xs font-bold text-slate-500">
                             <th class="px-5 py-3 sm:px-6">Mã</th>
-                            <th class="px-5 py-3">Tên dự án</th>
+                            <th class="px-5 py-3">Tên việc dự án</th>
                             <th class="px-5 py-3">Đơn vị</th>
-                            <th class="px-5 py-3">Chủ dự án</th>
+                            <th class="px-5 py-3">Chủ việc dự án</th>
                             <th class="px-5 py-3">Trạng thái</th>
                             <th class="px-5 py-3">Tiến độ</th>
                             <th class="px-5 py-3">Công việc</th>
@@ -256,7 +256,7 @@ const paginationLabel = (label: string) => {
             <nav
                 v-if="projects.last_page > 1"
                 class="flex flex-wrap items-center justify-center gap-1 border-t border-slate-100 px-5 py-4"
-                aria-label="Phân trang dự án"
+                aria-label="Phân trang việc dự án"
             >
                 <template v-for="link in projects.links" :key="link.label">
                     <Link

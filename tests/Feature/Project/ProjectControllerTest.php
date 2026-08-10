@@ -39,9 +39,9 @@ test('a user with project view permission can list filtered paginated projects',
 
 test('a member with the project view gate but no scope permission sees only their own projects on the index', function () {
     // Cổng project.view là bắt buộc để mở danh sách (viewAny); phạm vi own
-    // quyết định nội dung: chỉ dự án mà người này là thành viên.
+    // quyết định nội dung: chỉ việc dự án mà người này là thành viên.
     $member = userWithPermissions([PermissionName::ProjectView->value]);
-    $myProject = Project::factory()->create(['name' => 'Dự án của tôi']);
+    $myProject = Project::factory()->create(['name' => 'Việc dự án của tôi']);
     ProjectMember::factory()->create([
         'project_id' => $myProject->id,
         'user_id' => $member->id,
@@ -68,7 +68,7 @@ test('a user with the project view gate but without membership sees an empty pro
 
 test('project list exposes progress task count open task count and member count without N plus 1', function () {
     // Các số liệu tổng hợp đi qua Task::visibleTo(), nên người xem cần cả phạm
-    // vi công việc mới đếm được toàn bộ việc của dự án.
+    // vi công việc mới đếm được toàn bộ việc của việc dự án.
     $viewer = userWithPermissions([
         PermissionName::ProjectView->value,
         PermissionName::ProjectViewAll->value,
@@ -104,7 +104,7 @@ test('project list exposes progress task count open task count and member count 
 
     $withOneProject = $countQueries();
 
-    // Thêm dự án, thành viên và việc rồi gọi lại. Đây mới là phép đo đúng nghĩa
+    // Thêm việc dự án, thành viên và việc rồi gọi lại. Đây mới là phép đo đúng nghĩa
     // "không N+1": số truy vấn phải không đổi khi số bản ghi tăng. Một ngưỡng số
     // cố định thì không đo được điều đó — nó vỡ mỗi khi có thêm một truy vấn
     // hằng số vô hại, mà lại bỏ lọt N+1 nếu ngưỡng đặt rộng tay.
@@ -140,8 +140,8 @@ test('a user with create permission creates a project and becomes manager', func
         'organization_unit_id' => $unit->id,
         'owner_id' => $owner->id,
         'code' => 'PRJ-001',
-        'name' => 'Dự án thí điểm',
-        'description' => 'Mô tả dự án',
+        'name' => 'Việc dự án thí điểm',
+        'description' => 'Mô tả việc dự án',
     ]);
 
     $response->assertRedirect(route('projects.index'));
@@ -166,7 +166,7 @@ test('a user without project create permission cannot create a project', functio
         'organization_unit_id' => $unit->id,
         'owner_id' => $user->id,
         'code' => 'PRJ-002',
-        'name' => 'Dự án trái phép',
+        'name' => 'Việc dự án trái phép',
     ]);
 
     $response->assertForbidden();
@@ -182,7 +182,7 @@ test('project code must be unique', function () {
         'organization_unit_id' => $unit->id,
         'owner_id' => $creator->id,
         'code' => 'PRJ-DUP',
-        'name' => 'Dự án trùng mã',
+        'name' => 'Việc dự án trùng mã',
     ])->assertSessionHasErrors('code');
 });
 
@@ -194,7 +194,7 @@ test('project code must follow the expected format', function () {
         'organization_unit_id' => $unit->id,
         'owner_id' => $creator->id,
         'code' => 'prj lowercase invalid',
-        'name' => 'Dự án mã sai',
+        'name' => 'Việc dự án mã sai',
     ])->assertSessionHasErrors('code');
 });
 
@@ -206,7 +206,7 @@ test('project end date cannot be before start date', function () {
         'organization_unit_id' => $unit->id,
         'owner_id' => $creator->id,
         'code' => 'PRJ-003',
-        'name' => 'Dự án ngày sai',
+        'name' => 'Việc dự án ngày sai',
         'start_date' => '2026-08-10',
         'end_date' => '2026-08-01',
     ])->assertSessionHasErrors('end_date');
@@ -226,7 +226,7 @@ test('a user with update permission can change the project owner and the new own
         'organization_unit_id' => $project->organization_unit_id,
         'owner_id' => $newOwner->id,
         'code' => $project->code,
-        'name' => 'Dự án đổi chủ',
+        'name' => 'Việc dự án đổi chủ',
     ]);
 
     $response->assertRedirect(route('projects.index'));
@@ -402,7 +402,7 @@ test('update cannot reopen a closed project', function () {
     $project = Project::factory()->create([
         'status' => ProjectStatus::Completed,
         'closed_at' => now(),
-        'close_reason' => 'Lý do đóng dự án ngoại lệ.',
+        'close_reason' => 'Lý do đóng việc dự án ngoại lệ.',
     ]);
 
     $this->actingAs($updater)
@@ -430,7 +430,7 @@ test('store cannot create a project directly in a closed status', function () {
             'organization_unit_id' => $unit->id,
             'owner_id' => $creator->id,
             'code' => 'PRJ-CLOSED',
-            'name' => 'Dự án đóng sẵn',
+            'name' => 'Việc dự án đóng sẵn',
             'status' => ProjectStatus::Completed->value,
         ])
         ->assertSessionHasErrors('status');
@@ -452,12 +452,12 @@ test('a project manager without the project update permission can edit ordinary 
             'organization_unit_id' => $project->organization_unit_id,
             'owner_id' => $project->owner_id,
             'code' => $project->code,
-            'name' => 'Tên dự án do quản lý cập nhật',
+            'name' => 'Tên việc dự án do quản lý cập nhật',
         ])
         ->assertRedirect(route('projects.index'))
         ->assertSessionHasNoErrors();
 
-    expect($project->fresh()->name)->toBe('Tên dự án do quản lý cập nhật');
+    expect($project->fresh()->name)->toBe('Tên việc dự án do quản lý cập nhật');
 });
 
 test('a project manager without the project update permission cannot change the owner or organization unit', function () {

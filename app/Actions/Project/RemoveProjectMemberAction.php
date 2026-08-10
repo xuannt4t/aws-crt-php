@@ -18,7 +18,7 @@ final class RemoveProjectMemberAction
     {
         if ($member->user_id === $project->owner_id) {
             throw ValidationException::withMessages([
-                'user_id' => 'Không thể xoá chủ dự án khỏi danh sách thành viên.',
+                'user_id' => 'Không thể xoá chủ việc dự án khỏi danh sách thành viên.',
             ]);
         }
 

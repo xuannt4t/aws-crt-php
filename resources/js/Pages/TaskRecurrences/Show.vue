@@ -279,7 +279,7 @@ const paginationLabel = (label: string) => {
                         </dd>
                     </div>
                     <div>
-                        <dt class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Dự án</dt>
+                        <dt class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Việc dự án</dt>
                         <dd class="mt-2 text-sm font-semibold text-slate-700">
                             <Link
                                 v-if="recurrence.project"
@@ -288,7 +288,7 @@ const paginationLabel = (label: string) => {
                             >
                                 {{ recurrence.project.name }}
                             </Link>
-                            <span v-else class="text-slate-400">Không thuộc dự án</span>
+                            <span v-else class="text-slate-400">Không thuộc việc dự án</span>
                         </dd>
                     </div>
                     <div>

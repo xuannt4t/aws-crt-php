@@ -181,7 +181,7 @@ const confirmRemove = () => {
                         <span
                             v-else
                             class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-500"
-                            title="Quản lý dự án luôn thấy toàn bộ việc của dự án, không thể đổi."
+                            title="Quản lý việc dự án luôn thấy toàn bộ việc của việc dự án, không thể đổi."
                         >
                             {{ projectTaskVisibilityLabels.all }}
                         </span>
@@ -191,7 +191,7 @@ const confirmRemove = () => {
                         v-if="canManage"
                         icon="trash"
                         tone="danger"
-                        :label="`Xóa ${member.user?.name ?? 'thành viên'} khỏi dự án`"
+                        :label="`Xóa ${member.user?.name ?? 'thành viên'} khỏi việc dự án`"
                         @click="memberToRemove = member"
                     />
                 </div>
@@ -201,7 +201,7 @@ const confirmRemove = () => {
         <AppConfirmDialog
             :show="memberToRemove !== null"
             title="Xóa thành viên?"
-            :description="`“${memberToRemove?.user?.name ?? ''}” sẽ không còn thuộc dự án này.`"
+            :description="`“${memberToRemove?.user?.name ?? ''}” sẽ không còn thuộc việc dự án này.`"
             confirm-label="Xóa thành viên"
             :processing="isRemoving"
             @cancel="memberToRemove = null"

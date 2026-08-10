@@ -57,12 +57,12 @@ const navigation: NavigationItem[] = [
         permission: 'task.view',
     },
     {
-        label: 'Dự án',
+        label: 'Việc dự án',
         routeName: 'projects.index',
         activePattern: 'projects.*',
         icon: 'folder',
-        // Không gate theo project.view: danh sách dự án mở cho mọi người dùng
-        // đã đăng nhập, nhưng chỉ hiển thị dự án họ là thành viên nếu thiếu quyền.
+        // Không gate theo project.view: danh sách việc dự án mở cho mọi người dùng
+        // đã đăng nhập, nhưng chỉ hiển thị việc dự án họ là thành viên nếu thiếu quyền.
     },
     {
         label: 'Cơ cấu tổ chức',

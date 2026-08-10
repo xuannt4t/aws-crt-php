@@ -17,7 +17,7 @@ export const projectStatusClasses: Record<ProjectStatus, string> = {
 };
 
 export const projectMemberRoleLabels: Record<ProjectMemberRole, string> = {
-    manager: 'Quản lý dự án',
+    manager: 'Quản lý việc dự án',
     member: 'Thành viên',
     viewer: 'Người theo dõi',
 };

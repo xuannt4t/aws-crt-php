@@ -43,7 +43,7 @@ final class StoreProjectMemberRequest extends FormRequest
             'user_id.required' => 'Vui lòng chọn người dùng.',
             'user_id.integer' => 'Người dùng không hợp lệ.',
             'user_id.exists' => 'Người dùng không tồn tại hoặc đã bị vô hiệu hoá.',
-            'user_id.unique' => 'Người dùng này đã là thành viên của dự án.',
+            'user_id.unique' => 'Người dùng này đã là thành viên của việc dự án.',
             'role.required' => 'Vui lòng chọn vai trò.',
             'role.enum' => 'Vai trò không hợp lệ.',
             'task_visibility.enum' => 'Quyền xem việc không hợp lệ.',

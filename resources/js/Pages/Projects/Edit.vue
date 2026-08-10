@@ -32,8 +32,8 @@ defineProps<{
         <template #header>
             <AppPageHeader
                 :title="project.name"
-                description="Cập nhật thông tin, phân công và lịch trình của dự án."
-                eyebrow="Chỉnh sửa dự án"
+                description="Cập nhật thông tin, phân công và lịch trình của việc dự án."
+                eyebrow="Chỉnh sửa việc dự án"
             >
                 <template #actions>
                     <Link :href="route('projects.index')" class="app-button-secondary">

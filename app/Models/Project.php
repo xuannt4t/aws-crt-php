@@ -23,7 +23,7 @@ final class Project extends Model
 
     /**
      * Trạng thái được xem là "đã đóng" — nguồn sự thật duy nhất, dùng bởi
-     * isClosed(), scopeOpen() và mọi rule xác thực cần biết dự án nào đã đóng.
+     * isClosed(), scopeOpen() và mọi rule xác thực cần biết việc dự án nào đã đóng.
      *
      * @var list<ProjectStatus>
      */
@@ -87,10 +87,10 @@ final class Project extends Model
     }
 
     /**
-     * Tiến độ trung bình của dự án. Truyền $viewer để chỉ tính trên những công
+     * Tiến độ trung bình của việc dự án. Truyền $viewer để chỉ tính trên những công
      * việc người đó thấy được (Task::scopeVisibleTo) — dùng cho màn hình hiển
      * thị, nơi con số phải khớp với danh sách việc bên cạnh. Bỏ trống khi cần
-     * con số toàn dự án cho nghiệp vụ.
+     * con số toàn việc dự án cho nghiệp vụ.
      */
     public function calculateProgress(?User $viewer = null): int
     {
@@ -133,8 +133,8 @@ final class Project extends Model
     }
 
     /**
-     * Giới hạn danh sách dự án theo phạm vi dữ liệu hiệu lực của người dùng
-     * (spec §4.2). Đây là định nghĩa DUY NHẤT của "dự án nào người dùng thấy
+     * Giới hạn danh sách việc dự án theo phạm vi dữ liệu hiệu lực của người dùng
+     * (spec §4.2). Đây là định nghĩa DUY NHẤT của "việc dự án nào người dùng thấy
      * được" — mở rộng từ Project::scopeVisibleTo() có sẵn từ Sprint 3, không
      * phải cơ chế mới song song. ProjectPolicy::view() hỏi lại chính scope
      * này thay vì viết lại điều kiện, để danh sách và xem trực tiếp qua URL
@@ -143,7 +143,7 @@ final class Project extends Model
      * Toàn bộ điều kiện "own" (và phần bổ sung của "department") nằm trong MỘT
      * closure where(...) duy nhất — nếu tách các orWhere ra ngoài, chúng sẽ phá
      * vỡ những điều kiện lọc khác đã có sẵn trên query (tìm kiếm, trạng thái,
-     * đơn vị, chủ dự án, only_mine...).
+     * đơn vị, chủ việc dự án, only_mine...).
      */
     public function scopeVisibleTo(Builder $query, User $user): Builder
     {
@@ -168,7 +168,7 @@ final class Project extends Model
     /**
      * Thêm điều kiện "own" (spec §4.2) vào một closure where() đã có sẵn: dự
      * án mà người dùng là thành viên. Owner luôn là thành viên vai trò
-     * manager nên chủ dự án tự nhiên nằm trong phạm vi này.
+     * manager nên chủ việc dự án tự nhiên nằm trong phạm vi này.
      */
     private function addOwnConditions(Builder $query, User $user): void
     {

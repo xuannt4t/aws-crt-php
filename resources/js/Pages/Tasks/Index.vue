@@ -66,12 +66,12 @@ const canCreate = computed(() => can('task.create'));
 
 // Bối cảnh do route/controller quyết định (spec §5.1, §5.2) — chỉ dùng để
 // đổi tiêu đề trang, KHÔNG bao giờ tự suy ra hay đổi qua query. Ở cấp 2
-// (props.scope khác null) tiêu đề là tên dự án/phòng thay vì nhãn bối cảnh.
+// (props.scope khác null) tiêu đề là tên việc dự án/phòng thay vì nhãn bối cảnh.
 const pageTitle = computed(() => props.scope?.name ?? taskContextLabels[props.context]);
 const pageDescription = computed(() =>
     props.scope
         ? `Ba khúc công việc cố định trong phạm vi bạn được xem, chỉ tính việc thuộc ${
-              props.scope.type === 'project' ? 'dự án' : 'phòng ban'
+              props.scope.type === 'project' ? 'việc dự án' : 'phòng ban'
           } này.`
         : taskContextDescriptions[props.context],
 );
@@ -222,7 +222,7 @@ const paginationLabel = (label: string) => {
                                 <th class="px-5 py-3">Mức ưu tiên</th>
                                 <th class="px-5 py-3">Người phụ trách</th>
                                 <th class="px-5 py-3">Phòng ban</th>
-                                <th class="px-5 py-3">Dự án</th>
+                                <th class="px-5 py-3">Việc dự án</th>
                                 <th class="px-5 py-3">Hạn</th>
                                 <th class="px-5 py-3">Người tạo</th>
                             </tr>

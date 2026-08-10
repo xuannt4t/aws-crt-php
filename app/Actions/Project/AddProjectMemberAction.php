@@ -23,7 +23,7 @@ final class AddProjectMemberAction
         return DB::transaction(function () use ($actor, $project, $data): ProjectMember {
             $role = ProjectMemberRole::from($data['role']);
 
-            // Quản lý dự án luôn hiệu lực toàn bộ việc dự án — cột lưu trực
+            // Quản lý việc dự án luôn hiệu lực toàn bộ việc dự án — cột lưu trực
             // tiếp "all" khi thêm với vai trò này, dù người dùng gửi gì khác.
             $taskVisibility = $role === ProjectMemberRole::Manager
                 ? ProjectTaskVisibility::All

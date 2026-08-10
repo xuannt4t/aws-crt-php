@@ -168,7 +168,7 @@ final class ProjectController extends Controller
     {
         $action->execute($request->user(), $request->validated());
 
-        return Redirect::route('projects.index')->with('success', 'Tạo dự án thành công.');
+        return Redirect::route('projects.index')->with('success', 'Tạo việc dự án thành công.');
     }
 
     public function edit(Project $project): Response
@@ -197,7 +197,7 @@ final class ProjectController extends Controller
     {
         $action->execute($request->user(), $project, $request->validated());
 
-        return Redirect::route('projects.index')->with('success', 'Cập nhật dự án thành công.');
+        return Redirect::route('projects.index')->with('success', 'Cập nhật việc dự án thành công.');
     }
 
     public function destroy(Request $request, Project $project, DeleteProjectAction $action): RedirectResponse
@@ -206,14 +206,14 @@ final class ProjectController extends Controller
 
         $action->execute($request->user(), $project);
 
-        return Redirect::route('projects.index')->with('success', 'Xóa dự án thành công.');
+        return Redirect::route('projects.index')->with('success', 'Xóa việc dự án thành công.');
     }
 
     public function close(CloseProjectRequest $request, Project $project, CloseProjectAction $action): RedirectResponse
     {
         $action->execute($request->user(), $project, $request->validated()['close_reason'] ?? null);
 
-        return Redirect::back()->with('success', 'Đã đóng dự án.');
+        return Redirect::back()->with('success', 'Đã đóng việc dự án.');
     }
 
     /**

@@ -8,7 +8,7 @@ export const roleLabels: Record<string, string> = {
     system_admin: 'Quản trị hệ thống',
     director: 'Giám đốc',
     department_manager: 'Quản lý phòng ban',
-    project_manager: 'Quản lý dự án',
+    project_manager: 'Quản lý việc dự án',
     employee: 'Nhân viên',
     auditor: 'Kiểm toán viên',
 };

@@ -237,7 +237,7 @@ const paginationLabel = (label: string) => {
                             <th class="px-5 py-3 sm:px-6">Mẫu</th>
                             <th class="px-5 py-3">Chu kỳ</th>
                             <th class="px-5 py-3">Đơn vị</th>
-                            <th class="px-5 py-3">Dự án</th>
+                            <th class="px-5 py-3">Việc dự án</th>
                             <th class="px-5 py-3">Phụ trách</th>
                             <th class="px-5 py-3">Kỳ kế tiếp</th>
                             <th class="px-5 py-3 text-right">Bật/tắt</th>

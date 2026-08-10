@@ -21,7 +21,7 @@ final class ProjectMemberController extends Controller
     ): RedirectResponse {
         $action->execute($request->user(), $project, $request->validated());
 
-        return Redirect::back()->with('success', 'Đã thêm thành viên vào dự án.');
+        return Redirect::back()->with('success', 'Đã thêm thành viên vào việc dự án.');
     }
 
     public function update(
@@ -52,6 +52,6 @@ final class ProjectMemberController extends Controller
 
         $action->execute(request()->user(), $project, $member);
 
-        return Redirect::back()->with('success', 'Đã xoá thành viên khỏi dự án.');
+        return Redirect::back()->with('success', 'Đã xoá thành viên khỏi việc dự án.');
     }
 }

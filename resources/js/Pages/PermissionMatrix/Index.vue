@@ -138,7 +138,7 @@ const submit = () => {
             <p class="font-bold">Quyền phạm vi dữ liệu (đánh dấu "Phạm vi")</p>
             <p class="mt-1">
                 Các quyền <code>view_own</code> / <code>view_department</code> / <code>view_all</code> quyết định vai
-                trò thấy được công việc và dự án ở mức nào: của riêng người dùng, trong đơn vị (kể cả đơn vị con), hay
+                trò thấy được công việc và việc dự án ở mức nào: của riêng người dùng, trong đơn vị (kể cả đơn vị con), hay
                 toàn bộ hệ thống. Một vai trò có thể giữ nhiều mức — hệ thống luôn áp dụng mức rộng nhất. Đây là nhóm
                 quyền sẽ được điều chỉnh nhiều nhất nên được xếp liền nhau trong từng nhóm bên dưới.
             </p>

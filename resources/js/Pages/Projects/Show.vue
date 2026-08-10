@@ -129,8 +129,8 @@ const paginationLabel = (label: string) => {
         <template #header>
             <AppPageHeader
                 :title="project.name"
-                :description="`Dự án #${project.code} · ${project.organization_unit?.name ?? 'Chưa có đơn vị'}`"
-                eyebrow="Chi tiết dự án"
+                :description="`Việc dự án #${project.code} · ${project.organization_unit?.name ?? 'Chưa có đơn vị'}`"
+                eyebrow="Chi tiết việc dự án"
             >
                 <template #actions>
                     <Link :href="route('projects.index')" class="app-button-secondary">
@@ -143,7 +143,7 @@ const paginationLabel = (label: string) => {
                     </Link>
                     <button v-if="actions.close" type="button" class="app-button-secondary" @click="openCloseDialog">
                         <AppIcon name="lock" class="size-4" />
-                        Đóng dự án
+                        Đóng việc dự án
                     </button>
                     <button
                         v-if="actions.delete"
@@ -180,7 +180,7 @@ const paginationLabel = (label: string) => {
                     </div>
 
                     <div v-if="project.close_reason" class="mt-6 rounded-xl border border-slate-100 bg-slate-50/60 p-4">
-                        <h3 class="text-xs font-bold uppercase tracking-wide text-slate-500">Lý do đóng dự án</h3>
+                        <h3 class="text-xs font-bold uppercase tracking-wide text-slate-500">Lý do đóng việc dự án</h3>
                         <p class="mt-2 text-sm leading-6 text-slate-600">{{ project.close_reason }}</p>
                     </div>
 
@@ -194,8 +194,8 @@ const paginationLabel = (label: string) => {
 
                 <section class="app-panel overflow-hidden">
                     <div class="border-b border-slate-100 px-5 py-4 sm:px-6">
-                        <h2 class="font-display text-base font-bold text-ink-950">Thành viên dự án</h2>
-                        <p class="mt-1 text-xs text-slate-500">{{ members.length }} thành viên tham gia dự án.</p>
+                        <h2 class="font-display text-base font-bold text-ink-950">Thành viên việc dự án</h2>
+                        <p class="mt-1 text-xs text-slate-500">{{ members.length }} thành viên tham gia việc dự án.</p>
                     </div>
                     <div class="px-5 py-5 sm:px-6">
                         <ProjectMemberList
@@ -210,7 +210,7 @@ const paginationLabel = (label: string) => {
 
                 <section v-if="actions.viewTasks && tasks" class="app-panel overflow-hidden">
                     <div class="border-b border-slate-100 px-5 py-4 sm:px-6">
-                        <h2 class="font-display text-base font-bold text-ink-950">Công việc thuộc dự án</h2>
+                        <h2 class="font-display text-base font-bold text-ink-950">Công việc thuộc việc dự án</h2>
                         <p class="mt-1 text-xs text-slate-500">
                             {{ tasks.total }} công việc · hiển thị {{ tasks.from ?? 0 }}–{{ tasks.to ?? 0 }}
                         </p>
@@ -220,7 +220,7 @@ const paginationLabel = (label: string) => {
                         v-if="tasks.data.length === 0"
                         icon="tasks"
                         title="Chưa có công việc"
-                        description="Dự án này chưa có công việc nào được tạo."
+                        description="Việc dự án này chưa có công việc nào được tạo."
                     />
 
                     <ul v-else class="divide-y divide-slate-100">
@@ -277,11 +277,11 @@ const paginationLabel = (label: string) => {
             </div>
 
             <aside class="app-panel h-fit p-5 sm:p-6">
-                <h2 class="font-display text-base font-bold text-ink-950">Thông tin dự án</h2>
+                <h2 class="font-display text-base font-bold text-ink-950">Thông tin việc dự án</h2>
 
                 <dl class="mt-5 space-y-5">
                     <div>
-                        <dt class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Chủ dự án</dt>
+                        <dt class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Chủ việc dự án</dt>
                         <dd class="mt-2 text-sm font-semibold text-slate-700">
                             {{ project.owner?.name ?? 'Chưa có' }}
                         </dd>
@@ -311,11 +311,11 @@ const paginationLabel = (label: string) => {
                 <div class="flex size-11 items-center justify-center rounded-xl bg-amber-50 text-amber-700">
                     <AppIcon name="lock" class="size-5" />
                 </div>
-                <h2 class="mt-5 font-display text-lg font-bold tracking-[-0.02em] text-ink-950">Đóng dự án?</h2>
+                <h2 class="mt-5 font-display text-lg font-bold tracking-[-0.02em] text-ink-950">Đóng việc dự án?</h2>
 
                 <template v-if="!hasOpenTasks">
                     <p class="mt-2 text-sm leading-6 text-slate-500">
-                        Dự án không còn công việc mở. Bạn có thể đóng dự án ngay.
+                        Việc dự án không còn công việc mở. Bạn có thể đóng việc dự án ngay.
                     </p>
                     <InputError class="mt-2" :message="closeForm.errors.close_reason" />
                 </template>
@@ -323,10 +323,10 @@ const paginationLabel = (label: string) => {
                 <template v-else>
                     <div class="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
                         <p class="text-sm font-semibold text-amber-800">
-                            Dự án còn {{ project.open_task_count }} công việc chưa hoàn thành.
+                            Việc dự án còn {{ project.open_task_count }} công việc chưa hoàn thành.
                         </p>
                         <p class="mt-1 text-xs leading-5 text-amber-700/80">
-                            Vui lòng nhập lý do đóng dự án ngoại lệ trước khi tiếp tục.
+                            Vui lòng nhập lý do đóng việc dự án ngoại lệ trước khi tiếp tục.
                         </p>
                     </div>
 
@@ -336,7 +336,7 @@ const paginationLabel = (label: string) => {
                             rows="4"
                             maxlength="1000"
                             class="app-field resize-y"
-                            placeholder="Nhập lý do đóng dự án khi còn công việc chưa hoàn thành (tối thiểu 10 ký tự)..."
+                            placeholder="Nhập lý do đóng việc dự án khi còn công việc chưa hoàn thành (tối thiểu 10 ký tự)..."
                         />
                         <InputError class="mt-2" :message="closeForm.errors.close_reason" />
                     </div>
@@ -345,7 +345,7 @@ const paginationLabel = (label: string) => {
                 <div class="mt-7 flex justify-end gap-2">
                     <SecondaryButton @click="isClosing = false">Huỷ</SecondaryButton>
                     <button type="submit" class="app-button-primary" :disabled="closeForm.processing">
-                        {{ closeForm.processing ? 'Đang đóng...' : 'Đóng dự án' }}
+                        {{ closeForm.processing ? 'Đang đóng...' : 'Đóng việc dự án' }}
                     </button>
                 </div>
             </form>
@@ -353,9 +353,9 @@ const paginationLabel = (label: string) => {
 
         <AppConfirmDialog
             :show="isConfirmingDelete"
-            title="Xóa dự án?"
-            :description="`Dự án “${project.name}” sẽ được chuyển vào trạng thái đã xóa.`"
-            confirm-label="Xóa dự án"
+            title="Xóa việc dự án?"
+            :description="`Việc dự án “${project.name}” sẽ được chuyển vào trạng thái đã xóa.`"
+            confirm-label="Xóa việc dự án"
             :processing="isDeleting"
             @cancel="isConfirmingDelete = false"
             @confirm="confirmDelete"

@@ -242,7 +242,7 @@ const paginationLabel = (label: string) => {
             class="mb-5 flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"
         >
             <AppIcon name="lock" class="size-4 shrink-0" />
-            <p>Dự án đã đóng nên công việc này ở trạng thái chỉ đọc.</p>
+            <p>Việc dự án đã đóng nên công việc này ở trạng thái chỉ đọc.</p>
         </section>
 
         <section
@@ -544,7 +544,7 @@ const paginationLabel = (label: string) => {
                         <dd class="mt-2 text-sm font-semibold text-slate-700">{{ task.organization_unit?.name }}</dd>
                     </div>
                     <div>
-                        <dt class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Dự án</dt>
+                        <dt class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Việc dự án</dt>
                         <dd class="mt-2 text-sm font-semibold text-slate-700">
                             <Link
                                 v-if="task.project"
@@ -553,7 +553,7 @@ const paginationLabel = (label: string) => {
                             >
                                 {{ task.project.name }}
                             </Link>
-                            <span v-else class="text-slate-400">Không thuộc dự án</span>
+                            <span v-else class="text-slate-400">Không thuộc việc dự án</span>
                         </dd>
                     </div>
                     <div>

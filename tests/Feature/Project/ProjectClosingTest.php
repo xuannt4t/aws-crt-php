@@ -18,7 +18,7 @@ test('closing a project with no open tasks marks it completed and records a plai
 
     $response = $this->actingAs($actor)->patch(route('projects.close', $project));
 
-    $response->assertRedirect()->assertSessionHas('success', 'Đã đóng dự án.');
+    $response->assertRedirect()->assertSessionHas('success', 'Đã đóng việc dự án.');
 
     $project->refresh();
     expect($project->status)->toBe(ProjectStatus::Completed)
@@ -55,15 +55,15 @@ test('closing a project with open tasks and a valid reason closes it with an exc
     Task::factory()->create(['project_id' => $project->id, 'status' => TaskStatus::Completed]);
 
     $response = $this->actingAs($actor)->patch(route('projects.close', $project), [
-        'close_reason' => 'Khách hàng yêu cầu kết thúc sớm dự án này.',
+        'close_reason' => 'Khách hàng yêu cầu kết thúc sớm việc dự án này.',
     ]);
 
-    $response->assertRedirect()->assertSessionHas('success', 'Đã đóng dự án.');
+    $response->assertRedirect()->assertSessionHas('success', 'Đã đóng việc dự án.');
 
     $project->refresh();
     expect($project->status)->toBe(ProjectStatus::Completed)
         ->and($project->closed_at)->not->toBeNull()
-        ->and($project->close_reason)->toBe('Khách hàng yêu cầu kết thúc sớm dự án này.');
+        ->and($project->close_reason)->toBe('Khách hàng yêu cầu kết thúc sớm việc dự án này.');
 
     $auditLog = AuditLog::where('action', AuditAction::ProjectClosedWithException->value)
         ->where('subject_id', $project->id)
@@ -82,7 +82,7 @@ test('closing an already closed project fails validation with a close reason err
 
     $response = $this->actingAs($actor)->patch(route('projects.close', $project));
 
-    $response->assertSessionHasErrors(['close_reason' => 'Dự án đã được đóng.']);
+    $response->assertSessionHasErrors(['close_reason' => 'Việc dự án đã được đóng.']);
 });
 
 test('a user without close permission and not a manager cannot close a project', function () {

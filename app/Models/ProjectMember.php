@@ -42,8 +42,8 @@ final class ProjectMember extends Model
     }
 
     /**
-     * Phạm vi xem việc hiệu lực của thành viên này trong dự án. Đây là nơi
-     * DUY NHẤT diễn giải quy tắc "quản lý dự án luôn thấy toàn bộ việc" —
+     * Phạm vi xem việc hiệu lực của thành viên này trong việc dự án. Đây là nơi
+     * DUY NHẤT diễn giải quy tắc "quản lý việc dự án luôn thấy toàn bộ việc" —
      * bất kể cột task_visibility lưu giá trị gì.
      */
     public function effectiveTaskVisibility(): ProjectTaskVisibility

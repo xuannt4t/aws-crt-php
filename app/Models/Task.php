@@ -198,7 +198,7 @@ final class Task extends Model
     }
 
     /**
-     * Điều kiện "thành viên dự án với hiệu lực xem toàn bộ việc" (spec §4.1,
+     * Điều kiện "thành viên việc dự án với hiệu lực xem toàn bộ việc" (spec §4.1,
      * mục 3) — nơi DUY NHẤT của rule này trong scopeVisibleTo, dùng lại y hệt
      * cho việc trực tiếp và cho việc cha (một cấp). Thành viên vai trò
      * `manager` luôn đạt điều kiện này bất kể cột task_visibility lưu gì,
@@ -225,8 +225,8 @@ final class Task extends Model
 
     /**
      * Hỏi lại Project::isClosed()/CLOSED_STATUSES — định nghĩa DUY NHẤT của
-     * "dự án đã đóng" (App\Models\Project). Đây là nơi DUY NHẤT xác định một
-     * công việc có bị khoá do dự án hay không; TaskPolicy và
+     * "việc dự án đã đóng" (App\Models\Project). Đây là nơi DUY NHẤT xác định một
+     * công việc có bị khoá do việc dự án hay không; TaskPolicy và
      * TaskAttachmentPolicy đều hỏi lại đây, không viết lại danh sách trạng
      * thái đóng.
      *

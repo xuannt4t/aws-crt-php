@@ -11,7 +11,7 @@ enum ProjectMemberRole: string
     public function label(): string
     {
         return match ($this) {
-            self::Manager => 'Quản lý dự án',
+            self::Manager => 'Quản lý việc dự án',
             self::Member => 'Thành viên',
             self::Viewer => 'Người theo dõi',
         };

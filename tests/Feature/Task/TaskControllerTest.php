@@ -542,13 +542,13 @@ test('a task can be created and linked to an open project', function () {
     $response = $this->actingAs($creator)->post(route('tasks.store'), [
         'organization_unit_id' => $unit->id,
         'project_id' => $project->id,
-        'title' => 'Công việc gắn dự án',
+        'title' => 'Công việc gắn việc dự án',
         'priority' => TaskPriority::Medium->value,
     ]);
 
     $response->assertRedirect(route('tasks.index'));
 
-    $task = Task::where('title', 'Công việc gắn dự án')->firstOrFail();
+    $task = Task::where('title', 'Công việc gắn việc dự án')->firstOrFail();
 
     expect($task->project_id)->toBe($project->id);
 });
@@ -670,7 +670,7 @@ test('a task cannot be attached to a project the actor cannot view', function ()
             'title' => 'Công việc chèn trái phép',
             'priority' => TaskPriority::Medium->value,
         ])
-        ->assertSessionHasErrors(['project_id' => 'Bạn không có quyền gắn công việc vào dự án này.']);
+        ->assertSessionHasErrors(['project_id' => 'Bạn không có quyền gắn công việc vào việc dự án này.']);
 
     $this->assertDatabaseMissing('tasks', ['project_id' => $foreignProject->id]);
 });

@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Đổi mỗi lần cả vai trò lẫn quyền xem việc của thành viên — hai giá trị này
- * ràng buộc lẫn nhau (nâng lên/hạ khỏi quản lý dự án) nên xử lý cùng một hành
+ * ràng buộc lẫn nhau (nâng lên/hạ khỏi quản lý việc dự án) nên xử lý cùng một hành
  * động thay vì tách riêng.
  */
 final class UpdateProjectMemberAction
@@ -33,8 +33,8 @@ final class UpdateProjectMemberAction
             $newRole = ProjectMemberRole::from($role);
             $requestedTaskVisibility = ProjectTaskVisibility::from($taskVisibility);
 
-            // Nâng lên quản lý dự án thì luôn chuyển cột thành "all"; hạ khỏi
-            // quản lý dự án thì giữ nguyên giá trị đang lưu, bỏ qua giá trị
+            // Nâng lên quản lý việc dự án thì luôn chuyển cột thành "all"; hạ khỏi
+            // quản lý việc dự án thì giữ nguyên giá trị đang lưu, bỏ qua giá trị
             // vừa gửi lên. Các trường hợp còn lại dùng đúng giá trị yêu cầu.
             $newTaskVisibility = match (true) {
                 $newRole === ProjectMemberRole::Manager => ProjectTaskVisibility::All,

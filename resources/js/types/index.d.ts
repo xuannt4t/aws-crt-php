@@ -259,7 +259,7 @@ export interface User {
 }
 
 /**
- * Một dòng trong ô chọn người (người phụ trách, chủ dự án, thành viên).
+ * Một dòng trong ô chọn người (người phụ trách, chủ việc dự án, thành viên).
  * Do `App\Support\UserOptions` sinh ra — sửa đây thì sửa cả bên đó.
  */
 export interface UserOption {

@@ -35,7 +35,7 @@ export const taskContextLabels: Record<TaskContext, string> = {
 /** Mô tả phụ theo bối cảnh, dùng cho phần header của trang. */
 export const taskContextDescriptions: Record<TaskContext, string> = {
     overview: 'Theo dõi mọi đầu việc trong phạm vi bạn được xem, người phụ trách, thời hạn và trạng thái thực hiện.',
-    project: 'Chỉ hiển thị công việc thuộc dự án, trong phạm vi bạn được xem.',
+    project: 'Chỉ hiển thị công việc thuộc việc dự án, trong phạm vi bạn được xem.',
     department: 'Chỉ hiển thị công việc thuộc phòng ban, trong phạm vi bạn được xem.',
 };
 

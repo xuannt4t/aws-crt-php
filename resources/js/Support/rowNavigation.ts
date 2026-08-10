@@ -10,7 +10,7 @@ import { router } from '@inertiajs/vue3';
  *
  * Ba trường hợp phải nhường lại, nếu không sẽ phá những thao tác đang chạy tốt:
  *
- * 1. Bấm trúng một phần tử tương tác lồng bên trong (link dự án, nút xoá, ô
+ * 1. Bấm trúng một phần tử tương tác lồng bên trong (link việc dự án, nút xoá, ô
  *    select đổi vai trò...). Để phần tử đó tự xử lý.
  * 2. Người dùng đang bôi đen chữ trong hàng — nhả chuột sau khi bôi đen cũng
  *    sinh ra sự kiện `click`, mà điều hướng lúc đó thì mất luôn phần vừa chọn.

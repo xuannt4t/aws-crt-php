@@ -20,7 +20,7 @@ final class CloseProjectAction
             // Gắn vào close_reason vì đó là trường duy nhất hộp thoại "Đóng dự
             // án" trên Projects/Show.vue hiển thị lỗi.
             throw ValidationException::withMessages([
-                'close_reason' => 'Dự án đã được đóng.',
+                'close_reason' => 'Việc dự án đã được đóng.',
             ]);
         }
 

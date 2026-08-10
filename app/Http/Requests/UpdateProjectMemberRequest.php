@@ -57,7 +57,7 @@ final class UpdateProjectMemberRequest extends FormRequest
             ) {
                 $validator->errors()->add(
                     'role',
-                    'Không thể hạ vai trò của chủ dự án xuống dưới Quản lý dự án.',
+                    'Không thể hạ vai trò của chủ việc dự án xuống dưới Quản lý việc dự án.',
                 );
             }
         });

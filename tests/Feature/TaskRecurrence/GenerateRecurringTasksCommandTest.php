@@ -223,7 +223,7 @@ test('a template pointing at a closed project still generates a task, with proje
     expect($tasks)->toHaveCount(3);
     expect($tasks->pluck('project_id')->unique()->all())->toBe([null]);
 
-    // Dự án được phân giải một lần cho cả lượt chạy, không phải mỗi kỳ một lần.
+    // Việc dự án được phân giải một lần cho cả lượt chạy, không phải mỗi kỳ một lần.
     Log::shouldHaveReceived('warning')->once();
 });
 

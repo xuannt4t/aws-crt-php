@@ -7,9 +7,9 @@ use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 
 /**
- * Từ chối gắn công việc vào một dự án đã đóng (hoàn thành/huỷ). Dùng chung
+ * Từ chối gắn công việc vào một việc dự án đã đóng (hoàn thành/huỷ). Dùng chung
  * cho StoreTaskRequest và UpdateTaskRequest để tránh lặp định nghĩa
- * "dự án đã đóng" — nguồn sự thật duy nhất nằm ở Project::isClosed()/
+ * "việc dự án đã đóng" — nguồn sự thật duy nhất nằm ở Project::isClosed()/
  * Project::closedStatusValues().
  */
 final class ProjectIsOpen implements ValidationRule
@@ -26,7 +26,7 @@ final class ProjectIsOpen implements ValidationRule
             ->exists();
 
         if ($isClosed) {
-            $fail('Không thể gắn công việc vào dự án đã đóng.');
+            $fail('Không thể gắn công việc vào việc dự án đã đóng.');
         }
     }
 }

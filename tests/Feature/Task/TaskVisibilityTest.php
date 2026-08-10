@@ -38,7 +38,7 @@ test('own scope shows a task created by the user', function () {
 test('own scope does not show a colleague task in a project the user is a plain member of', function () {
     // Thay đổi hành vi có chủ đích (spec §4.1 mục 3, cập nhật cùng
     // ProjectMemberTaskVisibilityTest): thành viên thường ("own", mặc định
-    // của factory) không còn tự động thấy mọi việc của dự án — chỉ những
+    // của factory) không còn tự động thấy mọi việc của việc dự án — chỉ những
     // thành viên có hiệu lực "all" (cột task_visibility = all hoặc vai trò
     // manager) mới thấy. Chi tiết đầy đủ nằm ở
     // tests/Feature/Project/ProjectMemberTaskVisibilityTest.php.
@@ -235,7 +235,7 @@ test('search filter still applies correctly when combined with the own scope', f
 
 test('opening the edit page of a task outside the scope returns 403', function () {
     // Trang sửa để lộ đúng phần nội dung mà trang xem đã che (tiêu đề, mô tả,
-    // dự án, người phụ trách, đơn vị, hạn) nên phải chịu cùng phạm vi dữ liệu.
+    // việc dự án, người phụ trách, đơn vị, hạn) nên phải chịu cùng phạm vi dữ liệu.
     $user = userWithPermissions([
         PermissionName::TaskView->value,
         PermissionName::TaskUpdate->value,

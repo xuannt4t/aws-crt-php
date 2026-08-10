@@ -151,9 +151,9 @@ test('status filter still applies correctly when combined with the own scope', f
 });
 
 test('a project view_all holder who is not a member only sees own tasks on the project detail page', function () {
-    // Xem được trang dự án nhờ project.view_all (không phải thành viên), nhưng
+    // Xem được trang việc dự án nhờ project.view_all (không phải thành viên), nhưng
     // chỉ có task.view (mặc định own) — không bao trùm điều kiện 3 của own
-    // (thành viên dự án) vì họ không phải thành viên. Danh sách việc lồng phải
+    // (thành viên việc dự án) vì họ không phải thành viên. Danh sách việc lồng phải
     // đi qua Task::visibleTo() nên chỉ thấy việc của chính mình.
     $viewer = User::factory()->create();
     grantPermissions($viewer, [

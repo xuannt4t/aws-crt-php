@@ -213,7 +213,7 @@ const handleReset = () => {
                     </label>
 
                     <label v-else-if="key === 'project_id'" class="w-48">
-                        <span class="mb-1.5 block text-xs font-bold text-slate-600">Dự án</span>
+                        <span class="mb-1.5 block text-xs font-bold text-slate-600">Việc dự án</span>
                         <select v-model="projectId" class="app-field">
                             <option value="">Tất cả</option>
                             <option v-for="project in props.projects" :key="project.id" :value="project.id">

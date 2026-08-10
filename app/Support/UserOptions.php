@@ -6,7 +6,7 @@ use App\Models\User;
 
 /**
  * Nguồn dữ liệu duy nhất cho các ô chọn người: người phụ trách công việc, chủ dự
- * án, thành viên dự án, bộ lọc theo người.
+ * án, thành viên việc dự án, bộ lọc theo người.
  *
  * Trước đây mỗi controller tự viết một hàm `activeUsers()` giống hệt nhau và chỉ
  * trả về `id` + `name`. Ô chọn vì thế chỉ là một danh sách tên phẳng — trùng tên

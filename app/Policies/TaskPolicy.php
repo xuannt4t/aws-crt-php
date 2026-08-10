@@ -135,7 +135,7 @@ final class TaskPolicy
 
     /**
      * Hỏi lại Task::isProjectLocked() — định nghĩa DUY NHẤT của "công việc bị
-     * khoá do dự án đã đóng" (dùng chung với TaskAttachmentPolicy). Mọi
+     * khoá do việc dự án đã đóng" (dùng chung với TaskAttachmentPolicy). Mọi
      * ability ghi/tương tác (không phải xem) phải đi qua đây, không viết lại
      * điều kiện.
      */

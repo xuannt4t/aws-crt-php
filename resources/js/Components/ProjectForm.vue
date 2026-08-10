@@ -60,12 +60,12 @@ const handleSubmit = () => {
     <form class="app-panel overflow-hidden" @submit.prevent="handleSubmit">
         <section class="border-b border-slate-100">
             <div class="px-5 py-5 sm:px-7">
-                <h2 class="font-display text-base font-bold text-ink-950">Thông tin dự án</h2>
-                <p class="mt-1 text-xs text-slate-500">Mã và tên dự án dùng để nhận diện trong toàn hệ thống.</p>
+                <h2 class="font-display text-base font-bold text-ink-950">Thông tin việc dự án</h2>
+                <p class="mt-1 text-xs text-slate-500">Mã và tên việc dự án dùng để nhận diện trong toàn hệ thống.</p>
             </div>
             <div class="app-form-grid px-5 pb-7 sm:px-7 lg:grid-cols-2">
                 <div>
-                    <InputLabel for="code" value="Mã dự án" required />
+                    <InputLabel for="code" value="Mã việc dự án" required />
                     <TextInput
                         id="code"
                         v-model="form.code"
@@ -78,7 +78,7 @@ const handleSubmit = () => {
                     <InputError class="mt-2" :message="form.errors.code" />
                 </div>
                 <div>
-                    <InputLabel for="name" value="Tên dự án" required />
+                    <InputLabel for="name" value="Tên việc dự án" required />
                     <TextInput
                         id="name"
                         v-model="form.name"
@@ -98,7 +98,7 @@ const handleSubmit = () => {
                         rows="4"
                         maxlength="5000"
                         class="app-field resize-y"
-                        placeholder="Bối cảnh, mục tiêu và phạm vi của dự án..."
+                        placeholder="Bối cảnh, mục tiêu và phạm vi của việc dự án..."
                     />
                     <InputError class="mt-2" :message="form.errors.description" />
                 </div>
@@ -108,7 +108,7 @@ const handleSubmit = () => {
         <section>
             <div class="px-5 py-5 sm:px-7">
                 <h2 class="font-display text-base font-bold text-ink-950">Phân công & lịch trình</h2>
-                <p class="mt-1 text-xs text-slate-500">Xác định đơn vị sở hữu, chủ dự án và thời gian thực hiện.</p>
+                <p class="mt-1 text-xs text-slate-500">Xác định đơn vị sở hữu, chủ việc dự án và thời gian thực hiện.</p>
             </div>
             <div class="app-form-grid px-5 pb-7 sm:px-7 lg:grid-cols-2">
                 <div>
@@ -122,13 +122,13 @@ const handleSubmit = () => {
                     <InputError class="mt-2" :message="form.errors.organization_unit_id" />
                 </div>
                 <div>
-                    <InputLabel for="owner_id" value="Chủ dự án" required />
+                    <InputLabel for="owner_id" value="Chủ việc dự án" required />
                     <AppUserSelect
                         v-model="form.owner_id"
                         input-id="owner_id"
                         :options="users"
                         :invalid="Boolean(form.errors.owner_id)"
-                        placeholder="Chọn chủ dự án"
+                        placeholder="Chọn chủ việc dự án"
                     />
                     <InputError class="mt-2" :message="form.errors.owner_id" />
                 </div>
@@ -160,7 +160,7 @@ const handleSubmit = () => {
             <Link :href="route('projects.index')" class="app-button-secondary">Hủy</Link>
             <PrimaryButton :disabled="form.processing">
                 <AppIcon v-if="!form.processing" name="check" class="size-4" />
-                {{ form.processing ? 'Đang lưu...' : project ? 'Lưu thay đổi' : 'Tạo dự án' }}
+                {{ form.processing ? 'Đang lưu...' : project ? 'Lưu thay đổi' : 'Tạo việc dự án' }}
             </PrimaryButton>
         </div>
     </form>

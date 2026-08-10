@@ -44,7 +44,7 @@ final class GenerateTasksFromRecurrenceAction
             return 0;
         }
 
-        // Dự án của mẫu không đổi giữa các kỳ trong cùng một lần chạy, nên chỉ
+        // Việc dự án của mẫu không đổi giữa các kỳ trong cùng một lần chạy, nên chỉ
         // phân giải (và cảnh báo) đúng một lần thay vì lặp lại mỗi kỳ.
         $projectId = $this->resolveProjectId($recurrence);
 
@@ -114,7 +114,7 @@ final class GenerateTasksFromRecurrenceAction
         $project = Project::withTrashed()->find($recurrence->project_id);
 
         if ($project === null || $project->trashed() || $project->isClosed()) {
-            Log::warning('Mẫu công việc định kỳ trỏ tới dự án không còn hợp lệ để sinh công việc, bỏ qua dự án.', [
+            Log::warning('Mẫu công việc định kỳ trỏ tới việc dự án không còn hợp lệ để sinh công việc, bỏ qua việc dự án.', [
                 'task_recurrence_id' => $recurrence->id,
                 'project_id' => $recurrence->project_id,
             ]);

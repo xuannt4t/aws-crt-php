@@ -13,7 +13,7 @@ test('viewAny requires the project view gate while create requires its own permi
 
     // Mô hình hai lớp: project.view là cổng module (viewAny), project.view_*
     // là phạm vi bản ghi. viewAny và view() phải cùng đòi cổng này, nếu không
-    // người dùng thấy dự án trong danh sách rồi nhận 403 khi bấm vào.
+    // người dùng thấy việc dự án trong danh sách rồi nhận 403 khi bấm vào.
     expect($viewer->can('viewAny', Project::class))->toBeTrue()
         ->and($userWithoutPermission->can('viewAny', Project::class))->toBeFalse()
         ->and($creator->can('create', Project::class))->toBeTrue()
@@ -22,7 +22,7 @@ test('viewAny requires the project view gate while create requires its own permi
 
 test('a project member without the project view gate is excluded from the list and from show alike', function () {
     // Danh sách và policy phải đồng ý: thành viên thiếu project.view không
-    // được thấy dự án trong danh sách, cũng không mở được trang chi tiết.
+    // được thấy việc dự án trong danh sách, cũng không mở được trang chi tiết.
     $member = User::factory()->create();
     $project = Project::factory()->create();
     ProjectMember::factory()->create(['project_id' => $project->id, 'user_id' => $member->id]);
@@ -42,7 +42,7 @@ test('a project member without the project view gate is excluded from the list a
 test('view requires the project view gate, then the scope: membership satisfies own, view_all reaches every project', function () {
     // Hai lớp tách bạch (spec §3.1): project.view mở cổng vào module,
     // project.view_own/department/all quyết định thấy bản ghi nào. Thành viên
-    // dự án tự nhiên nằm trong phạm vi "own", nhưng vẫn cần cổng project.view
+    // việc dự án tự nhiên nằm trong phạm vi "own", nhưng vẫn cần cổng project.view
     // — thành viên không có quyền này bị chặn ở cổng, đúng như thiết kế hai lớp.
     $project = Project::factory()->create();
 
@@ -93,7 +93,7 @@ test('update is allowed by permission plus scope, or by the project manager role
     $project = Project::factory()->create();
 
     // Nhánh "có quyền" nay còn phải nằm trong phạm vi dữ liệu; nhánh "là quản
-    // lý dự án" giữ nguyên vì quản lý luôn là thành viên nên đã ở trong own.
+    // lý việc dự án" giữ nguyên vì quản lý luôn là thành viên nên đã ở trong own.
     $permittedNonMember = userWithPermissions([
         PermissionName::ProjectUpdate->value,
         PermissionName::ProjectViewAll->value,

@@ -36,7 +36,7 @@ final class CloseProjectRequest extends FormRequest
             if (blank($this->input('close_reason')) && $project->openTasks()->exists()) {
                 $validator->errors()->add(
                     'close_reason',
-                    'Dự án còn công việc chưa hoàn thành, vui lòng nhập lý do đóng ngoại lệ.',
+                    'Việc dự án còn công việc chưa hoàn thành, vui lòng nhập lý do đóng ngoại lệ.',
                 );
             }
         });

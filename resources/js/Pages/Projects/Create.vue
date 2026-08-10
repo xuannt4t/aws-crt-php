@@ -14,13 +14,13 @@ defineProps<{
 </script>
 
 <template>
-    <Head title="Tạo dự án" />
+    <Head title="Tạo việc dự án" />
 
     <AuthenticatedLayout>
         <template #header>
             <AppPageHeader
-                title="Tạo dự án"
-                description="Khởi tạo dự án mới và chỉ định đơn vị sở hữu, chủ dự án."
+                title="Tạo việc dự án"
+                description="Khởi tạo việc dự án mới và chỉ định đơn vị sở hữu, chủ việc dự án."
                 eyebrow="Project Core"
             >
                 <template #actions>

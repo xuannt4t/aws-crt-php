@@ -22,7 +22,7 @@ test('creating a project without a status defaults to planning and adds the owne
         'organization_unit_id' => $unit->id,
         'owner_id' => $owner->id,
         'code' => 'PRJ-100',
-        'name' => 'Dự án mặc định',
+        'name' => 'Việc dự án mặc định',
     ]);
 
     expect($project->status)->toBe(ProjectStatus::Planning);

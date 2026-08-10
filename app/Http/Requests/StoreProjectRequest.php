@@ -49,10 +49,10 @@ final class StoreProjectRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'code.regex' => 'Mã dự án chỉ được chứa chữ hoa, số, dấu gạch dưới và gạch ngang.',
-            'code.unique' => 'Mã dự án đã tồn tại.',
+            'code.regex' => 'Mã việc dự án chỉ được chứa chữ hoa, số, dấu gạch dưới và gạch ngang.',
+            'code.unique' => 'Mã việc dự án đã tồn tại.',
             'end_date.after_or_equal' => 'Ngày kết thúc phải sau hoặc bằng ngày bắt đầu.',
-            'status.not_in' => 'Không thể tạo dự án ở trạng thái đã đóng. Vui lòng dùng chức năng "Đóng dự án" sau khi tạo.',
+            'status.not_in' => 'Không thể tạo việc dự án ở trạng thái đã đóng. Vui lòng dùng chức năng "Đóng việc dự án" sau khi tạo.',
         ];
     }
 }

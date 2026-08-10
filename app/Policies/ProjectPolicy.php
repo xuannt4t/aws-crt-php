@@ -12,7 +12,7 @@ final class ProjectPolicy
      * Cổng module theo mô hình hai lớp của spec: project.view mở màn hình danh
      * sách, còn project.view_* quyết định thấy được bản ghi nào. Nội dung danh
      * sách vẫn được giới hạn bằng Project::scopeVisibleTo(), nên viewAny và
-     * view() luôn đồng nhất — người thấy dự án trong danh sách cũng mở được nó.
+     * view() luôn đồng nhất — người thấy việc dự án trong danh sách cũng mở được nó.
      */
     public function viewAny(User $user): bool
     {
@@ -56,7 +56,7 @@ final class ProjectPolicy
 
     /**
      * Hỏi lại Project::scopeVisibleTo() — định nghĩa DUY NHẤT của phạm vi dữ
-     * liệu. Nhánh "hoặc là quản lý dự án" vẫn giữ nguyên hiệu lực: quản lý dự
+     * liệu. Nhánh "hoặc là quản lý việc dự án" vẫn giữ nguyên hiệu lực: quản lý dự
      * án luôn là thành viên nên đã nằm sẵn trong phạm vi own.
      */
     private function isVisible(User $user, Project $project): bool

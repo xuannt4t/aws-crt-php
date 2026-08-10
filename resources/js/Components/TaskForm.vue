@@ -166,9 +166,9 @@ const handleSubmit = () => {
                     <InputError class="mt-2" :message="form.errors.organization_unit_id" />
                 </div>
                 <div>
-                    <InputLabel for="project_id" value="Dự án" />
+                    <InputLabel for="project_id" value="Việc dự án" />
                     <select id="project_id" v-model="form.project_id" class="app-field">
-                        <option :value="null">Không thuộc dự án</option>
+                        <option :value="null">Không thuộc việc dự án</option>
                         <option v-for="project in projects" :key="project.id" :value="project.id">
                             {{ project.code }} · {{ project.name }}
                         </option>

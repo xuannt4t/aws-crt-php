@@ -77,7 +77,7 @@ defineProps<{
                         </span>
                         <h2 class="mt-5 font-display text-base font-bold">Công việc liền mạch</h2>
                         <p class="mt-2 text-sm leading-6 text-slate-500">
-                            Kết nối mục tiêu, dự án, nhiệm vụ và phê duyệt.
+                            Kết nối mục tiêu, việc dự án, nhiệm vụ và phê duyệt.
                         </p>
                     </article>
                     <article class="app-panel p-6">

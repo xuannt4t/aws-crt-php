@@ -19,11 +19,11 @@ describe('installFlashToasts', () => {
     it('shows the flash of the initial page load once', () => {
         const add = vi.fn();
 
-        installFlashToasts(add, { success: 'Tạo dự án thành công.', error: null });
+        installFlashToasts(add, { success: 'Tạo việc dự án thành công.', error: null });
 
         expect(add).toHaveBeenCalledTimes(1);
         expect(add).toHaveBeenCalledWith(
-            expect.objectContaining({ severity: 'success', detail: 'Tạo dự án thành công.' }),
+            expect.objectContaining({ severity: 'success', detail: 'Tạo việc dự án thành công.' }),
         );
     });
 
@@ -38,11 +38,11 @@ describe('installFlashToasts', () => {
 
     it('does not replay the initial flash when AppToast remounts after a navigation', () => {
         const first = vi.fn();
-        installFlashToasts(first, { success: 'Tạo dự án thành công.', error: null });
+        installFlashToasts(first, { success: 'Tạo việc dự án thành công.', error: null });
 
         // Điều hướng xong, AppToast mount lại và truyền vào đúng flash cũ.
         const second = vi.fn();
-        installFlashToasts(second, { success: 'Tạo dự án thành công.', error: null });
+        installFlashToasts(second, { success: 'Tạo việc dự án thành công.', error: null });
 
         expect(first).toHaveBeenCalledTimes(1);
         expect(second).not.toHaveBeenCalled();
@@ -53,10 +53,10 @@ describe('installFlashToasts', () => {
         installFlashToasts(add, { success: null, error: null });
 
         const handler = routerOn.mock.calls[0][1] as (event: unknown) => void;
-        handler({ detail: { page: { props: { flash: { success: 'Đã đóng dự án.', error: null } } } } });
+        handler({ detail: { page: { props: { flash: { success: 'Đã đóng việc dự án.', error: null } } } } });
 
         expect(add).toHaveBeenCalledTimes(1);
-        expect(add).toHaveBeenCalledWith(expect.objectContaining({ detail: 'Đã đóng dự án.' }));
+        expect(add).toHaveBeenCalledWith(expect.objectContaining({ detail: 'Đã đóng việc dự án.' }));
     });
 
     it('shows both a success and an error carried by the same response', () => {

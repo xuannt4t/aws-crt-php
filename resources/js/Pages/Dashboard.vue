@@ -52,7 +52,7 @@ const greeting = computed(() => {
                         Xây nền móng tốt cho một đội ngũ vận hành trơn tru.
                     </h2>
                     <p class="mt-3 max-w-xl text-sm leading-6 text-white/55">
-                        Hoàn thiện đơn vị và hồ sơ thành viên trước khi đưa công việc, dự án và báo cáo vào vận hành.
+                        Hoàn thiện đơn vị và hồ sơ thành viên trước khi đưa công việc, việc dự án và báo cáo vào vận hành.
                     </p>
                 </div>
 
