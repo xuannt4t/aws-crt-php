@@ -48,23 +48,30 @@ Route::prefix('v1')->group(function () {
         Route::post('tasks/{task}/attachments', [TaskController::class, 'storeAttachments']);
         Route::get('tasks/{task}/attachments/{attachment}', [TaskController::class, 'downloadAttachment'])->scopeBindings();
         Route::delete('tasks/{task}/attachments/{attachment}', [TaskController::class, 'destroyAttachment'])->scopeBindings();
-        Route::apiResource('tasks', TaskController::class);
+        Route::patch('tasks/{task}', [TaskController::class, 'update']);
+        Route::apiResource('tasks', TaskController::class)->except('update');
 
         Route::patch('task-recurrences/{taskRecurrence}/toggle', [TaskRecurrenceController::class, 'toggle']);
+        Route::patch('task-recurrences/{taskRecurrence}', [TaskRecurrenceController::class, 'update']);
         Route::apiResource('task-recurrences', TaskRecurrenceController::class)
+            ->except('update')
             ->parameters(['task-recurrences' => 'taskRecurrence']);
 
         Route::post('projects/{project}/members', [ProjectMemberController::class, 'store']);
         Route::patch('projects/{project}/members/{member}', [ProjectMemberController::class, 'update'])->scopeBindings();
         Route::delete('projects/{project}/members/{member}', [ProjectMemberController::class, 'destroy'])->scopeBindings();
         Route::patch('projects/{project}/close', [ProjectController::class, 'close']);
-        Route::apiResource('projects', ProjectController::class);
+        Route::patch('projects/{project}', [ProjectController::class, 'update']);
+        Route::apiResource('projects', ProjectController::class)->except('update');
 
+        Route::patch('organization-units/{organizationUnit}', [OrganizationUnitController::class, 'update']);
         Route::apiResource('organization-units', OrganizationUnitController::class)
+            ->except('update')
             ->parameters(['organization-units' => 'organizationUnit']);
         Route::patch('users/{user}/disable', [UserController::class, 'disable']);
         Route::patch('users/{user}/enable', [UserController::class, 'enable']);
-        Route::apiResource('users', UserController::class);
+        Route::patch('users/{user}', [UserController::class, 'update']);
+        Route::apiResource('users', UserController::class)->except('update');
         Route::get('permission-matrix', [PermissionMatrixController::class, 'index']);
         Route::put('permission-matrix', [PermissionMatrixController::class, 'update']);
         Route::get('audit-logs', [AuditLogController::class, 'index']);

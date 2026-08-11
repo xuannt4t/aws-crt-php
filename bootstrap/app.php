@@ -10,6 +10,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -52,5 +53,25 @@ return Application::configure(basePath: dirname(__DIR__))
                 'message' => 'Dữ liệu không hợp lệ.',
                 'errors' => $exception->errors(),
             ], $exception->status);
+        });
+
+        $exceptions->render(function (HttpExceptionInterface $exception, Request $request) {
+            if (! $request->is('api/*')) {
+                return null;
+            }
+
+            $status = $exception->getStatusCode();
+            $message = match ($status) {
+                403 => 'Bạn không có quyền thực hiện thao tác này.',
+                404 => 'Không tìm thấy tài nguyên.',
+                405 => 'Phương thức không được hỗ trợ.',
+                429 => 'Bạn thao tác quá nhanh. Vui lòng thử lại sau.',
+                default => $status >= 500 ? 'Đã xảy ra lỗi hệ thống.' : 'Yêu cầu không hợp lệ.',
+            };
+
+            return response()->json([
+                'success' => false,
+                'message' => $message,
+            ], $status);
         });
     })->create();

@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\PermissionName;
 use App\Models\User;
 use Laravel\Sanctum\Sanctum;
 
@@ -34,4 +35,16 @@ test('inactive users are rejected by protected api routes', function () {
             'success' => false,
             'message' => 'Tài khoản đã bị vô hiệu hóa.',
         ]);
+});
+
+test('api authorization and missing resource errors use the standard envelope', function () {
+    Sanctum::actingAs(User::factory()->create());
+    $this->getJson('/api/v1/organization-units')
+        ->assertForbidden()
+        ->assertExactJson(['success' => false, 'message' => 'Bạn không có quyền thực hiện thao tác này.']);
+
+    Sanctum::actingAs(userWithPermissions([PermissionName::UserView->value]));
+    $this->getJson('/api/v1/users/999999')
+        ->assertNotFound()
+        ->assertExactJson(['success' => false, 'message' => 'Không tìm thấy tài nguyên.']);
 });
