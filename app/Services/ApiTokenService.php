@@ -95,6 +95,8 @@ final class ApiTokenService
 
     public function revokeAll(User $user): void
     {
+        $isCurrentUser = Auth::id() === $user->id;
+
         DB::transaction(function () use ($user): void {
             ApiRefreshSession::query()
                 ->where('user_id', $user->id)
@@ -104,7 +106,9 @@ final class ApiTokenService
             $user->tokens()->delete();
         });
 
-        Auth::forgetGuards();
+        if ($isCurrentUser) {
+            Auth::forgetGuards();
+        }
     }
 
     public function revokeOthers(Request $request): void

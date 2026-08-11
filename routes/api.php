@@ -1,12 +1,16 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AuditLogController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\MetaController;
+use App\Http\Controllers\Api\V1\OrganizationUnitController;
+use App\Http\Controllers\Api\V1\PermissionMatrixController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\ProjectController;
 use App\Http\Controllers\Api\V1\ProjectMemberController;
 use App\Http\Controllers\Api\V1\TaskController;
 use App\Http\Controllers\Api\V1\TaskRecurrenceController;
+use App\Http\Controllers\Api\V1\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -55,5 +59,14 @@ Route::prefix('v1')->group(function () {
         Route::delete('projects/{project}/members/{member}', [ProjectMemberController::class, 'destroy'])->scopeBindings();
         Route::patch('projects/{project}/close', [ProjectController::class, 'close']);
         Route::apiResource('projects', ProjectController::class);
+
+        Route::apiResource('organization-units', OrganizationUnitController::class)
+            ->parameters(['organization-units' => 'organizationUnit']);
+        Route::patch('users/{user}/disable', [UserController::class, 'disable']);
+        Route::patch('users/{user}/enable', [UserController::class, 'enable']);
+        Route::apiResource('users', UserController::class);
+        Route::get('permission-matrix', [PermissionMatrixController::class, 'index']);
+        Route::put('permission-matrix', [PermissionMatrixController::class, 'update']);
+        Route::get('audit-logs', [AuditLogController::class, 'index']);
     });
 });
