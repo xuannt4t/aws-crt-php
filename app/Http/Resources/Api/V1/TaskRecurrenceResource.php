@@ -28,10 +28,17 @@ class TaskRecurrenceResource extends JsonResource
             'due_time' => $this->due_time,
             'is_active' => (bool) $this->is_active,
             'last_generated_for' => $this->last_generated_for?->toDateString(),
+            'cadence' => $this->getAttribute('cadence'),
+            'next_occurrence' => $this->getAttribute('next_occurrence'),
             'organization_unit' => $this->whenLoaded('organizationUnit'),
             'project' => $this->whenLoaded('project'),
             'creator' => $this->whenLoaded('creator'),
             'assignee' => $this->whenLoaded('assignee'),
+            'permissions' => $request->user() ? [
+                'update' => $request->user()->can('update', $this->resource),
+                'delete' => $request->user()->can('delete', $this->resource),
+                'toggle' => $request->user()->can('toggle', $this->resource),
+            ] : [],
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];

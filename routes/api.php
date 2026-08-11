@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\MetaController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\TaskController;
+use App\Http\Controllers\Api\V1\TaskRecurrenceController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -42,5 +43,9 @@ Route::prefix('v1')->group(function () {
         Route::get('tasks/{task}/attachments/{attachment}', [TaskController::class, 'downloadAttachment'])->scopeBindings();
         Route::delete('tasks/{task}/attachments/{attachment}', [TaskController::class, 'destroyAttachment'])->scopeBindings();
         Route::apiResource('tasks', TaskController::class);
+
+        Route::patch('task-recurrences/{taskRecurrence}/toggle', [TaskRecurrenceController::class, 'toggle']);
+        Route::apiResource('task-recurrences', TaskRecurrenceController::class)
+            ->parameters(['task-recurrences' => 'taskRecurrence']);
     });
 });
