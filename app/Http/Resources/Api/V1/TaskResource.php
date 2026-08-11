@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\V1;
 
+use App\Enums\TaskStatus;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -16,7 +17,8 @@ class TaskResource extends JsonResource
             'project_id' => $this->project_id,
             'creator_id' => $this->creator_id,
             'assignee_id' => $this->assignee_id,
-            'recurrence_id' => $this->recurrence_id,
+            'task_recurrence_id' => $this->task_recurrence_id,
+            'recurrence_date' => $this->recurrence_date?->toDateString(),
             'title' => $this->title,
             'description' => $this->description,
             'status' => $this->status?->value ?? $this->status,
@@ -33,6 +35,19 @@ class TaskResource extends JsonResource
             'assignee' => $this->whenLoaded('assignee'),
             'project' => $this->whenLoaded('project'),
             'recurrence' => $this->whenLoaded('recurrence'),
+            'permissions' => $request->user() ? [
+                'update' => $request->user()->can('update', $this->resource),
+                'delete' => $request->user()->can('delete', $this->resource),
+                'dispatch' => $this->status === TaskStatus::Draft && $request->user()->can('dispatch', $this->resource),
+                'start' => $this->status === TaskStatus::Todo && $request->user()->can('start', $this->resource),
+                'submit' => $this->status === TaskStatus::InProgress && $request->user()->can('submit', $this->resource),
+                'recall' => $this->status === TaskStatus::WaitingReview && $request->user()->can('recall', $this->resource),
+                'approve' => $this->status === TaskStatus::WaitingReview && $request->user()->can('approve', $this->resource),
+                'reject' => $this->status === TaskStatus::WaitingReview && $request->user()->can('reject', $this->resource),
+                'update_progress' => $this->status === TaskStatus::InProgress && $request->user()->can('updateProgress', $this->resource),
+                'comment' => $request->user()->can('comment', $this->resource),
+                'attach' => $request->user()->can('attach', $this->resource),
+            ] : [],
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];

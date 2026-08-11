@@ -37,6 +37,7 @@ final class ApiResponse
         LengthAwarePaginator $paginator,
         mixed $data,
         string $message = 'Thành công',
+        array $extraMeta = [],
     ): JsonResponse {
         return response()->json([
             'success' => true,
@@ -49,6 +50,7 @@ final class ApiResponse
                 'total' => $paginator->total(),
                 'from' => $paginator->firstItem(),
                 'to' => $paginator->lastItem(),
+                ...$extraMeta,
             ],
             'links' => [
                 'first' => $paginator->url(1),
