@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\LoginRequest;
 use App\Http\Requests\Api\V1\RefreshTokenRequest;
+use App\Http\Resources\Api\V1\UserResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\User;
 use App\Services\ApiTokenService;
@@ -31,7 +32,7 @@ final class AuthController extends Controller
 
         return ApiResponse::success([
             ...$tokens->issue($user, $request->string('device_name')->toString()),
-            'user' => $user,
+            'user' => UserResource::make($user->load(['organizationUnit:id,name', 'roles:id,name', 'permissions:id,name']))->resolve($request),
         ], 'Đăng nhập thành công.');
     }
 
@@ -59,6 +60,8 @@ final class AuthController extends Controller
 
     public function me(Request $request): JsonResponse
     {
-        return ApiResponse::success($request->user());
+        $user = $request->user()->load(['organizationUnit:id,name', 'roles:id,name', 'permissions:id,name']);
+
+        return ApiResponse::success(UserResource::make($user)->resolve($request));
     }
 }

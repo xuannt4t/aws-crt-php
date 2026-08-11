@@ -107,6 +107,26 @@ final class ApiTokenService
         Auth::forgetGuards();
     }
 
+    public function revokeOthers(Request $request): void
+    {
+        $currentToken = $request->user()?->currentAccessToken();
+
+        if (! $currentToken instanceof PersonalAccessToken) {
+            return;
+        }
+
+        DB::transaction(function () use ($request, $currentToken): void {
+            $otherIds = $request->user()->tokens()->whereKeyNot($currentToken->id)->pluck('id');
+
+            ApiRefreshSession::query()
+                ->whereIn('personal_access_token_id', $otherIds)
+                ->whereNull('revoked_at')
+                ->update(['revoked_at' => now()]);
+
+            PersonalAccessToken::query()->whereIn('id', $otherIds)->delete();
+        });
+    }
+
     /**
      * @return array{token_type: string, access_token: string, access_token_expires_in: int, refresh_token: string, refresh_token_expires_in: int}
      */
