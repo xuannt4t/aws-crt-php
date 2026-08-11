@@ -3,6 +3,8 @@
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\MetaController;
 use App\Http\Controllers\Api\V1\ProfileController;
+use App\Http\Controllers\Api\V1\ProjectController;
+use App\Http\Controllers\Api\V1\ProjectMemberController;
 use App\Http\Controllers\Api\V1\TaskController;
 use App\Http\Controllers\Api\V1\TaskRecurrenceController;
 use Illuminate\Support\Facades\Route;
@@ -47,5 +49,11 @@ Route::prefix('v1')->group(function () {
         Route::patch('task-recurrences/{taskRecurrence}/toggle', [TaskRecurrenceController::class, 'toggle']);
         Route::apiResource('task-recurrences', TaskRecurrenceController::class)
             ->parameters(['task-recurrences' => 'taskRecurrence']);
+
+        Route::post('projects/{project}/members', [ProjectMemberController::class, 'store']);
+        Route::patch('projects/{project}/members/{member}', [ProjectMemberController::class, 'update'])->scopeBindings();
+        Route::delete('projects/{project}/members/{member}', [ProjectMemberController::class, 'destroy'])->scopeBindings();
+        Route::patch('projects/{project}/close', [ProjectController::class, 'close']);
+        Route::apiResource('projects', ProjectController::class);
     });
 });
