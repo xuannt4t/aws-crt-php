@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\ApiRefreshSession;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -15,3 +16,11 @@ Schedule::command('tasks:notify-deadlines')
 Schedule::command('tasks:generate-recurring')
     ->dailyAt('00:05')
     ->withoutOverlapping();
+
+Schedule::command('sanctum:prune-expired --hours=24')->daily();
+
+Schedule::call(fn () => ApiRefreshSession::query()
+    ->where('expires_at', '<', now()->subDay())
+    ->delete())
+    ->name('api:prune-refresh-sessions')
+    ->daily();
